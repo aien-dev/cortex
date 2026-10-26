@@ -20,7 +20,7 @@ canonical checkout). `T` = `Authorization: Bearer paritytok`, `J` = `Content-Typ
 | OPTIONS anything (preflight or not, any origin) | 200 | `access-control-allow-methods: *`, `access-control-allow-headers: *`, `allow` of the route (none for unknown paths), `access-control-allow-origin` only for an allowed origin; no auth |
 | GET with `Origin: http://localhost:18095` | normal | adds `access-control-allow-origin: http://localhost:18095`; `http://evil` gets none |
 - Header `Bearer  paritytok  ` (extra spaces) is accepted (value trimmed); `bearer` lower-case is 401.
-- The live binary's allow-list is 127.0.0.1:18095, localhost:18095, 192.168.1.108:18095, 100.116.106.93:18095; the archived source now keeps loopback only (AlphaAudit). The Omega server keeps loopback only.
+- The live binary's allow-list is 127.0.0.1:18095, localhost:18095 and two non-loopback origins (a LAN and a tailnet address, not recorded here); the archived source now keeps loopback only (AlphaAudit). The Omega server keeps loopback only.
 
 ## Body extraction (axum Json)
 - Missing/other content type: 415 text/plain `Expected request with `Content-Type: application/json``. `application/vnd.x+json` is accepted.
