@@ -1,4 +1,4 @@
-note main.om: cortex [--host 127.0.0.1] [--port 18080] --log PATH [--encoder-url URL] [--tokens FILE]
+note main.om: cortex [--host 127.0.0.1] [--port 18080] --log PATH [--encoder-url URL] [--tokens FILE] [--sock PATH]
 global argb uchar 4096
 global mport ulong 1
 global mhost uchar 4
@@ -12,7 +12,7 @@ text a_enc "--encoder-url"
 text a_tok "--tokens"
 text a_db "--db-path"
 text d_enc "http://127.0.0.1:18081"
-text m_use "usage: cortex [--host 127.0.0.1] [--port 18080] --log PATH [--encoder-url URL] [--tokens FILE]\n"
+text m_use "usage: cortex [--host 127.0.0.1] [--port 18080] --log PATH [--encoder-url URL] [--tokens FILE] [--sock PATH]\n"
 text m_db "cortex: --db-path is the SQLite store of cortex-rs; import it once with cortex-import, then pass --log\n"
 text m_bind "cortex: cannot bind the listening socket\n"
 text m_logf "cortex: cannot open or replay the log\n"
@@ -139,6 +139,13 @@ end
 if arg_is i a_tok
 if not tok_load arg_jrs v
 say m_tokf
+ret 2
+end
+ret 0
+end
+if arg_is i a_sock
+if not sv_setpath arg_jrs v
+say m_sockp
 ret 2
 end
 ret 0
@@ -273,7 +280,18 @@ end
 ret true
 end
 
+note TCP listener; retries for 5 s while the address is still held (a previous acceptor exiting)
 fn main_listen to int
+for t ulong 50
+fd = main_listen1
+if ne fd -98
+ret fd
+end
+x = sleepns 100000000
+end
+ret -1
+end
+fn main_listen1 to int
 fd = socknew 2 524289 0
 if lt fd 0
 ret -1
@@ -281,6 +299,7 @@ end
 put mopt 0 1
 r = sockopt int fd 1 2 mopt 0 4
 if ne r 0
+x = fclose int fd
 ret -1
 end
 put maddr 0 2
@@ -292,10 +311,15 @@ put maddr add 4 k get mhost k
 end
 r = bind int fd maddr 0 16
 if ne r 0
+x = fclose int fd
+if eq r -98
+ret -98
+end
 ret -1
 end
 r = listen int fd 128
 if ne r 0
+x = fclose int fd
 ret -1
 end
 ret int fd
@@ -317,27 +341,21 @@ if lt w 0
 ret
 end
 end
-fn serve fd int to void
-while true bound 999999
-for k ulong 999999
-w = waitio fd 1 -1
-if gt w 0
-c = accept fd 524288
-if ge c 0
-api_conn int c
-x = fclose int c
-if ne x 0
-continue
-end
-end
-end
-end
-end
-end
 fn main to int
 r = main_args
 if ne r 0
 ret r
+end
+if not sv_defpath
+say m_sockp
+ret 2
+end
+u = sv_ulisten
+if lt u 0
+ret 4
+end
+if ne sv_start u 0
+ret int get sfp 3
 end
 auth_init
 fts_init
@@ -347,12 +365,11 @@ say m_logf
 ret 3
 end
 st_eav
-fd = main_listen
-if lt fd 0
+if not sv_go
 say m_bind
 ret 4
 end
 main_banner
-serve fd
-ret 0
+sv_serve u
+ret 5
 end

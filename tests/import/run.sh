@@ -3,7 +3,8 @@
 # Oracles: /usr/bin/sqlite3 3.45.1 (oracle.sh dump with hex()/typeof()/ieee754_to_blob()/rowid),
 # Python 3 walfix.py / realcheck.py (independent WAL + record parsers, fixture edits only), and a
 # Python CRC-32C reference. Omega programs are built with the pinned omc (omcbuild.sh).
-# usage: sh tests/import/run.sh [WORKDIR]    (default /tmp/cxo/impwork/run; needs ~400 MB)
+# usage: LIVE=SRC.db sh tests/import/run.sh [WORKDIR]   (default build/import-work; needs ~400 MB)
+# LIVE is a read-only copy of a cortex-rs database (required).
 # Prints PASS/FAIL per check, NEG lines are negative controls that must observe a failure.
 set -u
 # host rule: run at lowest CPU and I/O priority (re-exec once under nice -n 19 / ionice -c3).
@@ -11,8 +12,8 @@ set -u
 if [ -z "${CXO_NICED:-}" ]; then CXO_NICED=1 exec nice -n 19 ionice -c3 sh "$0" "$@"; fi
 T=$(cd "$(dirname "$0")" && pwd)
 R=$(cd "$T/../.." && pwd)
-W=${1:-/tmp/cxo/impwork/run}
-LIVE=${LIVE:-/tmp/cxo/data/cortex-copy.db}
+W=${1:-$R/build/import-work}
+LIVE=${LIVE:?set LIVE to a copy of a cortex-rs database}
 rm -rf "$W"; mkdir -p "$W"; cd "$W" || exit 1
 pass=0; fail=0
 ok() { pass=$((pass + 1)); echo "PASS $*"; }

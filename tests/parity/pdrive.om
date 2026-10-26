@@ -4,6 +4,8 @@ note stores the raw answers. CORPUS lines are CLASS TAB METHOD TAB PATH TAB FLAG
 note in spec/PARITY.md). OUT gets one record per request: "#<index> <bytes>\n", the raw answer
 note bytes and "\n"; a failed exchange is "#<index> ERR\n". LAT (optional) gets the latency of each
 note request in nanoseconds, one per line, measured from socket creation to the peer's close.
+note Flag a sends "authorization: Bearer paritytok", or the value of PDRIVE_TOKEN when that
+note environment variable is set (shadow replay against a server with a real token).
 global pa uchar 4096
 global cb uchar 16777216
 global bb uchar 4194304
@@ -11,8 +13,13 @@ global rq uchar 4194304
 global rb uchar 16777216
 global sa uchar 16
 global ob uchar 64
-note pv: 0 corpus bytes, 1 port, 2 out fd, 3 lat fd (0 none), 4 body len, 5 request len, 6 answer len
+note pv: 0 corpus bytes, 1 port, 2 out fd, 3 lat fd (0 none), 4 body len, 5 request len, 6 answer len,
+note 7 length of the PDRIVE_TOKEN header in tk (0 none)
 global pv ulong 8
+global ev uchar 4096
+global tk uchar 4200
+text h_auth "authorization: Bearer "
+text e_tok "PDRIVE_TOKEN="
 note fl: one byte per flag letter present on the current line
 global fl uchar 128
 text u_use "usage: pdrive CORPUS PORT OUT [LAT]\n"
@@ -117,6 +124,45 @@ end
 fn rqh o ulong t view uchar * to ulong
 ret rqcr rqt o t
 end
+fn rqa o ulong to ulong
+if eq get pv 7 0
+ret rqh o h_ok
+end
+for i ulong get pv 7
+put rq add o i get tk i
+end
+ret rqcr add o get pv 7
+end
+note tokenv: find PDRIVE_TOKEN=VALUE in the environment; tk gets "authorization: Bearer VALUE"
+fn tokenv to void
+c = ulong envcnt
+for i ulong c
+m = envread i ev 0 len ev
+if lt m 14
+continue
+end
+if tokpre
+tokcp sub ulong m len e_tok
+end
+end
+end
+fn tokpre to bool
+for j ulong len e_tok
+if ne get ev j get e_tok j
+ret false
+end
+end
+ret true
+end
+fn tokcp v ulong to void
+for q ulong len h_auth
+put tk q get h_auth q
+end
+for r ulong v
+put tk add len h_auth r get ev add len e_tok r
+end
+put pv 7 add len h_auth v
+end
 fn rqdec o ulong v ulong to ulong
 k = o
 if ge v 10
@@ -203,7 +249,7 @@ end
 fn rqflag o ulong to ulong
 k = o
 if eq get fl 97 1
-k = rqh k h_ok
+k = rqa k
 end
 if eq get fl 98 1
 k = rqh k h_bad
@@ -449,6 +495,7 @@ if or lt c 4 gt c 5
 say u_use
 ret 2
 end
+tokenv
 fd = opnr argp 1
 if lt fd 0
 say u_open

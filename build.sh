@@ -10,7 +10,7 @@ R=$(cd "$(dirname "$0")" && pwd)
 B=$R/build
 OMC=$(sh "$R/tools/omc.sh") || exit 1
 mkdir -p "$B"
-SERVER="f64 uni_rust json crc32c uni_fts flog fts like http store log api api2 api3 qs enc de main"
+SERVER="f64 uni_rust json crc32c uni_fts flog fts like http store log api api2 api3 qs enc de srv main"
 IMPORT="crc32c sqlite import_main"
 unit() { # unit OUT MODULES...
   out=$1; shift

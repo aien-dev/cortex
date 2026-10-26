@@ -8,7 +8,7 @@ set -u
 R=$(cd "$(dirname "$0")/../.." && pwd)
 T=$R/tests/json
 OMC=$(sh "$R/tools/omc.sh") || exit 2
-W=${W:-/tmp/jn/run}
+W=${W:-$R/build/json-work}
 RYU_TABLE=${RYU_TABLE:-$HOME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ryu-1.0.23/src/d2s_full_table.rs}
 N="nice -n 19 ionice -c3"
 FAIL=0

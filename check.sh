@@ -29,15 +29,19 @@ cd "$R" || exit 2
 step build sh build.sh || { echo "check: build failed, nothing else can run"; exit 1; }
 step json env W="$C/json-work" bash tests/json/run.sh
 step fts env WORK="$C/fts-work" sh tests/fts/run.sh "$SRC"
-step import sh tests/import/run.sh "$C/import-work"
+step import env LIVE="$SRC" sh tests/import/run.sh "$C/import-work"
 rm -rf "$C/json-work" "$C/fts-work" "$C/import-work"
 if step parity env PARITY_WORK="$C/parity-work" PARITY_EVIDENCE="$C/parity" sh tests/parity/run.sh "$SRC"; then
   step mutant env MUTANT_WORK="$C/mutant-work" MUTANT_EVIDENCE="$C/parity" sh tests/parity/mutant.sh "$SRC"
   rm -rf "$C/mutant-work"
   step load env PARITY_WORK="$C/parity-work" LOAD_WORK="$C/load-work" LOAD_EVIDENCE="$C/load" sh tests/load/run.sh "$SRC"
   rm -rf "$C/load-work"
+  step conc env PARITY_WORK="$C/parity-work" CONC_WORK="$C/conc-work" CONC_EVIDENCE="$C/conc" sh tests/conc/run.sh "$SRC"
+  rm -rf "$C/conc-work"
+  step claims env PARITY_GEN="$R/tests/claims/gen.sh" PARITY_WORK="$C/claims-work" PARITY_EVIDENCE="$C/claims" sh tests/parity/run.sh "$SRC"
+  rm -rf "$C/claims-work"
 else
-  echo "SKIP mutant, load (they need a passing parity run)"; fails=$((fails + 2))
+  echo "SKIP mutant, load, conc, claims (they need a passing parity run)"; fails=$((fails + 4))
 fi
 if [ $fails -eq 0 ]; then echo "check: ALL PASS"; exit 0; fi
 echo "check: $fails step(s) failed"; exit 1
