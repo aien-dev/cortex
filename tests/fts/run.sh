@@ -4,7 +4,8 @@
 # build.rs and gcc -O3 like the cc crate inside cortex-rs) and glibc libm, plus negative controls.
 #
 # usage: sh tests/fts/run.sh DB        DB: a copy of a cortex-rs database (opened read only)
-# env:   OMC (pinned compiler), SQLITE_SRC (dir with sqlite3.c/sqlite3.h), WORK (scratch dir)
+# env:   OMC (pinned compiler), SQLITE_SRC (dir with sqlite3.c/sqlite3.h), WORK (scratch dir),
+#        FTS_EVIDENCE (log dir, default evidence/fts; check.sh points it into $CHECK_DIR)
 # exit 0 only when every differential is bit-identical AND every negative control is detected.
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -13,7 +14,7 @@ DB=${1:?usage: run.sh DB}
 OMC=$(sh "$ROOT/tools/omc.sh") || exit 2
 SQLITE_SRC=${SQLITE_SRC:-$HOME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libsqlite3-sys-0.28.0/sqlite3}
 WORK=${WORK:-$ROOT/build/fts-work}
-EV="$ROOT/evidence/fts"
+EV=${FTS_EVIDENCE:-$ROOT/evidence/fts}
 N="nice -n 19 ionice -c3"
 mkdir -p "$WORK" "$EV"
 LOG="$EV/run.log"
