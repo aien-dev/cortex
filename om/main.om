@@ -317,7 +317,9 @@ ret -98
 end
 ret -1
 end
-r = listen int fd 128
+note backlog 1024 (as tokio, which cortex-rs uses): with 128, a burst of 200 connections overflowed
+note the accept queue once (TcpExtListenOverflows 1) and that client's SYN was retried 1 s later
+r = listen int fd 1024
 if ne r 0
 x = fclose int fd
 ret -1

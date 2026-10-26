@@ -43,9 +43,12 @@ A record passes when all of these hold:
 1. The status lines are byte-equal.
 2. The header lines are equal as a multiset, ignoring `date` (order differs: the oracle sends
    `connection` before `date`).
-3. `content-length` is equal, with two exceptions: the body needed one of the masks in 4, or the
+3. `content-length` is equal, with three exceptions: the body needed one of the masks in 4; the
    request is a HEAD of /health or /status, both bodies are empty and Omega's length is exactly the
-   oracle's plus one (the masked `runtime` value below is one byte longer).
+   oracle's plus one (the masked `runtime` value below is one byte longer); or the request is a HEAD
+   of /api/cortex/search or /api/cortex/recall, both bodies are empty and the lengths differ by at
+   most 24 bytes (the unseen body holds the masked `elapsedMs` number, whose text is at most 24
+   bytes; observed: 727.0010540000001 from the oracle against 1.990726 from Omega).
 4. The body bytes are equal except for these values:
    - an `elapsedMs` number (wall time);
    - a `committedAt`, `createdAt` or `updatedAt` string when both values are fresh (at or after the
