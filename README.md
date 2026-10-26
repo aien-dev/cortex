@@ -16,9 +16,11 @@ pinned Omega compiler; nothing else runs in production (DEPENDENCIES.md).
 - No CI: the gates below are run by hand (`check.sh`). The evidence files name the exact binaries
   and inputs they were produced with.
 - Linux aarch64 only (the compiler emits aarch64 ELF).
-- Limits: up to 262,144 FTS documents and 16 Mi index tokens. One connection is served at a time
-  (a single accept loop with a 10 s read deadline per connection), so concurrent clients queue and a
-  slow client can hold the others for up to 10 s; see evidence/load/stats.txt for 4 clients.
+- Limits: up to 262,144 FTS documents, 16 Mi index tokens and 64 MiB of short strings (four
+  16 MiB pools; about 305 bytes per entity on real data). Connections are served concurrently: a
+  handler process per connection (at most `S_MAXH`) forwards each whole request to the single
+  state process, so a slow client holds only its own handler (evidence/conc). Ranked search and
+  recall take about 1.35x the cortex-rs wall time; get and traverse are faster.
 
 ## Build
 
@@ -67,6 +69,9 @@ runs, one at a time and at lowest CPU/IO priority:
 | parity | `tests/parity/run.sh` | the wire gate against the cortex-rs binary (spec/PARITY.md) |
 | mutant | `tests/parity/mutant.sh` | the gate fails when one score constant changes |
 | load | `tests/load/run.sh` | read-mix latency of both servers and the kill -9 durability check |
+| big | `tests/big/run.sh` | a snapshot padded past 16 MiB of short strings loads and reads back |
+| conc | `tests/conc/run.sh` | 16 concurrent clients plus slow clients, against the latency gate |
+| claims | `tests/claims/gen.sh` via the parity runner | claim create/upsert/retract parity |
 
 The parity and load steps need the cortex-rs binary on `PATH` (or `CORTEX_ORACLE`) and use ports
 18180 and 18190. The json and fts steps need their offline oracles (DEPENDENCIES.md). Logs and fresh

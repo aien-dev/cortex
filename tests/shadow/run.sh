@@ -31,7 +31,12 @@ ENC=${SHADOW_ENC:-http://127.0.0.1:18081}
 TRIES=${SHADOW_TRIES:-20}
 W=${SHADOW_WORK:-$R/build/shadow}
 SPID=
-stop() { [ -n "$SPID" ] && kill "$SPID" 2>/dev/null; SPID=; }
+# stop the Omega server and wait (up to 5 s) until its acceptor has released the port
+stop() {
+  [ -n "$SPID" ] && kill "$SPID" 2>/dev/null; SPID=
+  i=0
+  while [ $i -lt 50 ] && curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$SP/health"; do sleep 0.1; i=$((i + 1)); done
+}
 fail() { echo "shadow: $*" >&2; stop; exit 2; }
 [ -n "${CORTEX_TOKEN:-}" ] || fail "CORTEX_TOKEN is not set"
 [ -f "$DB" ] && [ -f "$CORPUS" ] || fail "missing LIVE_DB or CORPUS"

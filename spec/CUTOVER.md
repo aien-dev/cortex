@@ -5,6 +5,22 @@ switches or restarts a production Cortex needs the operator's approval. Host-spe
 (ports, service names, paths, credentials) live in the operator's private runbook, not in this
 public repository.
 
+## Blockers before any switch
+
+- **Short-string pool runway (fixed on this branch).** Every logged revision's short fields live
+  in the string space `hs` (om/store.om). An omc pool holds at most 16,777,216 elements, so `hs`
+  is now four 16 MiB pools behind one byte accessor (`hsg`/`hsp`), 64 MiB in total. On 2026-10-26
+  the primary instance's 6641 entities used 2,022,373 bytes (about 305 bytes each); at 60-70 new
+  entities an hour the 64 MiB space lasts about 127-148 days (modeled; the single 16 MiB pool
+  lasted about 29-34 days). When the space is full the server still traps while loading its log,
+  so the remaining margin must be watched. `tests/big` pads a snapshot past 16 MiB of short
+  strings and reads the last entity back; the old single-pool build exits 109 on the same log.
+- **Ranked search speed.** Ranked search and recall take about 1.35x the oracle's wall time
+  (3 interleaved rounds pinned to one core), while get and traverse are faster. The speed is
+  acceptable for the request volume, but the operator should know.
+- **Shadow.** At least 24 h of read-only shadow comparison against the live instance, with zero
+  unexplained differences.
+
 ## Order
 
 One instance at a time. The primary instance goes first; any further instance only after the first
@@ -20,11 +36,14 @@ runs under a separate system user needs a new privileged launch rule, which is a
 2. **Side-port run.** Start the Omega server on a free side port with the same token source and
    encoder URL as the production instance, under the operator's process supervisor or by hand.
 3. **Shadow comparison.** Replay real read traffic to both ports and compare with
-   `tests/parity/pcmp` (same equivalence rule as spec/PARITY.md). Writes made to the production
-   instance after the snapshot are mirrored to the side instance in commit order
-   (`tests/shadow/`), so reads that follow them are compared too. Gate: zero byte differences
-   (identical except the masked timing fields: `elapsedMs`, timestamps and the `/health` runtime
-   string) on rows present in both, over at least one day of real queries.
+   `tests/parity/pcmp` (same equivalence rule as spec/PARITY.md). `tests/shadow/run.sh` takes a
+   fresh read-only snapshot for every round and discards a round when the live data changed
+   between the snapshot and the end of the live replay, so writes are covered by re-snapshotting,
+   not mirrored. Gate: zero byte differences (identical except the masked timing fields:
+   `elapsedMs`, timestamps and the `/health` runtime string) over at least one day of rounds.
+   PROPOSED, not built: a tee in the MCP bridge that sends each real write to both instances in
+   commit order, which would let reads that follow a write be compared without waiting for the
+   next snapshot. Writes themselves are checked by the write-path gates in step 4.
 4. **Write-path checks on the build being switched in.** The wire parity gate and its mutant from a
    clean clone (`check.sh`), the concurrent writers-plus-readers load test with kill -9 mid-run
    (`tests/load/`), and claims create/upsert/retract on real-shaped data.

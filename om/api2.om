@@ -121,7 +121,7 @@ if ne q NONE
 n = rf_len q
 o = rf_off q
 for i ulong n
-put jrs i get hs add o i
+put jrs i hsg add o i
 end
 end
 ru_trim 0 n
@@ -184,7 +184,7 @@ r = get enm e
 o = rf_off r
 n = rf_len r
 for i ulong n
-put qct i get hs add o i
+put qct i hsg add o i
 end
 put qctl 0 n
 if like_test
@@ -313,7 +313,7 @@ q = get ap A_Q
 o = rf_off q
 n = rf_len q
 for i ulong n
-put jrq i get hs add o i
+put jrq i hsg add o i
 end
 put jrql 0 n
 ru_prep
@@ -344,7 +344,7 @@ r = get enm e
 o = rf_off r
 n = rf_len r
 for i ulong n
-put jrs i get hs add o i
+put jrs i hsg add o i
 end
 put jrsl 0 n
 if ru_contains

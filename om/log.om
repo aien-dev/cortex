@@ -68,7 +68,7 @@ put klw add w i hc_get add o i
 end
 else
 for i ulong n
-put klw add w i get hs add o i
+put klw add w i hsg add o i
 end
 end
 end
@@ -187,7 +187,7 @@ if gt add o n HSCAP
 trap 9
 end
 for i ulong n
-put hs add o i get klr add p i
+hsp add o i get klr add p i
 end
 put hsn 0 add o n
 put lgs 4 add p n
@@ -212,7 +212,7 @@ end
 p = get lgs 4
 o = get hsn 0
 for i ulong n
-put hs add o i get klr add p i
+hsp add o i get klr add p i
 end
 put lgs 4 add p n
 ret rf_hs o n

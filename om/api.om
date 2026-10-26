@@ -67,7 +67,7 @@ if gt add o n HSCAP
 trap 9
 end
 for i ulong n
-put hs add o i get jsv i
+hsp add o i get jsv i
 end
 put hst 0 add o n
 ret rf_hs o n
@@ -87,7 +87,7 @@ end
 fn stage_txt t view uchar * to ulong
 o = get hst 0
 for i ulong len t
-put hs add o i get t i
+hsp add o i get t i
 end
 put hst 0 add o len t
 ret rf_hs o len t
@@ -100,7 +100,7 @@ if gt add o n HSCAP
 trap 9
 end
 for i ulong n
-put hs add o i get job add a i
+hsp add o i get job add a i
 end
 put hst 0 add o n
 put jobl 0 a
@@ -131,7 +131,7 @@ end
 o = rf_off r
 n = rf_len r
 for i ulong n
-put jes i get hs add o i
+put jes i hsg add o i
 end
 js_esc_buf 0 n
 end
@@ -148,7 +148,7 @@ fn o_canon r ulong fb view uchar * to void
 o = rf_off r
 n = rf_len r
 for i ulong n
-put jes i get hs add o i
+put jes i hsg add o i
 end
 if not js_canon_buf 0 n
 js_raw fb

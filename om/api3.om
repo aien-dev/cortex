@@ -26,7 +26,7 @@ fn stage_jtx to ulong
 n = get jtxl 0
 o = get hst 0
 for i ulong n
-put hs add o i get jtx i
+hsp add o i get jtx i
 end
 put hst 0 add o n
 ret rf_hs o n
@@ -277,7 +277,7 @@ js_raw r_rec2
 n = rf_len tt
 o = rf_off tt
 for i ulong n
-put jes i get hs add o i
+put jes i hsg add o i
 end
 for i ulong len t_retr
 put jes add n i get t_retr i

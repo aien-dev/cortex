@@ -1,7 +1,11 @@
 note ===== tests/fts/t_like.om : LIKE differential harness =====
 note usage: t_like DUMP PATTERNS > out ; per pattern "p<i> ok|err n=<k> <hex bitmap>" where bit j
 note is set when entity j (dump order = rowid order) has canonical_name LIKE p OR content LIKE p
+note content bytes span tcb, tcb1, tcb2 (16 MiB each; one pool holds at most 16777216 elements):
+note the live content passed 16 MiB on 2026-10-26 (16834750 bytes, 6641 entities; trap 3)
 global tcb uchar 16777216
+global tcb1 uchar 16777216
+global tcb2 uchar 16777216
 global tco ulong 65536
 global tnb uchar 1048576
 global tno ulong 65536
@@ -65,7 +69,7 @@ end
 fn t_cpc o ulong to ulong
 n = get qctl 0
 for i ulong n
-put tcb add o i get qct i
+tc_put add o i get qct i
 end
 ret add o n
 end
@@ -124,7 +128,7 @@ end
 a = get tco e
 n = sub get tco add e 1 a
 for i ulong n
-put qct i get tcb add a i
+put qct i tc_get add a i
 end
 put qctl 0 n
 ret like_test
@@ -133,4 +137,31 @@ fn t_bset e ulong to void
 k = div e 8
 v = ulong get tbm k
 put tbm k uchar or v shl ulong 1 rem e 8
+end
+
+fn tc_put i ulong v uchar to void
+k = div i 16777216
+j = rem i 16777216
+note no elif/else chain around put: under omc 189ada82 such a chain stored into the wrong pool in
+note the server build (om/store.om hsp), so each branch returns on its own
+if eq k 0
+put tcb j v
+ret
+end
+if eq k 1
+put tcb1 j v
+ret
+end
+put tcb2 j v
+end
+fn tc_get i ulong to uchar
+k = div i 16777216
+j = rem i 16777216
+if eq k 0
+ret get tcb j
+end
+if eq k 1
+ret get tcb1 j
+end
+ret get tcb2 j
 end

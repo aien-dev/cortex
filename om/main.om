@@ -239,7 +239,7 @@ end
 fn tok_space a ulong z ulong to ulong
 o = get hst 0
 for i ulong sub z a
-put hs add o i get tfb add a i
+hsp add o i get tfb add a i
 end
 put hst 0 add o sub z a
 ret rf_hs o sub z a
@@ -262,7 +262,7 @@ end
 o = rf_off r
 n = rf_len r
 for i ulong n
-put jin i get hs add o i
+put jin i hsg add o i
 end
 put jinl 0 n
 if not js_parse

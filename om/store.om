@@ -13,9 +13,17 @@ const MDIN ulong 131072
 const RDISK ulong 9223372036854775808
 const RHC ulong 4611686018427387904
 const RLENM ulong 33554431
-const HSCAP ulong 16777216
+note hs holds every short string field (ids, names, types, aliases, metadata, timestamps) of every
+note logged revision. 2026-10-26: 2022373 bytes for 6641 live entities (about 305 bytes each) at about
+note 60-70 new entities an hour, so a single 16 MiB pool would fill (trap 9 when the log is loaded)
+note in about a month. One omc pool holds at most 16777216 elements (error 23 beyond), so the 64 MiB
+note string space is four pools (hs, hs1, hs2, hs3) read and written only through hsg / hsp.
+const HSCAP ulong 67108864
 const HCCAP ulong 134217728
 global hs uchar 16777216
+global hs1 uchar 16777216
+global hs2 uchar 16777216
+global hs3 uchar 16777216
 global hsn ulong 1
 global hc ulong 16777216
 global hcn ulong 1
@@ -107,7 +115,7 @@ fn hs_hash r ulong to ulong
 h = ulong 14695981039346656037
 o = rf_off r
 for i ulong rf_len r
-h = mul xor h ulong get hs add o i 1099511628211
+h = mul xor h ulong hsg add o i 1099511628211
 end
 ret h
 end
@@ -122,7 +130,7 @@ end
 x = rf_off a
 y = rf_off b
 for i ulong n
-if ne get hs add x i get hs add y i
+if ne hsg add x i hsg add y i
 ret false
 end
 end
@@ -139,8 +147,8 @@ end
 x = rf_off a
 y = rf_off b
 for i ulong k
-p = get hs add x i
-q = get hs add y i
+p = hsg add x i
+q = hsg add y i
 if lt p q
 ret -1
 end
@@ -165,7 +173,7 @@ ret false
 end
 o = rf_off r
 for i ulong len t
-if ne get hs add o i get t i
+if ne hsg add o i get t i
 ret false
 end
 end
@@ -178,7 +186,7 @@ end
 fn hs_stage_txt t view uchar * to ulong
 o = get hsn 0
 for i ulong len t
-put hs add o i get t i
+hsp add o i get t i
 end
 ret rf_hs o len t
 end
@@ -542,7 +550,7 @@ r = get enm e
 o = rf_off r
 n = rf_len r
 for i ulong n
-put qnm i get hs add o i
+put qnm i hsg add o i
 end
 put qnml 0 n
 c = get ect e
@@ -578,4 +586,39 @@ put efts e f
 if eq get stv 5 0
 st_fts_put e
 end
+end
+note byte i of the string space (16 MiB per pool)
+fn hsg i ulong to uchar
+k = shr i 24
+j = and i 16777215
+if eq k 0
+ret get hs j
+end
+if eq k 1
+ret get hs1 j
+end
+if eq k 2
+ret get hs2 j
+end
+ret get hs3 j
+end
+note no elif/else chain here: under omc 189ada82 the chain form stored into the wrong pool inside
+note this program (staged byte read back as a different byte; isolated test programs were fine),
+note so each branch returns on its own. tests/big covers it.
+fn hsp i ulong v uchar to void
+k = shr i 24
+j = and i 16777215
+if eq k 0
+put hs j v
+ret
+end
+if eq k 1
+put hs1 j v
+ret
+end
+if eq k 2
+put hs2 j v
+ret
+end
+put hs3 j v
 end

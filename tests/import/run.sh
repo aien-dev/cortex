@@ -90,7 +90,10 @@ cat live.imperr
 "$W/logdump" live.log > live.dump
 oracle_dump live live.db
 check live_oracle_has_no_BAD nobad live.oracle
-check live_summary [ "$(cat live.impout)" = "IMPORT OK spaces=9 entities=6327 claims=0 fts=3576" ]
+# expected counts from SQLite itself, so the check follows whatever snapshot LIVE is
+want=$(/usr/bin/sqlite3 -readonly live.db "SELECT 'IMPORT OK spaces=' || (SELECT count(*) FROM spaces) || ' entities=' || (SELECT count(*) FROM entities) || ' claims=' || (SELECT count(*) FROM claims) || ' fts=' || (SELECT count(*) FROM entities_fts)")
+echo "live expected: $want"
+check live_summary [ "$(cat live.impout)" = "$want" ]
 check live_dump_equals_sqlite3 cmp live.dump live.oracle
 echo "live log $(stat -c %s live.log) bytes, dump lines $(wc -l < live.dump), sha256 $(sha256sum live.log | cut -d' ' -f1)"
 cp live.oracle live.oracle.mut

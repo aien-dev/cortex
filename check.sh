@@ -30,7 +30,8 @@ step build sh build.sh || { echo "check: build failed, nothing else can run"; ex
 step json env W="$C/json-work" bash tests/json/run.sh
 step fts env WORK="$C/fts-work" sh tests/fts/run.sh "$SRC"
 step import env LIVE="$SRC" sh tests/import/run.sh "$C/import-work"
-rm -rf "$C/json-work" "$C/fts-work" "$C/import-work"
+step big env WORK="$C/big-work" sh tests/big/run.sh "$SRC"
+rm -rf "$C/json-work" "$C/fts-work" "$C/import-work" "$C/big-work"
 if step parity env PARITY_WORK="$C/parity-work" PARITY_EVIDENCE="$C/parity" sh tests/parity/run.sh "$SRC"; then
   step mutant env MUTANT_WORK="$C/mutant-work" MUTANT_EVIDENCE="$C/parity" sh tests/parity/mutant.sh "$SRC"
   rm -rf "$C/mutant-work"

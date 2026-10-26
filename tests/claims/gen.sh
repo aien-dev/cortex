@@ -19,12 +19,12 @@ DB=${1:?usage: gen.sh DB OUT}
 OUT=${2:?usage: gen.sh DB OUT}
 sqlite3 -readonly -batch -noheader "$DB" > "$OUT" <<'SQL' || exit 2
 CREATE TEMP TABLE p AS
-WITH e AS (SELECT rowid AS r, id, canonical_name, entity_type, metadata, space_slug,
+WITH e AS (SELECT rowid AS r, id, canonical_name, entity_type, metadata_json, space_slug,
                   row_number() OVER (PARTITION BY space_slug ORDER BY rowid) AS rn
            FROM entities WHERE retracted = 0),
      s AS (SELECT a.r AS r, a.id AS sid, a.canonical_name AS sname, a.entity_type AS stype,
                   b.id AS oid, b.canonical_name AS oname, b.entity_type AS otype,
-                  CASE WHEN json_valid(b.metadata) THEN b.metadata ELSE '{}' END AS ometa,
+                  CASE WHEN json_valid(b.metadata_json) THEN b.metadata_json ELSE '{}' END AS ometa,
                   a.space_slug AS space
            FROM e a JOIN e b ON b.space_slug = a.space_slug AND b.rn = a.rn + 1),
      n AS (SELECT *, row_number() OVER (ORDER BY r) AS k, count(*) OVER () AS c FROM s)

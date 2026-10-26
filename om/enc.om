@@ -432,7 +432,7 @@ q = get ap A_Q
 o = rf_off q
 n = rf_len q
 for i ulong n
-put enq i get hs add o i
+put enq i hsg add o i
 end
 put enql 0 n
 ok = enc_fetch
@@ -449,7 +449,7 @@ nm = get ap A_NAME
 a = rf_off nm
 m = rf_len nm
 for i ulong m
-put enq i get hs add a i
+put enq i hsg add a i
 end
 k = m
 if gt get jtrl 0 0
