@@ -1,5 +1,5 @@
 
-/home/drakestapleton/.local/bin/cortex-rs:     file format elf64-littleaarch64
+$HOME/.local/bin/cortex-rs:     file format elf64-littleaarch64
 
 
 Disassembly of section .init:

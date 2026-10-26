@@ -5,16 +5,17 @@ query shapes cortex-rs itself sends (raw text with '"' removed, the "quoted" phr
 the a AND b AND c fallback) and hand-written edge cases of the FTS5 grammar.
 Output: records u32 length + bytes. Python's sqlite3 is used only to READ the titles.
 
-Usage: gen_queries.py DB OUT [N]
+Usage: gen_queries.py DB OUT [N] [SEED]
 """
 import random, re, sqlite3, struct, sys
 
 db, out = sys.argv[1], sys.argv[2]
 target = int(sys.argv[3]) if len(sys.argv) > 3 else 2400
+seed = int(sys.argv[4]) if len(sys.argv) > 4 else 20261026
 con = sqlite3.connect('file:%s?mode=ro' % db, uri=True)
 titles = [r[0] for r in con.execute(
     "SELECT canonical_name FROM entities WHERE space_slug IN ('aien-lessons','aien-sources') ORDER BY rowid")]
-rnd = random.Random(20261026)
+rnd = random.Random(seed)
 words = []
 for t in titles:
     words += [w for w in re.split(r'[\s"]+', t) if w]

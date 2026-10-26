@@ -61,10 +61,17 @@ end
 ret true
 end
 global tstat long 4
+global tqn uchar 1048576
+global tqc uchar 16777216
+global tqno ulong 65536
+global tqco ulong 65536
 fn main to int
 t0 = monons
 nf = t_load
 put tstat 3 sub monons t0
+if gt argcnt 3
+t_ops nf
+end
 fq = t_open 2
 put tibn 0 0
 put tibp 0 0
@@ -100,11 +107,75 @@ z = t_need fd 1
 rt = get tib get tibp 0
 put tibp 0 add get tibp 0 1
 t_space r b rt
+t_keep r
 if not fts_put r row
 exit 80
 end
 end
 ret nf
+end
+note keep row r's texts (qnm, qct) for later re-inserts
+fn t_keep r ulong to void
+a = get tqno r
+n = get qnml 0
+for i ulong n
+put tqn add a i get qnm i
+end
+put tqno add r 1 add a n
+a = get tqco r
+n = get qctl 0
+for i ulong n
+put tqc add a i get qct i
+end
+put tqco add r 1 add a n
+end
+note apply argv[3] ops ("D i" / "P i rowid" lines), then compact the token pool
+fn t_ops nf ulong to void
+fd = t_open 3
+put tibn 0 0
+put tibp 0 0
+z = t_fill fd
+while lt get tibp 0 get tibn 0 bound 999999
+op = get tib get tibp 0
+put tibp 0 add get tibp 0 2
+i = t_num
+if eq op 68
+fts_del i
+else
+rw = t_num
+t_rest i
+if not fts_put i rw
+exit 81
+end
+end
+end
+fts_cmp
+end
+fn t_num to ulong
+v = ulong 0
+while true bound 30
+c = ulong get tib get tibp 0
+put tibp 0 add get tibp 0 1
+if or lt c 48 gt c 57
+ret v
+end
+v = add mul v 10 sub c 48
+end
+ret v
+end
+fn t_rest r ulong to void
+a = get tqno r
+n = sub get tqno add r 1 a
+for i ulong n
+put qnm i get tqn add a i
+end
+put qnml 0 n
+a = get tqco r
+n = sub get tqco add r 1 a
+for i ulong n
+put qct i get tqc add a i
+end
+put qctl 0 n
 end
 fn t_space r ulong b bool rt uchar to void
 sp = uchar 255

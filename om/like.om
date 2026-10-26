@@ -14,6 +14,7 @@ global qlpe ulong 1
 global qlok ulong 1
 global qlq ulong 1
 fn like_set to bool
+uf_init
 n = get qlpl 0
 if gt n 1048576
 put qlok 0 0

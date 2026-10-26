@@ -144,6 +144,46 @@ static int mode_tok(const char *dbp, const char *out){
   return 0;
 }
 
+/* copy SRC to DST, then replay cortex-rs style FTS updates on DST: for FTS row number i (rowid
+** order) with i%3==0 "DELETE FROM entities_fts WHERE id=?" and, when also i%2==0, re-INSERT the
+** same values (new rowid). Writes "D i" / "P i rowid" lines to OPS. */
+static int mode_mutate(const char *src, const char *dst, const char *ops){
+  sqlite3 *s = opendb(src), *d = 0;
+  if( sqlite3_open(dst, &d) ) die("open dst", d);
+  sqlite3_backup *b = sqlite3_backup_init(d, "main", s, "main");
+  if( !b ) die("backup", d);
+  sqlite3_backup_step(b, -1); sqlite3_backup_finish(b);
+  sqlite3_close(s);
+  FILE *o = fopen(ops, "wb");
+  sqlite3_stmt *sel, *del, *ins;
+  if( sqlite3_prepare_v2(d, "SELECT id, canonical_name, content, space_slug FROM entities_fts ORDER BY rowid", -1, &sel, 0) ) die("sel", d);
+  if( sqlite3_prepare_v2(d, "DELETE FROM entities_fts WHERE id = ?1", -1, &del, 0) ) die("del", d);
+  if( sqlite3_prepare_v2(d, "INSERT INTO entities_fts (id, canonical_name, content, space_slug) VALUES (?1, ?2, ?3, ?4)", -1, &ins, 0) ) die("ins", d);
+  int n = 0, cap = 8192;
+  char **v = malloc(sizeof(char*)*4*cap); int *ln = malloc(sizeof(int)*4*cap);
+  while( sqlite3_step(sel)==SQLITE_ROW ){
+    for(int c=0;c<4;c++){ int k = sqlite3_column_bytes(sel,c); v[n*4+c] = malloc(k+1); memcpy(v[n*4+c], sqlite3_column_text(sel,c), k); ln[n*4+c] = k; }
+    n++;
+  }
+  sqlite3_finalize(sel);
+  sqlite3_exec(d, "BEGIN", 0, 0, 0);
+  for(int i=0;i<n;i++){
+    if( i%3 ) continue;
+    sqlite3_reset(del); sqlite3_bind_text(del, 1, v[i*4], ln[i*4], SQLITE_STATIC);
+    if( sqlite3_step(del)!=SQLITE_DONE ) die("del step", d);
+    fprintf(o, "D %d\n", i);
+    if( i%2 ) continue;
+    sqlite3_reset(ins);
+    for(int c=0;c<4;c++) sqlite3_bind_text(ins, c+1, v[i*4+c], ln[i*4+c], SQLITE_STATIC);
+    if( sqlite3_step(ins)!=SQLITE_DONE ) die("ins step", d);
+    fprintf(o, "P %d %lld\n", i, (long long)sqlite3_last_insert_rowid(d));
+  }
+  sqlite3_exec(d, "COMMIT", 0, 0, 0);
+  sqlite3_finalize(del); sqlite3_finalize(ins);
+  sqlite3_close(d); fclose(o);
+  return 0;
+}
+
 /* tokenize arbitrary byte records (u32 len + bytes) from a file; same output format, rowid = record index */
 static unsigned char *slurp(const char *p, long *pn);
 static int mode_tokf(const char *in, const char *out){
@@ -325,6 +365,7 @@ static int mode_fma(const char *out, long target){
 int main(int argc, char **argv){
   if( argc>=3 && !strcmp(argv[1],"plan") ) return mode_plan(argv[2]);
   if( argc>=4 && !strcmp(argv[1],"dump") ) return mode_dump(argv[2], argv[3]);
+  if( argc>=5 && !strcmp(argv[1],"mutate") ) return mode_mutate(argv[2], argv[3], argv[4]);
   if( argc>=4 && !strcmp(argv[1],"tokf") ) return mode_tokf(argv[2], argv[3]);
   if( argc>=4 && !strcmp(argv[1],"tok") ) return mode_tok(argv[2], argv[3]);
   if( argc>=5 && !strcmp(argv[1],"query") ) return mode_query(argv[2], argv[3], argv[4]);

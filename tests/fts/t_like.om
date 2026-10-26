@@ -1,0 +1,136 @@
+note ===== tests/fts/t_like.om : LIKE differential harness =====
+note usage: t_like DUMP PATTERNS > out ; per pattern "p<i> ok|err n=<k> <hex bitmap>" where bit j
+note is set when entity j (dump order = rowid order) has canonical_name LIKE p OR content LIKE p
+global tcb uchar 16777216
+global tco ulong 65536
+global tnb uchar 1048576
+global tno ulong 65536
+global tbm uchar 65536
+text tlk1 " ok n="
+text tlk2 " err n="
+fn main to int
+nen = t_lload
+fp = t_open 2
+put tibn 0 0
+put tibp 0 0
+pi = ulong 0
+while t_need fp 4 bound 999999
+t_rdpat fp
+t_lone pi nen
+pi = add pi 1
+end
+t_flush
+ret 0
+end
+note skip the FTS rows, load the entities (name, content) into tnb/tcb
+fn t_lload to ulong
+fd = t_open 1
+z = t_need fd 12
+put tibp 0 8
+nf = t_u32
+for r ulong nf
+z = t_need fd 8
+row = t_u64
+for k ulong 5
+b = t_rdsb fd
+end
+z = t_need fd 1
+put tibp 0 add get tibp 0 1
+end
+z = t_need fd 4
+nen = t_u32
+co = ulong 0
+no = ulong 0
+for e ulong nen
+z = t_need fd 8
+row = t_u64
+b = t_rdsb fd
+put tno e no
+no = t_cpn no
+t_rdct fd
+put tco e co
+co = t_cpc co
+end
+put tno nen no
+put tco nen co
+ret nen
+end
+fn t_cpn o ulong to ulong
+n = get tsbn 0
+for i ulong n
+put tnb add o i get tsb i
+end
+ret add o n
+end
+fn t_cpc o ulong to ulong
+n = get qctl 0
+for i ulong n
+put tcb add o i get qct i
+end
+ret add o n
+end
+fn t_rdpat fp int to void
+n = t_u32
+z = t_need fp n
+p = get tibp 0
+for i ulong n
+put qlp i get tib add p i
+end
+put tibp 0 add p n
+put qlpl 0 n
+end
+fn t_lone pi ulong nen ulong to void
+for i ulong add div nen 8 1
+put tbm i 0
+end
+ok = like_set
+c = ulong 0
+if ok
+for e ulong nen
+if t_lent e
+t_bset e
+c = add c 1
+end
+end
+end
+t_ch 112
+t_dec pi
+if ok
+for i ulong len tlk1
+t_ch ulong get tlk1 i
+end
+else
+for i ulong len tlk2
+t_ch ulong get tlk2 i
+end
+end
+t_dec c
+t_ch 32
+for i ulong div add nen 7 8
+t_hex ulong get tbm i 2
+end
+t_ch 10
+end
+fn t_lent e ulong to bool
+a = get tno e
+n = sub get tno add e 1 a
+for i ulong n
+put qct i get tnb add a i
+end
+put qctl 0 n
+if like_test
+ret true
+end
+a = get tco e
+n = sub get tco add e 1 a
+for i ulong n
+put qct i get tcb add a i
+end
+put qctl 0 n
+ret like_test
+end
+fn t_bset e ulong to void
+k = div e 8
+v = ulong get tbm k
+put tbm k uchar or v shl ulong 1 rem e 8
+end
