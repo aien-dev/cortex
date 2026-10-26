@@ -1,0 +1,765 @@
+note pcmp.om: parity comparator. usage: pcmp CORPUS ORACLE.out OMEGA.out REPORT SINCE
+note Reads the two answer streams written by pdrive for the same corpus and decides, record by
+note record, whether the Omega answer equals the oracle answer under the rule in spec/PARITY.md:
+note  - same status line;
+note  - same header lines as a multiset, ignoring `date`; `content-length` must also be equal unless
+note    the body needed one of the masks below;
+note  - same body bytes, except: an `elapsedMs` number; a `committedAt`/`createdAt`/`updatedAt` string
+note    when both values are fresh (at or after SINCE, compared on the first 19 bytes) and have the
+note    same shape (digits as 9, fraction ignored); and server-generated UUIDs, which must follow one
+note    consistent one-to-one renaming learned only from `targetId`, receipt `id` and `spaceId`.
+note REPORT gets "PASS <index> <class>" or "FAIL <index> <class> <reason>" per record and a summary.
+note Exit 0 only when every record passes and both streams hold one record per corpus line.
+global pa uchar 4096
+global cb uchar 16777216
+global ra uchar 16777216
+global rs uchar 16777216
+global hb uchar 64
+global ob uchar 256
+global sn uchar 32
+note hl: header lines (offset, length) of the oracle (0..127) and Omega (128..255) answers
+global hl ulong 256
+global hu uchar 64
+note uuid renaming: mo (oracle) and ms (Omega) 36 bytes each, mc count
+global mo uchar 589824
+global ms uchar 589824
+note cv: 0 corpus len, 1 ofd, 2 sfd, 3 o pos, 4 s pos, 5 o len, 6 s len, 7 report fd, 8 masked,
+note 9 pass, 10 fail, 11 masks, 12 mc, 13 o err, 14 s err, 15 o body, 16 s body, 17 o hdrs, 18 s hdrs
+global cv ulong 24
+global ls ulong 1000000
+const NONE ulong 18446744073709551615
+text u_use "usage: pcmp CORPUS ORACLE.out OMEGA.out REPORT SINCE\n"
+text u_open "pcmp: cannot open a file\n"
+text u_big "pcmp: input too large\n"
+text r_pass "PASS "
+text r_fail "FAIL "
+text f_err " transport-error"
+text f_stat " status-line"
+text f_hdr " headers"
+text f_cl " content-length"
+text f_body " body@"
+text f_cnt " record-count"
+text s_tot "TOTAL records="
+text s_pass " pass="
+text s_fail " fail="
+text s_mask " masked-values="
+text s_map " renamed-uuids="
+text k_el "elapsedMs"
+text k_ca "committedAt"
+text k_cr "createdAt"
+text k_up "updatedAt"
+text k_ti "targetId"
+text k_id "id"
+text k_sp "spaceId"
+text k_rc "\"receipt\":{\"id\":"
+text h_date "date:"
+text h_cl "content-length:"
+
+fn say t view uchar * to void
+w = write 2 t 0 len t
+if lt w 0
+ret
+end
+end
+fn argp i ulong to ulong
+n = argread i pa 0 len pa
+if lt n 0
+ret 0
+end
+ret ulong n
+end
+fn opnr n ulong to int
+f = fopen pa 0 n 524288 0
+ret int f
+end
+fn rdall fd int to bool
+n = ulong 0
+while true bound 999999
+if ge n len cb
+say u_big
+ret false
+end
+r = pread fd cb n sub len cb n long n
+if lt r 0
+ret false
+end
+if eq r 0
+put cv 0 n
+ret true
+end
+n = add n ulong r
+end
+ret false
+end
+
+note ---- report output ----
+fn obt o ulong t view uchar * to ulong
+for i ulong len t
+put ob add o i get t i
+end
+ret add o len t
+end
+fn obdec o ulong v ulong to ulong
+k = o
+if ge v 10
+k = obdec o div v 10
+end
+put ob k uchar add rem v 10 48
+ret add k 1
+end
+fn flush n ulong to void
+put ob n 10
+w = write int get cv 7 ob 0 add n 1
+if lt w 0
+ret
+end
+end
+note " <class>" of corpus line ix (bytes up to the first tab), using the line starts in ls
+fn obcls o ulong ix ulong to ulong
+i = ulong 0
+if lt ix len ls
+i = get ls ix
+end
+put ob o 32
+r = add o 1
+for j ulong 40
+c = get cb add i j
+if or eq c 9 eq c 10
+break
+end
+put ob r c
+r = add r 1
+end
+ret r
+end
+
+note ---- answer records ----
+note header line of the next record at file offset p into hb; returns its length (0 = none)
+fn rhead fd int p ulong to ulong
+for i ulong 64
+put hb i 0
+end
+r = pread fd hb 0 64 long p
+if le r 0
+ret 0
+end
+for i ulong ulong r
+if eq get hb i 10
+ret add i 1
+end
+end
+ret 0
+end
+note byte count named in hb ("#<ix> <n>\n"); NONE for ERR
+fn hcount to ulong
+i = ulong 1
+while ne get hb i 32 bound 64
+i = add i 1
+end
+i = add i 1
+if eq get hb i 69
+ret NONE
+end
+v = ulong 0
+while ne get hb i 10 bound 64
+v = add mul v 10 ulong sub get hb i 48
+i = add i 1
+end
+ret v
+end
+fn rdo n ulong p ulong to bool
+k = ulong 0
+while lt k n bound 999999
+r = pread int get cv 1 ra k sub n k long add p k
+if le r 0
+ret false
+end
+k = add k ulong r
+end
+ret true
+end
+fn rds n ulong p ulong to bool
+k = ulong 0
+while lt k n bound 999999
+r = pread int get cv 2 rs k sub n k long add p k
+if le r 0
+ret false
+end
+k = add k ulong r
+end
+ret true
+end
+note load the next oracle record; 0 none left, 1 loaded, 2 ERR record, 3 bad stream
+fn nexto to ulong
+p = get cv 3
+h = rhead int get cv 1 p
+if eq h 0
+ret 0
+end
+n = hcount
+if eq n NONE
+put cv 3 add p h
+put cv 5 0
+ret 2
+end
+if gt n len ra
+ret 3
+end
+if not rdo n add p h
+ret 3
+end
+put cv 3 add add p h add n 1
+put cv 5 n
+ret 1
+end
+fn nexts to ulong
+p = get cv 4
+h = rhead int get cv 2 p
+if eq h 0
+ret 0
+end
+n = hcount
+if eq n NONE
+put cv 4 add p h
+put cv 6 0
+ret 2
+end
+if gt n len rs
+ret 3
+end
+if not rds n add p h
+ret 3
+end
+put cv 4 add add p h add n 1
+put cv 6 n
+ret 1
+end
+
+note ---- head comparison ----
+note split the oracle answer: header lines into hl[0..), count cv 17, body start cv 15
+fn splito to void
+n = get cv 5
+put cv 17 0
+put cv 15 n
+s = ulong 0
+c = ulong 0
+for i ulong n
+if and eq get ra i 13 eq get ra add i 1 10
+if eq i s
+put cv 15 add i 2
+break
+end
+if and gt s 0 lt c 63
+put hl mul c 2 s
+put hl add mul c 2 1 sub i s
+c = add c 1
+end
+s = add i 2
+end
+end
+put cv 17 c
+end
+fn splits to void
+n = get cv 6
+put cv 18 0
+put cv 16 n
+s = ulong 0
+c = ulong 0
+for i ulong n
+if and eq get rs i 13 eq get rs add i 1 10
+if eq i s
+put cv 16 add i 2
+break
+end
+if and gt s 0 lt c 63
+put hl add 128 mul c 2 s
+put hl add 128 add mul c 2 1 sub i s
+c = add c 1
+end
+s = add i 2
+end
+end
+put cv 18 c
+end
+note status lines equal
+fn stateq to bool
+for i ulong get cv 5
+if ne get ra i get rs i
+ret false
+end
+if eq get ra i 13
+ret true
+end
+end
+ret false
+end
+fn ohas p ulong t view uchar * to bool
+for i ulong len t
+if ne get ra add p i get t i
+ret false
+end
+end
+ret true
+end
+fn shas p ulong t view uchar * to bool
+for i ulong len t
+if ne get rs add p i get t i
+ret false
+end
+end
+ret true
+end
+note oracle header line i equals Omega header line j
+fn lneq i ulong j ulong to bool
+oo = get hl mul i 2
+ol = get hl add mul i 2 1
+so = get hl add 128 mul j 2
+if ne ol get hl add 128 add mul j 2 1
+ret false
+end
+for k ulong ol
+if ne get ra add oo k get rs add so k
+ret false
+end
+end
+ret true
+end
+note skip-class of a header: 0 compare, 1 date (ignored), 2 content-length
+fn okind i ulong to ulong
+p = get hl mul i 2
+if ohas p h_date
+ret 1
+end
+if ohas p h_cl
+ret 2
+end
+ret 0
+end
+fn skind j ulong to ulong
+p = get hl add 128 mul j 2
+if shas p h_date
+ret 1
+end
+if shas p h_cl
+ret 2
+end
+ret 0
+end
+note 0 equal, 1 headers differ, 2 content-length differs
+fn hdreq to ulong
+no = get cv 17
+ns = get cv 18
+for j ulong 64
+put hu j 0
+end
+for j ulong ns
+if eq skind j 1
+put hu j 1
+end
+end
+r = ulong 0
+for i ulong no
+ki = okind i
+if eq ki 1
+continue
+end
+f = false
+for j ulong ns
+if and eq get hu j 0 lneq i j
+put hu j 1
+f = true
+break
+end
+end
+if not f
+if eq ki 2
+r = 2
+continue
+end
+ret 1
+end
+end
+ret hdrrest r
+end
+note every Omega line must have been matched (content-length mismatches report 2)
+fn hdrrest r ulong to ulong
+for j ulong get cv 18
+if eq get hu j 0
+if ne skind j 2
+ret 1
+end
+ret 2
+end
+end
+ret r
+end
+
+note ---- body comparison with masks ----
+note key ending just before oracle offset p (p points at the byte after `":`) equals t
+fn keyis p ulong t view uchar * to bool
+n = len t
+if lt p add n 3
+ret false
+end
+s = sub sub p 2 n
+if ne get ra sub s 1 34
+ret false
+end
+for i ulong n
+if ne get ra add s i get t i
+ret false
+end
+end
+ret true
+end
+note oracle offset of the value start that contains the mismatch at io, or NONE (the scan stays
+note after the last resync point lo)
+fn valat io ulong lo ulong to ulong
+k = io
+while gt k lo bound 999999
+if and eq get ra sub k 1 58 eq get ra sub k 2 34
+ret k
+end
+c = get ra sub k 1
+if or eq c 44 or eq c 123 eq c 34
+if ne k io
+ret NONE
+end
+end
+k = sub k 1
+end
+ret NONE
+end
+fn oend p ulong n ulong str bool to ulong
+for j ulong sub n p
+c = get ra add p j
+if str
+if eq c 34
+ret add p j
+end
+else
+if or eq c 44 or eq c 125 eq c 93
+ret add p j
+end
+end
+end
+ret n
+end
+fn send2 p ulong n ulong str bool to ulong
+for j ulong sub n p
+c = get rs add p j
+if str
+if eq c 34
+ret add p j
+end
+else
+if or eq c 44 or eq c 125 eq c 93
+ret add p j
+end
+end
+end
+ret n
+end
+note fresh timestamp: at least SINCE on the first 19 bytes, and the same shape in both
+fn tseq a ulong ae ulong b ulong be ulong to bool
+if or lt sub ae a 19 lt sub be b 19
+ret false
+end
+for i ulong 19
+if ne isdig get ra add a i isdig get rs add b i
+ret false
+end
+end
+ret and tfresh a true tfresh b false
+end
+fn isdig c uchar to bool
+ret and ge c 48 le c 57
+end
+fn tfresh p ulong o bool to bool
+for i ulong 19
+c = get rs add p i
+if o
+c = get ra add p i
+end
+s = get sn i
+if gt c s
+ret true
+end
+if lt c s
+ret false
+end
+end
+ret true
+end
+fn uuidok p ulong o bool to bool
+for i ulong 36
+c = get rs add p i
+if o
+c = get ra add p i
+end
+if or eq i 8 or eq i 13 or eq i 18 eq i 23
+if ne c 45
+ret false
+end
+continue
+end
+if not or isdig c and ge c 97 le c 102
+ret false
+end
+end
+ret true
+end
+fn meqo m ulong a ulong to bool
+b = mul m 36
+for i ulong 36
+if ne get mo add b i get ra add a i
+ret false
+end
+end
+ret true
+end
+fn meqs m ulong a ulong to bool
+b = mul m 36
+for i ulong 36
+if ne get ms add b i get rs add a i
+ret false
+end
+end
+ret true
+end
+note renaming lookup: 1 pair known, 2 conflict, 0 both unknown
+fn mfind a ulong b ulong to ulong
+for m ulong get cv 12
+fo = meqo m a
+fs = meqs m b
+if and fo fs
+ret 1
+end
+if or fo fs
+ret 2
+end
+end
+ret 0
+end
+fn madd a ulong b ulong to bool
+m = get cv 12
+if ge m 16384
+ret false
+end
+for i ulong 36
+put mo add mul m 36 i get ra add a i
+put ms add mul m 36 i get rs add b i
+end
+put cv 12 add m 1
+ret true
+end
+note uuid pair at oracle a / Omega b may differ: learnable keys add a renaming
+fn uuideq a ulong b ulong learn bool to bool
+if not and uuidok a true uuidok b false
+ret false
+end
+f = mfind a b
+if eq f 1
+ret true
+end
+if eq f 2
+ret false
+end
+if not learn
+ret false
+end
+ret madd a b
+end
+note one masked value at oracle vo / Omega vs; returns false when the mismatch is not maskable;
+note on success cv 19 / cv 20 hold the oracle / Omega offsets after the value
+fn maskv vo ulong vs ulong to bool
+no = get cv 5
+ns = get cv 6
+if keyis vo k_el
+put cv 19 oend vo no false
+put cv 20 send2 vs ns false
+ret true
+end
+if or ne get ra vo 34 ne get rs vs 34
+ret false
+end
+ae = oend add vo 1 no true
+be = send2 add vs 1 ns true
+put cv 19 add ae 1
+put cv 20 add be 1
+a = add vo 1
+b = add vs 1
+if or keyis vo k_ca or keyis vo k_cr keyis vo k_up
+ret tseq a ae b be
+end
+if or ne sub ae a 36 ne sub be b 36
+ret false
+end
+rc = false
+if ge vo len k_rc
+rc = ohas sub vo len k_rc k_rc
+end
+lr = or rc or keyis vo k_ti keyis vo k_sp
+ret uuideq a b lr
+end
+note 0 equal (cv 8 = 1 when a mask was used), else 1 + oracle offset of the first difference
+fn bodyeq to ulong
+io = get cv 15
+is = get cv 16
+no = get cv 5
+ns = get cv 6
+lo = io
+put cv 8 0
+while true bound 999999
+if or ge io no ge is ns
+if and eq io no eq is ns
+ret 0
+end
+ret add io 1
+end
+if eq get ra io get rs is
+io = add io 1
+is = add is 1
+continue
+end
+vo = valat io lo
+if eq vo NONE
+ret add io 1
+end
+vs = sub is sub io vo
+if not maskv vo vs
+ret add io 1
+end
+put cv 8 1
+put cv 11 add get cv 11 1
+io = get cv 19
+is = get cv 20
+lo = io
+end
+ret add io 1
+end
+
+note ---- per record ----
+fn verdict ix ulong t view uchar * extra ulong to void
+o = obt 0 r_fail
+o = obcls obdec o ix ix
+o = obt o t
+if ne extra NONE
+o = obdec o extra
+end
+flush o
+put cv 10 add get cv 10 1
+end
+fn passed ix ulong to void
+o = obt 0 r_pass
+o = obcls obdec o ix ix
+flush o
+put cv 9 add get cv 9 1
+end
+fn onerec ix ulong a ulong b ulong to void
+if or ne a 1 ne b 1
+verdict ix f_err NONE
+ret
+end
+splito
+splits
+if not stateq
+verdict ix f_stat NONE
+ret
+end
+h = hdreq
+if eq h 1
+verdict ix f_hdr NONE
+ret
+end
+d = bodyeq
+if ne d 0
+verdict ix f_body sub d get cv 15
+ret
+end
+if and eq h 2 eq get cv 8 0
+verdict ix f_cl NONE
+ret
+end
+passed ix
+end
+fn lines to ulong
+k = ulong 0
+n = get cv 0
+put ls 0 0
+for j ulong n
+if eq get cb j 10
+k = add k 1
+if lt k len ls
+put ls k add j 1
+end
+end
+end
+ret k
+end
+fn summary nl ulong ix ulong to void
+o = obdec obt 0 s_tot ix
+o = obdec obt o s_pass get cv 9
+o = obdec obt o s_fail get cv 10
+o = obdec obt o s_mask get cv 11
+o = obdec obt o s_map get cv 12
+flush o
+if ne nl ix
+flush obt 0 f_cnt
+put cv 10 add get cv 10 1
+end
+end
+fn runall to int
+nl = lines
+ix = ulong 0
+while true bound 999999
+a = nexto
+b = nexts
+if and eq a 0 eq b 0
+break
+end
+if or eq a 3 eq b 3
+say u_big
+ret 3
+end
+onerec ix a b
+ix = add ix 1
+end
+summary nl ix
+if ne get cv 10 0
+ret 1
+end
+ret 0
+end
+fn main to int
+if ne ulong argcnt 6
+say u_use
+ret 2
+end
+fd = opnr argp 1
+if lt fd 0
+say u_open
+ret 3
+end
+if not rdall fd
+ret 3
+end
+x = fclose fd
+put cv 1 ulong opnr argp 2
+put cv 2 ulong opnr argp 3
+n = argp 4
+f = fopen pa 0 n 524865 420
+put cv 7 ulong f
+if or lt int get cv 1 0 or lt int get cv 2 0 lt f 0
+say u_open
+ret 3
+end
+if ne argp 5 19
+say u_use
+ret 2
+end
+for i ulong 19
+put sn i get pa i
+end
+ret runall
+end
