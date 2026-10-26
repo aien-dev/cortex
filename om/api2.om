@@ -7,9 +7,6 @@ global qtr uchar 4194304
 global qtrl ulong 1
 global qem f32 768
 global qemf ulong 1
-text tand " AND "
-text tor " OR "
-text tnot " NOT "
 text r_res "{\"results\":["
 text r_tail "],\"degraded\":[],\"elapsedMs\":"
 text r_lex ",\"lexicalScore\":"
@@ -23,56 +20,6 @@ text r_claims "{\"claims\":["
 text r_cend "]}"
 text e_lkcx "{\"error\":\"LIKE or GLOB pattern too complex\"}"
 global lkerr uchar 1
-
-note ---- small byte helpers over qtr (the trimmed query) ----
-note Rust char::is_whitespace for the UTF-8 sequence at qtr[i]: its byte length, or 0
-fn ws_len i ulong n ulong to ulong
-c = get qtr i
-if or and ge c 9 le c 13 eq c 32
-ret 1
-end
-if lt c 128
-ret 0
-end
-if and eq c 194 lt add i 1 n
-d = get qtr add i 1
-if or eq d 133 eq d 160
-ret 2
-end
-ret 0
-end
-if lt add i 2 n
-ret ws_len3 c get qtr add i 1 get qtr add i 2
-end
-ret 0
-end
-fn ws_len3 a uchar b uchar c uchar to ulong
-if and and eq a 225 eq b 154 eq c 128
-ret 3
-end
-if and eq a 226 eq b 128
-if or le c 138 or eq c 168 or eq c 169 eq c 175
-if ge c 128
-ret 3
-end
-end
-end
-if and and eq a 226 eq b 129 eq c 159
-ret 3
-end
-if and and eq a 227 eq b 128 eq c 128
-ret 3
-end
-ret 0
-end
-fn qtr_at i ulong t view uchar * to bool
-for k ulong len t
-if ne get qtr add i k get t k
-ret false
-end
-end
-ret true
-end
 
 note ---- result list ----
 fn res_has e ulong to bool
@@ -113,13 +60,10 @@ for i ulong n
 res_add get qrd i 0 get qrb i
 end
 end
-note qq = clean_q (qtr without double quotes), optionally quoted
-fn qq_clean quote bool to void
-o = ulong 0
-if quote
+note qq = clean_q (qtr without double quotes) inside double quotes
+fn qq_clean to void
 put qq 0 34
-o = 1
-end
+o = ulong 1
 for i ulong get qtrl 0
 c = get qtr i
 if ne c 34
@@ -127,45 +71,8 @@ put qq o c
 o = add o 1
 end
 end
-if quote
 put qq o 34
-o = add o 1
-end
-put qql 0 o
-end
-note qq = clean_q split on Unicode whitespace, joined with " AND "; returns the number of terms
-fn qq_and to ulong
-n = get qtrl 0
-o = ulong 0
-t = ulong 0
-i = ulong 0
-intok = false
-while lt i n bound 999999
-c = get qtr i
-w = ws_len i n
-if gt w 0
-intok = false
-i = add i w
-else
-if ne c 34
-if not intok
-if gt t 0
-for k ulong len tand
-put qq add o k get tand k
-end
-o = add o len tand
-end
-t = add t 1
-intok = true
-end
-put qq o c
-o = add o 1
-end
-i = add i 1
-end
-end
-put qql 0 o
-ret t
+put qql 0 add o 1
 end
 
 note ---- search ----
@@ -228,54 +135,16 @@ if eq tl 0
 search_list d lim
 ret
 end
-qq_clean false
-if qq_ops
+note the live binary returns rows only from the quoted-phrase FTS attempt: its operator query and
+note its AND-joined query never contribute (spec/ORACLE-OBSERVED.md)
+qq_clean
 cx_fts_run d lim
-end
-if eq get nres 0 0
-qq_clean true
-cx_fts_run d lim
-end
-if eq get nres 0 0
-if gt qq_and 1
-cx_fts_run d lim
-end
-end
 if lt get nres 0 lim
 search_like d lim
 end
 if gt get nres 0 lim
 put nres 0 lim
 end
-end
-note has_fts_ops on clean_q (qq after qq_clean false): " AND ", " OR ", " NOT " or '*'
-fn qq_ops to bool
-n = get qql 0
-for i ulong n
-put qtr add n i get qq i
-end
-if or or qq_has n tand qq_has n tor qq_has n tnot
-ret true
-end
-for i ulong n
-if eq get qq i 42
-ret true
-end
-end
-ret false
-end
-note does qq (copied to qtr[n..2n)) contain t
-fn qq_has n ulong t view uchar * to bool
-m = len t
-if gt m n
-ret false
-end
-for i ulong add sub n m 1
-if qtr_at add n i t
-ret true
-end
-end
-ret false
 end
 note substring fallback: LIKE '%q%' on name or content, scan order, LIMIT lim rows, new ones appended
 note likeFunc raises "LIKE or GLOB pattern too complex" on the first row it tests (lkerr = 1)
@@ -361,6 +230,7 @@ end
 i = m
 while gt i p bound 64
 put rsl i get rsl sub i 1
+put rsk i 2
 i = sub i 1
 end
 put rsl p e

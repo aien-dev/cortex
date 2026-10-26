@@ -41,6 +41,14 @@ No id/name → 400 `{"error":"Missing id or name parameter"}`; not found → 404
 - Unscored recall rows come in `idx_entities_type` order (space_slug, entity_type, rowid) — checked with LIMIT 20.
 - The LIKE fallback, get and the empty-query list scan the same index; ORDER BY with ties keeps that scan order (SQLite sorter, checked with a toy table).
 - FTS: ascending rowid scan, stable sort by bm25 (FtsEngine evidence/fts).
+- Search FTS on the live binary: of the three `run_fts` attempts in the archived `search_entities`
+  (raw query when it holds ` AND `/` OR `/` NOT `/`*`; the quoted phrase; the terms joined with ` AND `),
+  only the quoted phrase ever returns rows. Probes: `intact OR p95`, `p95 OR intact`, `intac*`,
+  `hardw*`, `broke existing`, `intact AND sha` all answer `{"results":[]…}` (the same FTS5 queries
+  return rows from the sqlite3 shell), and `824*` returns only the rows the phrase `"824"` matches.
+  The parity corpus holds 1,100 operator and 1,000 term searches; in the 96 of them where the two rules
+  give different answers, the oracle followed "phrase, then the LIKE fallback" every time. The Omega
+  server implements the observed rule.
 
 ## Writes
 `{"kind":"entity","value":{"canonicalName":"x","metadata":{"b":1,"a":[1.0,-0,1e2,12345678901234567890,-9223372036854775809]}}}` → 201

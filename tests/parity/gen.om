@@ -1,0 +1,749 @@
+note gen.om: parity corpus generator (read phase). usage: gen DATA OUT
+note DATA is written by tests/parity/gen.sh from a copy of the cortex-rs database (sqlite3 is used
+note only to extract real values, as hex): "T<TAB><hex query term>" and
+note "E<TAB><hex id><TAB><hex canonical name><TAB><hex space slug>". OUT gets one corpus line per
+note request, CLASS TAB METHOD TAB PATH TAB FLAGS TAB BODY (spec/PARITY.md):
+note  - every term, alone, against search GET, search POST and recall, over five spaces (none,
+note    aien-lessons, aien-sources, atlas-memory, an unknown one) with the limit cycling over
+note    absent/0/1/5/12/50/999 and occasional query=, include_retracted, tokenBudget, origin and
+note    spaced-token variants;
+note  - eleven FTS operator forms over term pairs (AND, OR, NOT, prefix, phrase, NEAR, column
+note    filter, dangling AND, open and close parenthesis, leading minus);
+note  - eighteen empty and malformed queries that use no term;
+note  - get by id, by name, with the right, default and wrong space, id+name, HEAD; traverse.
+global pa uchar 4096
+global db uchar 4194304
+global ob uchar 2097152
+global qb uchar 16384
+note tt: term i hex at db offset tt[2i], length tt[2i+1]
+global tt ulong 2048
+note et: entity e: id, name, space hex (offset, length) at et[6e .. 6e+5]
+global et ulong 3072
+note gv: 0 data len, 1 out fd, 2 ob pos, 3 terms, 4 entities, 5 request counter, 6 qb len, 7 write failed
+global gv ulong 8
+text u_use "usage: gen DATA OUT\n"
+text u_open "gen: cannot open a file\n"
+text u_big "gen: data too large or malformed\n"
+text u_wr "gen: write failed\n"
+text s_sp1 "aien-lessons"
+text s_sp2 "aien-sources"
+text s_sp3 "atlas-memory"
+text s_sp4 "no-such-space"
+text p_sg "/api/cortex/search?"
+text p_sp "/api/cortex/search"
+text p_rc "/api/cortex/recall"
+text p_get "/api/cortex/get?"
+text p_tr "/api/cortex/traverse"
+text m_get "GET"
+text m_post "POST"
+text m_head "HEAD"
+text a_q "q="
+text a_qy "query="
+text a_sp "&space="
+text a_lim "&limit="
+text a_ir "&include_retracted=true"
+text a_id "id="
+text a_nm "name="
+text a_spn "&space=no-such-space"
+text a_nz "&name=zzz-no-such-name"
+text j_q "{\"q\":\""
+text j_qy "{\"query\":\""
+text j_sj "{\"subjectId\":\""
+text j_sp ",\"space\":\""
+text j_lim ",\"limit\":"
+text j_ir ",\"include_retracted\":true"
+text j_tb ",\"tokenBudget\":200"
+text c_sgt "search.get.term"
+text c_spt "search.post.term"
+text c_rt "recall.term"
+text c_sgo "search.get.ops"
+text c_spo "search.post.ops"
+text c_ro "recall.ops"
+text c_sge "search.get.malformed"
+text c_spe "search.post.malformed"
+text c_re "recall.malformed"
+text c_get "get.read"
+text c_tr "traverse.read"
+text f_and " AND "
+text f_or " OR "
+text f_not " NOT "
+text f_near "NEAR("
+text f_col "canonical_name:"
+text f_dand " AND"
+text x_00 "   "
+text x_01 "\""
+text x_02 "*"
+text x_03 "AND"
+text x_04 "OR"
+text x_05 "NOT"
+text x_06 "("
+text x_07 ")"
+text x_08 "\"unclosed phrase"
+text x_09 "%"
+text x_10 "_"
+text x_11 "%_%"
+text x_12 "'"
+text x_13 "NEAR("
+text x_14 "a:b"
+text x_15 "^"
+text x_16 "\\"
+text x_17 "\t tab and newline \n"
+
+fn say t view uchar * to void
+w = write 2 t 0 len t
+if lt w 0
+ret
+end
+end
+fn argp i ulong to ulong
+n = argread i pa 0 len pa
+if lt n 0
+ret 0
+end
+ret ulong n
+end
+fn rdall fd int to bool
+n = ulong 0
+while true bound 999999
+if ge n len db
+say u_big
+ret false
+end
+r = pread fd db n sub len db n long n
+if lt r 0
+ret false
+end
+if eq r 0
+put gv 0 n
+ret true
+end
+n = add n ulong r
+end
+ret false
+end
+note ---- output ----
+fn flush to void
+k = ulong 0
+e = get gv 2
+while lt k e bound 999999
+w = write int get gv 1 ob k sub e k
+if le w 0
+put gv 7 1
+put gv 2 0
+ret
+end
+k = add k ulong w
+end
+put gv 2 0
+end
+fn oc c uchar to void
+p = get gv 2
+put ob p c
+put gv 2 add p 1
+end
+fn ot t view uchar * to void
+for i ulong len t
+oc get t i
+end
+end
+fn odec v ulong to void
+if ge v 10
+odec div v 10
+end
+oc uchar add rem v 10 48
+end
+fn hexv c ulong to ulong
+if le c 57
+ret sub c 48
+end
+if le c 70
+ret sub c 55
+end
+ret sub c 87
+end
+fn hexd v ulong to uchar
+if lt v 10
+ret uchar add v 48
+end
+ret uchar add v 55
+end
+note end of a corpus line; flushes when the buffer is mostly full
+fn eol to void
+oc 10
+put gv 5 add get gv 5 1
+if gt get gv 2 1900000
+flush
+end
+end
+fn tab to void
+oc 9
+end
+note ---- the query buffer qb ----
+fn qclr to void
+put gv 6 0
+end
+fn qc c uchar to void
+p = get gv 6
+if lt p len qb
+put qb p c
+put gv 6 add p 1
+end
+end
+fn qt t view uchar * to void
+for i ulong len t
+qc get t i
+end
+end
+note append the bytes of term i (decoded from hex)
+fn qterm i ulong to void
+o = get tt mul i 2
+n = div get tt add mul i 2 1 2
+for j ulong n
+a = hexv ulong get db add o mul j 2
+b = hexv ulong get db add add o mul j 2 1
+qc uchar add mul a 16 b
+end
+end
+note qb as "~" plus hex pairs (pdrive sends them as %HH)
+fn ourl to void
+oc 126
+for i ulong get gv 6
+c = ulong get qb i
+oc hexd shr c 4
+oc hexd and c 15
+end
+end
+fn ou4 c ulong to void
+oc 92
+oc 117
+oc 48
+oc 48
+oc hexd shr c 4
+oc hexd and c 15
+end
+note qb as the inside of a JSON string
+fn ojson to void
+for i ulong get gv 6
+c = get qb i
+if or eq c 34 eq c 92
+oc 92
+oc c
+continue
+end
+if lt c 32
+ou4 ulong c
+continue
+end
+oc c
+end
+end
+note hex region of db copied as "~" plus hex (url) or decoded and escaped (json)
+fn ohex o ulong n ulong to void
+oc 126
+for j ulong n
+oc get db add o j
+end
+end
+fn ojhex o ulong n ulong to void
+qclr
+for j ulong div n 2
+a = hexv ulong get db add o mul j 2
+b = hexv ulong get db add add o mul j 2 1
+qc uchar add mul a 16 b
+end
+ojson
+end
+note ---- spaces and limits ----
+fn ospace s ulong to void
+if eq s 1
+ot s_sp1
+end
+if eq s 2
+ot s_sp2
+end
+if eq s 3
+ot s_sp3
+end
+if eq s 4
+ot s_sp4
+end
+end
+fn limv l ulong to ulong
+if eq l 1
+ret 0
+end
+if eq l 2
+ret 1
+end
+if eq l 3
+ret 5
+end
+if eq l 4
+ret 12
+end
+if eq l 5
+ret 50
+end
+ret 999
+end
+note flags for request number n: a token, plus an allowed origin or a spaced token now and then
+fn oflags json bool to void
+n = get gv 5
+if eq rem n 13 6
+oc 115
+else
+oc 97
+end
+if json
+oc 106
+end
+if eq rem n 11 4
+oc 111
+end
+end
+note ---- one request built from qb: ep 0 search GET, 1 search POST, 2 recall ----
+fn rqget c view uchar * s ulong l ulong to void
+n = get gv 5
+ot c
+tab
+ot m_get
+tab
+ot p_sg
+if eq rem n 5 3
+ot a_qy
+else
+ot a_q
+end
+ourl
+if ne s 0
+ot a_sp
+ospace s
+end
+if ne l 0
+ot a_lim
+odec limv l
+end
+if eq rem n 7 2
+ot a_ir
+end
+tab
+oflags false
+tab
+eol
+end
+fn jtail s ulong l ulong to void
+oc 34
+if ne s 0
+ot j_sp
+ospace s
+oc 34
+end
+if ne l 0
+ot j_lim
+odec limv l
+end
+end
+fn rqpost c view uchar * s ulong l ulong to void
+n = get gv 5
+ot c
+tab
+ot m_post
+tab
+ot p_sp
+tab
+oflags true
+tab
+ot j_q
+ojson
+jtail s l
+if eq rem n 7 2
+ot j_ir
+end
+oc 125
+eol
+end
+fn rqrec c view uchar * s ulong l ulong to void
+n = get gv 5
+ot c
+tab
+ot m_post
+tab
+ot p_rc
+tab
+oflags true
+tab
+ot j_qy
+ojson
+jtail s l
+if eq rem n 5 1
+ot j_tb
+end
+oc 125
+eol
+end
+note kind 0 term, 1 ops, 2 malformed: picks the class names
+fn rq3 kind ulong ep ulong s ulong l ulong to void
+if eq ep 0
+if eq kind 0
+rqget c_sgt s l
+end
+if eq kind 1
+rqget c_sgo s l
+end
+if eq kind 2
+rqget c_sge s l
+end
+ret
+end
+if eq ep 1
+if eq kind 0
+rqpost c_spt s l
+end
+if eq kind 1
+rqpost c_spo s l
+end
+if eq kind 2
+rqpost c_spe s l
+end
+ret
+end
+if eq kind 0
+rqrec c_rt s l
+end
+if eq kind 1
+rqrec c_ro s l
+end
+if eq kind 2
+rqrec c_re s l
+end
+end
+note ---- phases ----
+fn gterm to void
+nt = get gv 3
+for i ulong nt
+qclr
+qterm i
+for s ulong 5
+for ep ulong 3
+rq3 0 ep s rem add add mul i 5 mul s 3 ep 7
+end
+end
+end
+end
+note operator form f (1..11) over terms t and u into qb
+fn qform f ulong t ulong u ulong to void
+qclr
+if eq f 5
+qc 34
+end
+if eq f 6
+qt f_near
+end
+if eq f 7
+qt f_col
+end
+if eq f 9
+qc 40
+end
+if eq f 11
+qc 45
+end
+qterm t
+if eq f 1
+qt f_and
+qterm u
+end
+if eq f 2
+qt f_or
+qterm u
+end
+if eq f 3
+qt f_not
+qterm u
+end
+if eq f 4
+qc 42
+end
+if or eq f 5 eq f 6
+qc 32
+qterm u
+end
+if eq f 5
+qc 34
+end
+if eq f 6
+qc 41
+end
+if eq f 8
+qt f_dand
+end
+if eq f 10
+qc 41
+end
+end
+fn opsone i ulong f ulong ep ulong to void
+s = rem add add i f ep 5
+l = rem add mul i 3 add f ep 7
+rq3 1 ep s l
+end
+fn gops to void
+nt = get gv 3
+np = nt
+if gt np 50
+np = 50
+end
+for i ulong np
+for f ulong 11
+qform add f 1 i rem add i 7 nt
+for ep ulong 3
+opsone i f ep
+end
+end
+end
+end
+fn qmal x ulong to void
+qclr
+if eq x 1
+qt x_00
+end
+if eq x 2
+qt x_01
+end
+if eq x 3
+qt x_02
+end
+if eq x 4
+qt x_03
+end
+if eq x 5
+qt x_04
+end
+if eq x 6
+qt x_05
+end
+if eq x 7
+qt x_06
+end
+if eq x 8
+qt x_07
+end
+if eq x 9
+qt x_08
+end
+if eq x 10
+qt x_09
+end
+if eq x 11
+qt x_10
+end
+if eq x 12
+qt x_11
+end
+if eq x 13
+qt x_12
+end
+if eq x 14
+qt x_13
+end
+if eq x 15
+qt x_14
+end
+if eq x 16
+qt x_15
+end
+if eq x 17
+qt x_16
+end
+if eq x 18
+qt x_17
+end
+end
+note x 0 is the empty query
+fn gmal to void
+for x ulong 19
+qmal x
+for s ulong 5
+for ep ulong 3
+rq3 2 ep s rem add add x s mul ep 3 7
+end
+end
+end
+end
+note get lines for entity e: v 0 id+space, 1 id (default space), 2 name+space, 3 name+wrong
+note space, 4 id+name+space, 5 HEAD id+space
+fn ghead e ulong m view uchar * to void
+ot c_get
+tab
+ot m
+tab
+ot p_get
+end
+fn gone e ulong v ulong to void
+b = mul e 6
+if eq v 5
+ghead e m_head
+else
+ghead e m_get
+end
+if or eq v 2 eq v 3
+ot a_nm
+ohex get et add b 2 get et add b 3
+else
+ot a_id
+ohex get et b get et add b 1
+end
+if eq v 4
+ot a_nz
+end
+if eq v 3
+ot a_spn
+end
+if and ne v 1 ne v 3
+ot a_sp
+ohex get et add b 4 get et add b 5
+end
+tab
+oflags false
+tab
+eol
+end
+fn trone e ulong to void
+b = mul e 6
+ot c_tr
+tab
+ot m_post
+tab
+ot p_tr
+tab
+oflags true
+tab
+ot j_sj
+ojhex get et b get et add b 1
+oc 34
+if eq rem e 2 0
+ot j_sp
+ojhex get et add b 4 get et add b 5
+oc 34
+end
+oc 125
+eol
+end
+fn gget to void
+for e ulong get gv 4
+for v ulong 5
+gone e v
+end
+if eq rem e 3 0
+gone e 5
+end
+if eq rem e 5 0
+trone e
+end
+end
+end
+note ---- data file ----
+fn eolat i ulong to ulong
+n = get gv 0
+for j ulong sub n i
+if eq get db add i j 10
+ret add i j
+end
+end
+ret n
+end
+fn tabat i ulong e ulong to ulong
+for j ulong sub e i
+if eq get db add i j 9
+ret add i j
+end
+end
+ret e
+end
+fn addt s ulong e ulong to bool
+k = get gv 3
+if ge mul add k 1 2 len tt
+ret false
+end
+put tt mul k 2 add s 2
+put tt add mul k 2 1 sub e add s 2
+put gv 3 add k 1
+ret true
+end
+fn adde s ulong e ulong to bool
+k = get gv 4
+b = mul k 6
+if ge add b 6 len et
+ret false
+end
+t1 = tabat add s 2 e
+t2 = tabat add t1 1 e
+if ge t2 e
+ret false
+end
+put et b add s 2
+put et add b 1 sub t1 add s 2
+put et add b 2 add t1 1
+put et add b 3 sub t2 add t1 1
+put et add b 4 add t2 1
+put et add b 5 sub e add t2 1
+put gv 4 add k 1
+ret true
+end
+fn parse to bool
+i = ulong 0
+n = get gv 0
+while lt i n bound 999999
+e = eolat i
+if gt e add i 2
+c = get db i
+ok = false
+if eq c 84
+ok = addt i e
+end
+if eq c 69
+ok = adde i e
+end
+if not ok
+ret false
+end
+end
+i = add e 1
+end
+ret and gt get gv 3 8 gt get gv 4 0
+end
+fn main to int
+if ne ulong argcnt 3
+say u_use
+ret 2
+end
+fd = int fopen pa 0 argp 1 524288 0
+if lt fd 0
+say u_open
+ret 3
+end
+if not rdall fd
+ret 3
+end
+x = fclose fd
+if not parse
+say u_big
+ret 3
+end
+of = int fopen pa 0 argp 2 524865 420
+if lt of 0
+say u_open
+ret 3
+end
+put gv 1 ulong of
+gterm
+gops
+gmal
+gget
+flush
+y = fclose of
+if ne get gv 7 0
+say u_wr
+ret 4
+end
+ret 0
+end

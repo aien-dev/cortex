@@ -52,6 +52,9 @@ text k_ti "targetId"
 text k_id "id"
 text k_sp "spaceId"
 text k_rc "\"receipt\":{\"id\":"
+text k_rt "runtime"
+text v_rto "native-arm64-rust"
+text v_rts "native-arm64-omega"
 text h_date "date:"
 text h_cl "content-length:"
 
@@ -421,7 +424,11 @@ if and eq get ra sub k 1 58 eq get ra sub k 2 34
 ret k
 end
 c = get ra sub k 1
-if or eq c 44 or eq c 123 eq c 34
+opn = false
+if and eq c 34 gt sub k 1 lo
+opn = eq get ra sub k 2 58
+end
+if and not opn or eq c 44 or eq c 123 eq c 34
 if ne k io
 ret NONE
 end
@@ -570,6 +577,63 @@ ret false
 end
 ret madd a b
 end
+note the one /health field that differs by design (spec/PARITY.md): runtime is native-arm64-rust in the
+note oracle and native-arm64-omega here, exactly
+fn rtmask a ulong ae ulong b ulong be ulong to bool
+if or ne sub ae a len v_rto ne sub be b len v_rts
+ret false
+end
+for i ulong len v_rto
+if ne get ra add a i get v_rto i
+ret false
+end
+end
+for i ulong len v_rts
+if ne get rs add b i get v_rts i
+ret false
+end
+end
+ret true
+end
+note decimal value of a content-length header line at p (length n) of the oracle (o) or Omega answer
+fn clval p ulong n ulong o bool to ulong
+v = ulong 0
+for i ulong sub n len h_cl
+c = get rs add add p len h_cl i
+if o
+c = get ra add add p len h_cl i
+end
+if isdig c
+v = add mul v 10 sub ulong c 48
+end
+end
+ret v
+end
+note HEAD answers carry no body, so the masked runtime value of /health and /status shows only as a
+note content-length one larger in Omega: accepted when both bodies are empty and the difference is +1
+fn headcl to bool
+if or ne get cv 15 get cv 5 ne get cv 16 get cv 6
+ret false
+end
+vo = NONE
+vs = NONE
+for i ulong get cv 17
+if eq okind i 2
+vo = clval get hl mul i 2 get hl add mul i 2 1 true
+end
+end
+for j ulong get cv 18
+if eq skind j 2
+p = get hl add 128 mul j 2
+n = get hl add add 128 mul j 2 1
+vs = clval p n false
+end
+end
+if or eq vo NONE eq vs NONE
+ret false
+end
+ret eq vs add vo 1
+end
 note one masked value at oracle vo / Omega vs; returns false when the mismatch is not maskable;
 note on success cv 19 / cv 20 hold the oracle / Omega offsets after the value
 fn maskv vo ulong vs ulong to bool
@@ -589,6 +653,9 @@ put cv 19 add ae 1
 put cv 20 add be 1
 a = add vo 1
 b = add vs 1
+if keyis vo k_rt
+ret rtmask a ae b be
+end
 if or keyis vo k_ca or keyis vo k_cr keyis vo k_up
 ret tseq a ae b be
 end
@@ -601,6 +668,34 @@ rc = ohas sub vo len k_rc k_rc
 end
 lr = or rc or keyis vo k_ti keyis vo k_sp
 ret uuideq a b lr
+end
+note count of equal bytes of ra from io and rs from is (c at most 65536), then the chunked run
+fn eqchunk io ulong is ulong c ulong to ulong
+for j ulong c
+if ne get ra add io j get rs add is j
+ret j
+end
+end
+ret c
+end
+fn eqrun io ulong is ulong no ulong ns ulong to ulong
+lim = sub no io
+if lt sub ns is lim
+lim = sub ns is
+end
+r = ulong 0
+while lt r lim bound 999999
+c = sub lim r
+if gt c 65536
+c = 65536
+end
+m = eqchunk add io r add is r c
+r = add r m
+if lt m c
+break
+end
+end
+ret r
 end
 note 0 equal (cv 8 = 1 when a mask was used), else 1 + oracle offset of the first difference
 fn bodyeq to ulong
@@ -617,9 +712,10 @@ ret 0
 end
 ret add io 1
 end
-if eq get ra io get rs is
-io = add io 1
-is = add is 1
+m = eqrun io is no ns
+io = add io m
+is = add is m
+if or ge io no ge is ns
 continue
 end
 vo = valat io lo
@@ -677,23 +773,41 @@ if ne d 0
 verdict ix f_body sub d get cv 15
 ret
 end
-if and eq h 2 eq get cv 8 0
+if eq h 2
+if or ne get cv 8 0 headcl
+passed ix
+ret
+end
 verdict ix f_cl NONE
 ret
 end
 passed ix
 end
+note loops run in 65536-byte chunks: one loop may pass at most 1000000 times (trap 4 beyond)
+fn linesb b ulong e ulong k0 ulong to ulong
+k = k0
+for j ulong sub e b
+if eq get cb add b j 10
+k = add k 1
+if lt k len ls
+put ls k add add b j 1
+end
+end
+end
+ret k
+end
 fn lines to ulong
 k = ulong 0
 n = get cv 0
 put ls 0 0
-for j ulong n
-if eq get cb j 10
-k = add k 1
-if lt k len ls
-put ls k add j 1
+b = ulong 0
+while lt b n bound 999999
+e = add b 65536
+if gt e n
+e = n
 end
-end
+k = linesb b e k
+b = e
 end
 ret k
 end
