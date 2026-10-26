@@ -1,0 +1,20 @@
+FtsEngine evidence (2026-10-26, Linux aarch64 host only; no GPU; not hardware qualification)
+
+Command (from the repo root):
+  sh tests/fts/run.sh            # DB defaults to the read-only copy /tmp/cxo/data/cortex-copy.db
+Env: OMC=/tmp/cxo/omega/seed/out/omc (sha256 befb8199...8a1d), SQLITE_SRC=$HOME/.cargo/registry/src/
+     index.crates.io-1949cf8c6b5b557f/libsqlite3-sys-0.28.0/sqlite3, WORK=/tmp/cxo/fts-work/run
+Log: evidence/fts/run.log (tool hashes, plan, every PASS/FAIL line, timings, corpus stats). RESULT PASS.
+
+Oracle: tests/fts/oracle.c linked with sqlite3.c 3.45.0 (sha256 7956a38f...6775) compiled by
+gcc 13.3.0 -O3 with the -D flags of libsqlite3-sys 0.28.0 build.rs; it runs the exact cortex-rs
+search SQL text (EXPLAIN QUERY PLAN: SCAN f VIRTUAL TABLE INDEX 0:M4 / SEARCH e / TEMP B-TREE
+FOR ORDER BY), the LIKE query, the unicode61 xTokenize, glibc 2.39 log() and C fma().
+Disassembly: cortex-rs-bm25.dis (the live binary's fts5Bm25Function), oracle-bm25.dis (same
+instruction sequence from the oracle build), glibc-log.dis (log@@GLIBC_2.29 replicated by flog.om).
+
+Generators of committed tables (tool versions: Python 3, glibc 2.39 libm sha256 5e039156...1b4a):
+  python3 tests/fts/gen_uni_tables.py  .../libsqlite3-sys-0.28.0/sqlite3/sqlite3.c   -> tables in om/uni_fts.om
+  python3 tests/fts/gen_parse_tables.py .../libsqlite3-sys-0.28.0/sqlite3/sqlite3.c  -> tables in om/fts.om
+  python3 tests/fts/gen_flog_table.py  /usr/lib/aarch64-linux-gnu/libm.so.6          -> table in om/flog.om
+Test inputs: gen_queries.py, gen_like.py, gen_tokf.py (seeded, deterministic).

@@ -1,0 +1,43 @@
+date 2026-10-26T16:48:26Z host aarch64
+omc befb8199db8c4bca188a494dfaac2a6f0ee5c36fcea11188c75666c55fce8a1d
+sqlite3.c 7956a38f236a6be6c0bb30c96ba4f85f19e5a69f6beb6d2c62c9d246972a6775
+libm 5e0391562de36de323fb9cb0f2c1b6bd6d034c840b1dac018499f5fe4ded1b4a
+db c59dec42f776f71a484465f168c57cf67643fcc115a9b6209370adc279efdf38
+gcc gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+om/uni_fts.om c75ea029f9dfcb065937f3121fe10e85d44753e3c18ab1ce7418429771271589 fns=15
+om/flog.om 0d680f39e3aa151bd3a33c9ad77ca44d8f7bc508251c3830be3332245d63cf2b fns=23
+om/fts.om 1d972201033fbc8961caf88f259c382bc288a1f43184c57b2475aa6b4bf3705f fns=140
+om/like.om 6879c08a34c4b730557eed5308f91ce2211ab041beddc2c339901b489d688bd9 fns=8
+8 0 SCAN f VIRTUAL TABLE INDEX 0:M4
+13 0 SEARCH e USING INDEX sqlite_autoindex_entities_1 (id=?)
+50 0 USE TEMP B-TREE FOR ORDER BY
+sqlite_version 3.45.0 source_id 2024-01-15 17:01:13 1066602b2b1976fe58b5150777cced894af17c803e068f5918390d6915b46e1d
+compiled: t_flog t_tok t_query t_like
+4674 records
+log cases 5324811
+2400 queries
+3000 queries
+600 patterns
+ops 1192 deletes 596 re-inserts
+PASS flog vs glibc log: cases=5324811 mismatches=0
+PASS flog_fma vs FMADD: cases=2000000 mismatches=0
+PASS tokenizer, all entities_fts rows (same)
+PASS tokenizer, every code point + invalid UTF-8 (same)
+PASS search corpus 1 (2400 queries x 5 spaces x 4 limits) (same)
+timing q1: searches=48000 total_ns=33327652053 max_ns=21708269 load_ns=169811986
+PASS search corpus 2 (3000 queries x 5 spaces x 4 limits) (same)
+timing q2: searches=60000 total_ns=39785611513 max_ns=19828794 load_ns=125707944
+PASS search after delete/re-insert + token-pool compaction (same)
+PASS LIKE (600 patterns x every entity) (same)
+PASS single-term latency corpus (200 frequent words) (same)
+timing single-term: searches=4000 total_ns=3618076315 max_ns=2577592 load_ns=139839092
+q1 lines=48000 ok=25480 err=22520 nonempty=7512 rows=65867 lines_with_tied_bm25=845
+q2 lines=60000 ok=34660 err=25340 nonempty=10900 rows=105504 lines_with_tied_bm25=1377
+like patterns=600 err=1 matches=609122
+PASS negative control bm25 k1=1.3 detected (differ)
+PASS negative control unfused bm25 tail detected (differ)
+PASS negative control tokenizer table entry detected (differ)
+PASS negative control flog ln2lo detected (MISMATCH 40b7710000000000 0000000000000000 0000000000000000 4021663ca3fdbd25 4021663ca3fdbb92)
+PASS negative control LIKE case folding detected (differ)
+PASS negative control unstable tie order detected (differ)
+RESULT PASS

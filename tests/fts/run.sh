@@ -92,6 +92,17 @@ check "search after delete/re-insert + token-pool compaction" 0 "$WORK/qm_om.txt
 $O like "$DB" "$WORK/like.bin" "$WORK/like_or.txt"
 $N "$WORK/t_like" "$WORK/dump.bin" "$WORK/like.bin" > "$WORK/like_om.txt"
 check "LIKE (600 patterns x every entity)" 0 "$WORK/like_om.txt" "$WORK/like_or.txt"
+# latency: the 200 most frequent title words as single-term queries (x 5 spaces x 4 limits)
+python3 - "$DB" "$WORK/lat.bin" <<'EOF'
+import collections, re, sqlite3, struct, sys
+con = sqlite3.connect('file:%s?mode=ro' % sys.argv[1], uri=True)
+c = collections.Counter(w.lower() for (t,) in con.execute('SELECT canonical_name FROM entities_fts') for w in re.findall(r'[A-Za-z]{3,}', t))
+open(sys.argv[2], 'wb').write(b''.join(struct.pack('<I', len(w)) + w.encode() for w, _ in c.most_common(200)))
+EOF
+$O query "$DB" "$WORK/lat.bin" "$WORK/lat_or.txt"
+$N "$WORK/t_query" "$WORK/dump.bin" "$WORK/lat.bin" > "$WORK/lat_om.txt" 2> "$WORK/lat.time"
+check "single-term latency corpus (200 frequent words)" 0 "$WORK/lat_om.txt" "$WORK/lat_or.txt"
+say "timing single-term: $(cat "$WORK/lat.time")"
 python3 - "$WORK" >> "$LOG" <<'EOF'
 import sys, collections
 w = sys.argv[1]
