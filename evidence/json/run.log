@@ -1,5 +1,6 @@
 == toolchain
-omc /tmp/cxo/omega/seed/out/omc sha256 befb8199db8c4bca188a494dfaac2a6f0ee5c36fcea11188c75666c55fce8a1d
+omc /tmp/cxo/cortex/build/omc sha256 189ada82e00bb440cb41351bd252cc68c54a1b1050051cc42a1df700081c3b54
+omc pinned by tools/omc.sh (omega-mv 91b3c932)
 rustc rustc 1.98.1 (48a229cea 2026-09-01)
 om/f64.om sha256 5e164308f6e04276f42c7bc9f541c2fa0f010cdfcbc8e4fc8b02dc73247d1a6d functions 31
 om/uni_rust.om sha256 74e84cab8487c87c1a41edf3de161736353c7da3018386eee245fd5f182c45fd functions 13
@@ -60,25 +61,21 @@ PASS negative control autosi_millis caught
 mutant-dup_last_wins records 600000 observed 600000 match 594538 mismatch 5462
 PASS negative control dup_last_wins caught
 == throughput (host, nice 19; machine shared with other lanes)
- 11:38:36 up 5 days, 17:19, 16 users,  load average: 8.18, 8.66, 10.72
-ru_contains_5x6MB_ns 86506056 30000000
-ru_contains_5x6MB_latin_ns 51985334 30000000
-js_parse_ns_bytes 26171773 4710001
-js_canon_ns_bytes 32398588 4590001
-js_f64_1M_ns 179137823 1000000
-ru_contains_5x6MB_ns 86629801 30000000
-ru_contains_5x6MB_latin_ns 51993638 30000000
-js_parse_ns_bytes 26286142 4710001
-js_canon_ns_bytes 32384572 4590001
-js_f64_1M_ns 178928492 1000000
-ru_contains_5x6MB_ns 109115471 30000000
-ru_contains_5x6MB_latin_ns 51879540 30000000
-js_parse_ns_bytes 26290958 4710001
-js_canon_ns_bytes 32396413 4590001
-js_f64_1M_ns 178931372 1000000
+ 12:48:56 up 5 days, 18:29, 17 users,  load average: 6.52, 6.10, 6.16
+ru_contains_5x6MB_ns 92130664 30000000
+ru_contains_5x6MB_latin_ns 51877264 30000000
+js_parse_ns_bytes 27008353 4710001
+js_canon_ns_bytes 32285745 4590001
+js_f64_1M_ns 178921632 1000000
+ru_contains_5x6MB_ns 87958787 30000000
+ru_contains_5x6MB_latin_ns 51747935 30000000
+js_parse_ns_bytes 26765983 4710001
+js_canon_ns_bytes 32591172 4590001
+js_f64_1M_ns 178932976 1000000
+ru_contains_5x6MB_ns 109927127 30000000
+ru_contains_5x6MB_latin_ns 51774624 30000000
+js_parse_ns_bytes 26141642 4710001
+js_canon_ns_bytes 32429746 4590001
+js_f64_1M_ns 178954049 1000000
 == summary
 RESULT PASS
-
-real	0m24.319s
-user	0m35.519s
-sys	0m16.917s

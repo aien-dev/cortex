@@ -1,7 +1,7 @@
 JsonNum evidence (host only: Linux aarch64 DGX Spark, shared with other lanes; not hardware qualification)
 Command (from the repo root /tmp/cxo/cortex):
-  bash tests/json/run.sh > evidence/json/run.log 2>&1        # exit status 0 = RESULT PASS
-Defaults: OMC=/tmp/cxo/omega/seed/out/omc (sha256 befb8199...8a1d, omega-mv 3364a1dfd), W=/tmp/jn/run (scratch,
+  nice -n 19 ionice -c3 bash tests/json/run.sh > evidence/json/run.log 2>&1   # exit status 0 = RESULT PASS
+Defaults: OMC from tools/omc.sh (sha256 189ada82...3b54, omega-mv 91b3c932), W=/tmp/jn/run (scratch,
 oracle build, corpora), oracle = tests/json/oracle (cargo +1.98.1, --offline, serde_json =1.0.151 raw_value,
 serde_path_to_error =0.1.20, ryu =1.0.23, zmij =1.0.23, chrono =0.4.45, uuid =1.26.1, serde 1.0.229 derive).
 Corpus seeds: gen-json 200000 12345, gen_big.py, gen-f64 1000000 777, rand_f64.py 2000000 20261026,

@@ -1,5 +1,5 @@
-date 2026-10-26T16:48:26Z host aarch64
-omc befb8199db8c4bca188a494dfaac2a6f0ee5c36fcea11188c75666c55fce8a1d
+date 2026-10-26T17:48:26Z host aarch64
+omc 189ada82e00bb440cb41351bd252cc68c54a1b1050051cc42a1df700081c3b54
 sqlite3.c 7956a38f236a6be6c0bb30c96ba4f85f19e5a69f6beb6d2c62c9d246972a6775
 libm 5e0391562de36de323fb9cb0f2c1b6bd6d034c840b1dac018499f5fe4ded1b4a
 db c59dec42f776f71a484465f168c57cf67643fcc115a9b6209370adc279efdf38
@@ -24,13 +24,13 @@ PASS flog_fma vs FMADD: cases=2000000 mismatches=0
 PASS tokenizer, all entities_fts rows (same)
 PASS tokenizer, every code point + invalid UTF-8 (same)
 PASS search corpus 1 (2400 queries x 5 spaces x 4 limits) (same)
-timing q1: searches=48000 total_ns=33327652053 max_ns=21708269 load_ns=169811986
+timing q1: searches=48000 total_ns=29581214190 max_ns=20231781 load_ns=136742043
 PASS search corpus 2 (3000 queries x 5 spaces x 4 limits) (same)
-timing q2: searches=60000 total_ns=39785611513 max_ns=19828794 load_ns=125707944
+timing q2: searches=60000 total_ns=39789614673 max_ns=19838131 load_ns=171405096
 PASS search after delete/re-insert + token-pool compaction (same)
 PASS LIKE (600 patterns x every entity) (same)
 PASS single-term latency corpus (200 frequent words) (same)
-timing single-term: searches=4000 total_ns=3618076315 max_ns=2577592 load_ns=139839092
+timing single-term: searches=4000 total_ns=3558895907 max_ns=2160611 load_ns=138207523
 q1 lines=48000 ok=25480 err=22520 nonempty=7512 rows=65867 lines_with_tied_bm25=845
 q2 lines=60000 ok=34660 err=25340 nonempty=10900 rows=105504 lines_with_tied_bm25=1377
 like patterns=600 err=1 matches=609122

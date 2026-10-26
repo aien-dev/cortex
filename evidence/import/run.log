@@ -1,6 +1,6 @@
-command: sh tests/import/run.sh /tmp/cxo/impwork/run   (cwd /tmp/cxo/cortex, 2026-10-26T16:27:48Z, host Linux 7.0.0-1019-nvidia aarch64)
+command: sh tests/import/run.sh   (cwd repo root, 2026-10-26T17:49:23Z, host Linux 7.0.0-1019-nvidia aarch64)
 == toolchain
-omc befb8199db8c4bca188a494dfaac2a6f0ee5c36fcea11188c75666c55fce8a1d (omega-mv 3364a1dfd0ca50c1b82bf19ba34932d8bc10a7a9)
+omc 189ada82e00bb440cb41351bd252cc68c54a1b1050051cc42a1df700081c3b54 (omega-mv 91b3c932, tools/omc.sh)
 sqlite3 3.45.1 2024-01-30
 python Python 3.12.3
 src caab3d5b655b24fa6a287c5a600bfe7b7fef180206afa3cedbd68fdec5e35635 om/crc32c.om fns=8
@@ -30,9 +30,9 @@ serial types rowid:type = 1:9 2:7 3:1 4:8 5:5 6:7
 PASS integral_reals_stored_as_integers
 == live copy (/tmp/cxo/data/cortex-copy.db)
 c59dec42f776f71a484465f168c57cf67643fcc115a9b6209370adc279efdf38  live.db
-live import run 1 rc=0 wall_ms=142 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
-live import run 2 rc=0 wall_ms=137 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
-live import run 3 rc=0 wall_ms=112 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
+live import run 1 rc=0 wall_ms=153 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
+live import run 2 rc=0 wall_ms=126 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
+live import run 3 rc=0 wall_ms=108 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
 cortex-import: wal: frames=0 valid=0 committed=0
 cortex-import: db: pages=12895
 cortex-import: import: fts rows without entity=0
@@ -127,4 +127,3 @@ PASS NEG corrupted_crc_field_detected(rc=3)
 TORN offset=12841867
 PASS NEG torn_tail_detected(rc=4)
 == result: PASS=50 FAIL=0
-exit=0
