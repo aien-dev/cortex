@@ -1,0 +1,15 @@
+fn de_write to ulong
+ret 0
+end
+fn de_search to ulong
+ret 0
+end
+fn de_recall to ulong
+ret 0
+end
+fn de_traverse to ulong
+ret 0
+end
+fn de_delete to ulong
+ret 0
+end

@@ -1,0 +1,3985 @@
+
+/tmp/cxo/fts-work/sqlite3.o:     file format elf64-littleaarch64
+
+
+Disassembly of section .text.sqlite3MemSize:
+
+Disassembly of section .text.sqlite3MemRoundup:
+
+Disassembly of section .text.sqlite3MemInit:
+
+Disassembly of section .text.sqlite3_mutex_free:
+
+Disassembly of section .text.sqlite3_mutex_enter:
+
+Disassembly of section .text.sqlite3_mutex_leave:
+
+Disassembly of section .text.noopMutexInit:
+
+Disassembly of section .text.noopMutexAlloc:
+
+Disassembly of section .text.sqlite3_msize:
+
+Disassembly of section .text.measureAllocationSize:
+
+Disassembly of section .text.sqlite3_str_errcode:
+
+Disassembly of section .text.sqlite3_str_length:
+
+Disassembly of section .text.sqlite3_str_value:
+
+Disassembly of section .text.sqlite3Dequote:
+
+Disassembly of section .text.dekkerMul2:
+
+Disassembly of section .text.sqlite3AtoF:
+
+Disassembly of section .text.sqlite3Atoi64:
+
+Disassembly of section .text.putVarint64:
+
+Disassembly of section .text.sqlite3GetVarint:
+
+Disassembly of section .text.findElementWithHash:
+
+Disassembly of section .text.nolockCheckReservedLock:
+
+Disassembly of section .text.nolockLock:
+
+Disassembly of section .text.dotlockCheckReservedLock:
+
+Disassembly of section .text.posixIoFinderImpl:
+
+Disassembly of section .text.nolockIoFinderImpl:
+
+Disassembly of section .text.dotlockIoFinderImpl:
+
+Disassembly of section .text.memdbTruncate:
+
+Disassembly of section .text.memdbFileSize:
+
+Disassembly of section .text.memdbLock:
+
+Disassembly of section .text.memdbUnlock:
+
+Disassembly of section .text.memdbDeviceCharacteristics:
+
+Disassembly of section .text.memdbFetch:
+
+Disassembly of section .text.memdbUnfetch:
+
+Disassembly of section .text.memdbAccess:
+
+Disassembly of section .text.memdbDlOpen:
+
+Disassembly of section .text.memdbDlError:
+
+Disassembly of section .text.memdbDlSym:
+
+Disassembly of section .text.memdbDlClose:
+
+Disassembly of section .text.memdbRandomness:
+
+Disassembly of section .text.memdbSleep:
+
+Disassembly of section .text.memdbGetLastError:
+
+Disassembly of section .text.memdbCurrentTimeInt64:
+
+Disassembly of section .text.sqlite3PcacheSetPageSize:
+
+Disassembly of section .text.pcache1Pagecount:
+
+Disassembly of section .text.pcache1Rekey:
+
+Disassembly of section .text.pagerLockDb:
+
+Disassembly of section .text.sqlite3_database_file_object:
+
+Disassembly of section .text.getPageError:
+
+Disassembly of section .text.walChecksumBytes:
+
+Disassembly of section .text.unlockBtreeMutex:
+
+Disassembly of section .text.sqlite3_enable_shared_cache:
+
+Disassembly of section .text.cellSizePtr:
+
+Disassembly of section .text.cellSizePtrIdxLeaf:
+
+Disassembly of section .text.cellSizePtrNoPayload:
+
+Disassembly of section .text.cellSizePtrTableLeaf:
+
+Disassembly of section .text.btreeGetPage:
+
+Disassembly of section .text.btreeInvokeBusyHandler:
+
+Disassembly of section .text.computeCellSize:
+
+Disassembly of section .text.sqlite3NoopDestructor:
+
+Disassembly of section .text.sqlite3VdbeFrameMemDel:
+
+Disassembly of section .text.sqlite3_expired:
+
+Disassembly of section .text.sqlite3_value_subtype:
+
+Disassembly of section .text.sqlite3_value_type:
+
+Disassembly of section .text.sqlite3_value_encoding:
+
+Disassembly of section .text.sqlite3_value_nochange:
+
+Disassembly of section .text.sqlite3_value_frombind:
+
+Disassembly of section .text.sqlite3_result_subtype:
+
+Disassembly of section .text.sqlite3_user_data:
+
+Disassembly of section .text.sqlite3_context_db_handle:
+
+Disassembly of section .text.sqlite3_get_auxdata:
+
+Disassembly of section .text.sqlite3_aggregate_count:
+
+Disassembly of section .text.sqlite3_column_count:
+
+Disassembly of section .text.sqlite3_data_count:
+
+Disassembly of section .text.sqlite3_bind_parameter_count:
+
+Disassembly of section .text.sqlite3_bind_parameter_name:
+
+Disassembly of section .text.sqlite3_db_handle:
+
+Disassembly of section .text.sqlite3_stmt_readonly:
+
+Disassembly of section .text.sqlite3_stmt_isexplain:
+
+Disassembly of section .text.sqlite3_stmt_busy:
+
+Disassembly of section .text.sqlite3_sql:
+
+Disassembly of section .text.sqlite3_blob_bytes:
+
+Disassembly of section .text.vdbeSorterExtendFile:
+
+Disassembly of section .text.memjrnlFileSize:
+
+Disassembly of section .text.sqlite3WalkWinDefnDummyCallback:
+
+Disassembly of section .text.sqlite3WalkerDepthIncrease:
+
+Disassembly of section .text.sqlite3WalkerDepthDecrease:
+
+Disassembly of section .text.sqlite3ExprWalkNoop:
+
+Disassembly of section .text.incrAggDepth:
+
+Disassembly of section .text.gatherSelectWindowsSelectCallback:
+
+Disassembly of section .text.sqlite3SelectWalkFail:
+
+Disassembly of section .text.sqlite3ExprCanBeNull:
+
+Disassembly of section .text.sqlite3ExprNeedsNoAffinityChange:
+
+Disassembly of section .text.selectRefLeave:
+
+Disassembly of section .text.renameUnmapExprCb:
+
+Disassembly of section .text.renameColumnExprCb:
+
+Disassembly of section .text.renameTableExprCb:
+
+Disassembly of section .text.sampleIsBetter:
+
+Disassembly of section .text.initAvgEq:
+
+Disassembly of section .text.sqlite3DbIsNamed:
+
+Disassembly of section .text.isDupColumn:
+
+Disassembly of section .text.fkParentIsModified:
+
+Disassembly of section .text.sqlite3_cancel_auto_extension:
+
+Disassembly of section .text.pragmaVtabEof:
+
+Disassembly of section .text.pragmaVtabRowid:
+
+Disassembly of section .text.unsetJoinExpr:
+
+Disassembly of section .text.srclistRenumberCursors:
+
+Disassembly of section .text.sqlite3SelectPopWith:
+
+Disassembly of section .text.aggregateIdxEprRefToColCallback:
+
+Disassembly of section .text.disableTerm:
+
+Disassembly of section .text.whereLoopCheaperProperSubset:
+
+Disassembly of section .text.whereLoopFindLesser:
+
+Disassembly of section .text.sqlite3_vtab_in:
+
+Disassembly of section .text.sqlite3_vtab_distinct:
+
+Disassembly of section .text.exprNodeIsDeterministic:
+
+Disassembly of section .text.whereCheckIfBloomFilterIsUseful:
+
+Disassembly of section .text.whereReverseScanOrder:
+
+Disassembly of section .text.noopStepFunc:
+
+Disassembly of section .text.sqlite3_keyword_count:
+
+Disassembly of section .text.sqlite3TestExtInit:
+
+Disassembly of section .text.sqlite3_libversion:
+
+Disassembly of section .text.sqlite3_libversion_number:
+
+Disassembly of section .text.sqlite3_threadsafe:
+
+Disassembly of section .text.hasHighPrecisionDouble:
+
+Disassembly of section .text.sqliteDefaultBusyCallback:
+
+Disassembly of section .text.sqlite3_system_errno:
+
+Disassembly of section .text.sqlite3_thread_cleanup:
+
+Disassembly of section .text.sqlite3_compileoption_get:
+
+Disassembly of section .text.sqlite3Fts3GetVarintU:
+
+Disassembly of section .text.sqlite3Fts3Dequote:
+
+Disassembly of section .text.fts3RowidMethod:
+
+Disassembly of section .text.fts3ReleaseMethod:
+
+Disassembly of section .text.fts3auxBestIndexMethod:
+
+Disassembly of section .text.fts3auxEofMethod:
+
+Disassembly of section .text.fts3auxRowidMethod:
+
+Disassembly of section .text.fts3BinHash:
+
+Disassembly of section .text.stem:
+
+Disassembly of section .text.sqlite3Fts3NextToken:
+
+Disassembly of section .text.fts3tokBestIndexMethod:
+
+Disassembly of section .text.fts3tokEofMethod:
+
+Disassembly of section .text.fts3tokRowidMethod:
+
+Disassembly of section .text.fts3ExprLoadDoclistsCb:
+
+Disassembly of section .text.fts3ExprPhraseCountCb:
+
+Disassembly of section .text.fts3MatchinfoLcsCb:
+
+Disassembly of section .text.remove_diacritic:
+
+Disassembly of section .text.json5Whitespace:
+
+Disassembly of section .text.jsonbPayloadSize:
+
+Disassembly of section .text.jsonEachEof:
+
+Disassembly of section .text.jsonEachRowid:
+
+Disassembly of section .text.jsonEachBestIndex:
+
+Disassembly of section .text.rtreeEof:
+
+Disassembly of section .text.rtreeBeginTransaction:
+
+Disassembly of section .text.statBestIndex:
+
+Disassembly of section .text.statEof:
+
+Disassembly of section .text.statRowid:
+
+Disassembly of section .text.fts5CInstIterNext:
+
+Disassembly of section .text.fts5SnippetScore:
+
+Disassembly of section .text.fts5CountCb:
+
+Disassembly of section .text.fts5MultiIterAdvanceRowid:
+
+Disassembly of section .text.fts5IterSetOutputs_None:
+
+Disassembly of section .text.fts5IterSetOutputs_ZeroColset:
+
+Disassembly of section .text.fts5IndexTombstoneAddToPage:
+
+Disassembly of section .text.fts5EofMethod:
+
+Disassembly of section .text.fts5ApiUserData:
+
+Disassembly of section .text.fts5ApiColumnCount:
+
+Disassembly of section .text.fts5ApiTokenize:
+
+Disassembly of section .text.fts5ApiPhraseCount:
+
+Disassembly of section .text.fts5ApiPhraseSize:
+
+Disassembly of section .text.fts5ApiRowid:
+
+Disassembly of section .text.fts5ColumnSizeCb:
+
+Disassembly of section .text.fts5ApiGetAuxdata:
+
+Disassembly of section .text.fts5ApiQueryToken:
+
+Disassembly of section .text.fts5PorterTokenize:
+
+Disassembly of section .text.sqlite3Fts5GetVarint:
+
+Disassembly of section .text.fts5VocabBestIndexMethod:
+
+Disassembly of section .text.fts5VocabEofMethod:
+
+Disassembly of section .text.fts5VocabRowidMethod:
+
+Disassembly of section .text.sqlite3_sourceid:
+
+Disassembly of section .text.unixShmLock:
+
+Disassembly of section .text.pager_truncate:
+
+Disassembly of section .text.sqlite3GetInt32:
+
+Disassembly of section .text.sqlite3AffinityType:
+
+Disassembly of section .text.sqlite3ExprAffinity:
+
+Disassembly of section .text.memdbRead:
+
+Disassembly of section .text.sqlite3BitvecClear:
+
+Disassembly of section .text.walMerge:
+
+Disassembly of section .text.sqlite3VdbeSwap:
+
+Disassembly of section .text.serialGet:
+
+Disassembly of section .text.sqlite3VdbeSerialGet:
+
+Disassembly of section .text.vdbePmaWriteBlob:
+
+Disassembly of section .text.memjrnlRead:
+
+Disassembly of section .text.sqlite3DefaultRowEst:
+
+Disassembly of section .text.SortByDimension:
+
+Disassembly of section .text.unixNextSystemCall:
+
+Disassembly of section .text.unixGetSystemCall:
+
+Disassembly of section .text.unixSetSystemCall:
+
+Disassembly of section .text.sqlite3_value_pointer:
+
+Disassembly of section .text.fts5Fts5Func:
+
+Disassembly of section .text.fts3FindFunctionMethod:
+
+Disassembly of section .text.sqlite3_get_clientdata:
+
+Disassembly of section .text.pthreadMutexLeave:
+
+Disassembly of section .text.pthreadMutexTry:
+
+Disassembly of section .text.pthreadMutexEnter:
+
+Disassembly of section .text.unixShmBarrier:
+
+Disassembly of section .text.sqlite3_uri_key:
+
+Disassembly of section .text.fts3StrHash:
+
+Disassembly of section .text.getDigits:
+
+Disassembly of section .text.unixGetpagesize:
+
+Disassembly of section .text.unixRead:
+
+Disassembly of section .text.unixGetLastError:
+
+Disassembly of section .text.unixCheckReservedLock:
+
+Disassembly of section .text.posixOpen:
+
+Disassembly of section .text.unixCurrentTimeInt64:
+
+Disassembly of section .text.unixCurrentTime:
+
+Disassembly of section .text.unixSleep:
+
+Disassembly of section .text.unixDlClose:
+
+Disassembly of section .text.unixDlSym:
+
+Disassembly of section .text.unixDlOpen:
+
+Disassembly of section .text.sqlite3BlobCompare:
+
+Disassembly of section .text.binCollFunc:
+
+Disassembly of section .text.rtrimCollFunc:
+
+Disassembly of section .text.fts3CompareElemByTerm:
+
+Disassembly of section .text.fts3BinCompare:
+
+Disassembly of section .text.getCellInfo:
+
+Disassembly of section .text.sqlite3Put4byte:
+
+Disassembly of section .text.readSuperJournal:
+
+Disassembly of section .text.sqlite3LogEst:
+
+Disassembly of section .text.fts3StrCompare:
+
+Disassembly of section .text.sqlite3MemFree:
+
+Disassembly of section .text.computeYMD.part.0:
+
+Disassembly of section .text.sqlite3OsSync.part.0:
+
+Disassembly of section .text.sqlite3_mutex_try:
+
+Disassembly of section .text.btreeLockCarefully:
+
+Disassembly of section .text.pcacheSortDirtyList:
+
+Disassembly of section .text.pcache1Init:
+
+Disassembly of section .text.pcache1Shutdown:
+
+Disassembly of section .text.rowSetEntrySort:
+
+Disassembly of section .text.sqlite3_free:
+
+Disassembly of section .text.sqlite3DbFreeNN:
+
+Disassembly of section .text.sqlite3DbNNFreeNN:
+
+Disassembly of section .text.sqlite3RCStrUnref:
+
+Disassembly of section .text.memdbClose:
+
+Disassembly of section .text.sqlite3VdbeValueListFree:
+
+Disassembly of section .text.vdbePmaWriterFinish:
+
+Disassembly of section .text.memjrnlClose:
+
+Disassembly of section .text.pragmaVtabDisconnect:
+
+Disassembly of section .text.sqlite3_free_table:
+
+Disassembly of section .text.porterClose:
+
+Disassembly of section .text.simpleClose:
+
+Disassembly of section .text.fts3tokDisconnectMethod:
+
+Disassembly of section .text.fts3tokNextMethod:
+
+Disassembly of section .text.fts3MIBufferFree:
+
+Disassembly of section .text.unicodeClose:
+
+Disassembly of section .text.rtreeFreeCallback:
+
+Disassembly of section .text.fts5ExprAddChildren:
+
+Disassembly of section .text.fts5ModuleDestroy:
+
+Disassembly of section .text.fts5PorterDelete:
+
+Disassembly of section .text.sqlite3_stricmp:
+
+Disassembly of section .text.isSelfJoinView:
+
+Disassembly of section .text.fts3ShadowName:
+
+Disassembly of section .text.rtreeShadowName:
+
+Disassembly of section .text.fts5ShadowName:
+
+Disassembly of section .text.sqlite3_strnicmp:
+
+Disassembly of section .text.nocaseCollatingFunc:
+
+Disassembly of section .text.fts5ConfigSkipLiteral:
+
+Disassembly of section .text.isValidSchemaTableName:
+
+Disassembly of section .text.sqlite3PutVarint:
+
+Disassembly of section .text.unixSectorSize:
+
+Disassembly of section .text.unixUnfetch:
+
+Disassembly of section .text.unixAccess:
+
+Disassembly of section .text.pcache1Free:
+
+Disassembly of section .text.sqlite3BtreeEnter.part.0:
+
+Disassembly of section .text.sqlite3BtreeLeave.part.0:
+
+Disassembly of section .text.sqlite3IsTrueOrFalse:
+
+Disassembly of section .text.sqlite3ExprIdToTrueFalse:
+
+Disassembly of section .text.sqlite3IsRowid:
+
+Disassembly of section .text.sqlite3MatchEName:
+
+Disassembly of section .text.exprRefToSrcList:
+
+Disassembly of section .text.sqlite3GetTempRange:
+
+Disassembly of section .text.exprIdxCover:
+
+Disassembly of section .text.sqlite3TableColumnToStorage.part.0:
+
+Disassembly of section .text.sqlite3SchemaToIndex.part.0:
+
+Disassembly of section .text.sqlite3_keyword_name:
+
+Disassembly of section .text.sqlite3_free_filename:
+
+Disassembly of section .text.sqlite3_filename_database:
+
+Disassembly of section .text.fts3BestIndexMethod:
+
+Disassembly of section .text.isConsonant:
+
+Disassembly of section .text.sqlite3Fts5ConfigFree:
+
+Disassembly of section .text.fts5AllocateSegid.part.0:
+
+Disassembly of section .text.sqlite3Fts5UnicodeFold.part.0:
+
+Disassembly of section .text.sqlite3Fts5UnicodeCategory.part.0:
+
+Disassembly of section .text.getSafetyLevel:
+
+Disassembly of section .text.sqlite3_uri_parameter:
+
+Disassembly of section .text.sqlite3_uri_boolean:
+
+Disassembly of section .text.sqlite3_filename_journal:
+
+Disassembly of section .text.sqlite3_filename_wal:
+
+Disassembly of section .text.dotlockUnlock:
+
+Disassembly of section .text.unixFileSize:
+
+Disassembly of section .text.dotlockLock:
+
+Disassembly of section .text.sqlite3DecOrHexToI64:
+
+Disassembly of section .text.sqlite3_uri_int64:
+
+Disassembly of section .text.pragmaVtabBestIndex:
+
+Disassembly of section .text.sqlite3SelectWalkNoop:
+
+Disassembly of section .text.fts5IterSetOutputs_Noop:
+
+Disassembly of section .text.keywordCode.constprop.0:
+
+Disassembly of section .text.sqlite3GetToken:
+
+Disassembly of section .text.sqlite3_keyword_check:
+
+Disassembly of section .text.identPut:
+
+Disassembly of section .text.walChecksumBytes.constprop.0:
+
+Disassembly of section .text.memjrnlSync:
+
+Disassembly of section .text.sqlite3MemShutdown:
+
+Disassembly of section .text.fts5CommitMethod:
+
+Disassembly of section .text.parseHhMmSs:
+
+Disassembly of section .text.findElementWithHash.constprop.0:
+
+Disassembly of section .text.sqlite3FindTable:
+
+Disassembly of section .text.sqlite3FindIndex:
+
+Disassembly of section .text.sqlite3IsShadowTableOf:
+
+Disassembly of section .text.cellUnion:
+
+Disassembly of section .text.fts3SegReaderDoclistCmpRev:
+
+Disassembly of section .text.fts3SegReaderDoclistCmp:
+
+Disassembly of section .text.resolveRemoveWindowsCb:
+
+Disassembly of section .text.sqlite3WindowExtraAggFuncDepth:
+
+Disassembly of section .text.renumberCursorsCb:
+
+Disassembly of section .text.checkConstraintExprNode:
+
+Disassembly of section .text.exprColumnFlagUnion:
+
+Disassembly of section .text.renameQuotefixExprCb:
+
+Disassembly of section .text.sqlite3_vtab_nochange:
+
+Disassembly of section .text.cellArea.isra.0:
+
+Disassembly of section .text.whereOrInsert.isra.0:
+
+Disassembly of section .text.sqlite3TriggerList.isra.0:
+
+Disassembly of section .text.memRealValue.isra.0:
+
+Disassembly of section .text.memIntValue.isra.0:
+
+Disassembly of section .text.sqlite3VdbeIntValue:
+
+Disassembly of section .text.indexCellCompare.isra.0:
+
+Disassembly of section .text.finalDbSize.isra.0:
+
+Disassembly of section .text.btreeParseCellAdjustSizeForOverflow.isra.0:
+
+Disassembly of section .text.btreeParseCellPtrIndex:
+
+Disassembly of section .text.btreeParseCellPtr:
+
+Disassembly of section .text.unixFileLock.isra.0:
+
+Disassembly of section .text.unixLock:
+
+Disassembly of section .text.nolockUnlock:
+
+Disassembly of section .text.memdbSync:
+
+Disassembly of section .text.fts3CommitMethod:
+
+Disassembly of section .text.noopMutexTry:
+
+Disassembly of section .text.noopValueFunc:
+
+Disassembly of section .text.noopMutexLeave:
+
+Disassembly of section .text.noopMutexFree:
+
+Disassembly of section .text.noopMutexEnter:
+
+Disassembly of section .text.noopMutexEnd:
+
+Disassembly of section .text.pthreadMutexInit:
+
+Disassembly of section .text.pthreadMutexEnd:
+
+Disassembly of section .text.porterDestroy:
+
+Disassembly of section .text.fts5VocabDisconnectMethod:
+
+Disassembly of section .text.fts5VocabDestroyMethod:
+
+Disassembly of section .text.simpleDestroy:
+
+Disassembly of section .text.statDisconnect:
+
+Disassembly of section .text.fts5TriDelete:
+
+Disassembly of section .text.fts5AsciiDelete:
+
+Disassembly of section .text.unicodeDestroy:
+
+Disassembly of section .text.unixDeviceCharacteristics:
+
+Disassembly of section .text.pagerFixMaplimit.part.0:
+
+Disassembly of section .text.fts5UnicodeDelete:
+
+Disassembly of section .text.dupedExprSize:
+
+Disassembly of section .text.fts5ExprNodeTest_OR:
+
+Disassembly of section .text.fts5ExprNodeNext_OR:
+
+Disassembly of section .text.fts5FindFunctionMethod:
+
+Disassembly of section .text.fts5FindTokenizer:
+
+Disassembly of section .text.vdbeSorterSort.part.0:
+
+Disassembly of section .text.sqlite3VdbeMemNumerify.isra.0:
+
+Disassembly of section .text.pcache1TruncateUnsafe:
+
+Disassembly of section .text.pcache1Truncate:
+
+Disassembly of section .text.computeJD.part.0:
+
+Disassembly of section .text.heightOfSelect:
+
+Disassembly of section .text.unixWrite:
+
+Disassembly of section .text.walIndexWriteHdr:
+
+Disassembly of section .text.walIndexTryHdr:
+
+Disassembly of section .text.sqlite3ColumnIndex:
+
+Disassembly of section .text.fts3tokCloseMethod:
+
+Disassembly of section .text.pcache1EnforceMaxPage:
+
+Disassembly of section .text.pcache1Cachesize:
+
+Disassembly of section .text.pcache1Shrink:
+
+Disassembly of section .text.pcache1Destroy:
+
+Disassembly of section .text.sqlite3Fts3HashFindElem:
+
+Disassembly of section .text.pcacheFetchFinishWithInit:
+
+Disassembly of section .text.invokeProfileCallback:
+
+Disassembly of section .text.sqlite3OomClear:
+
+Disassembly of section .text.memjrnlTruncate:
+
+Disassembly of section .text.sqlite3Fts3DoclistPrev:
+
+Disassembly of section .text.fts5PorterGobbleVC:
+
+Disassembly of section .text.sqlite3_bind_parameter_index:
+
+Disassembly of section .text.sqlite3StmtCurrentTime.isra.0:
+
+Disassembly of section .text.fts5ExprSetEof:
+
+Disassembly of section .text.sqlite3_value_double:
+
+Disassembly of section .text.fts5TriTokenize:
+
+Disassembly of section .text.sqlite3_errstr:
+
+Disassembly of section .text.sqlite3_release_memory:
+
+Disassembly of section .text.fts3RollbackMethod:
+
+Disassembly of section .text.sqlite3Fts5Dequote:
+
+Disassembly of section .text.sqlite3Malloc.part.0:
+
+Disassembly of section .text.sqlite3Malloc:
+
+Disassembly of section .text.fts3ExprCheckDepth:
+
+Disassembly of section .text.applyNumericAffinity:
+
+Disassembly of section .text.sqlite3_value_numeric_type:
+
+Disassembly of section .text.pcache1Unpin:
+
+Disassembly of section .text.exprNodeIsConstant:
+
+Disassembly of section .text.rowSetTreeToList:
+
+Disassembly of section .text.btreeLeaveAll:
+
+Disassembly of section .text.fts5ExprClearPoslists:
+
+Disassembly of section .text.sqlite3ReleaseTempRange.part.0:
+
+Disassembly of section .text.sqlite3PcacheMakeClean:
+
+Disassembly of section .text.AdjustTree:
+
+Disassembly of section .text.fts3EvalDlPhraseNext.constprop.0:
+
+Disassembly of section .text.sqlite3WalEndReadTransaction:
+
+Disassembly of section .text.recomputeColumnsUsedExpr:
+
+Disassembly of section .text.sqlite3PcacheTruncate:
+
+Disassembly of section .text.hashDestroy:
+
+Disassembly of section .text.updateRangeAffinityStr:
+
+Disassembly of section .text.fts3RollbackToMethod:
+
+Disassembly of section .text.removeElementGivenHash:
+
+Disassembly of section .text.walWriteToLog:
+
+Disassembly of section .text.btreeEnterAll:
+
+Disassembly of section .text.vdbeLeave:
+
+Disassembly of section .text.vdbeIncrFree:
+
+Disassembly of section .text.vdbeMergeEngineFree:
+
+Disassembly of section .text.sqlite3PcacheDrop:
+
+Disassembly of section .text.fts3ExprIterate2.constprop.0:
+
+Disassembly of section .text.setAllPagerFlags.part.0:
+
+Disassembly of section .text.fts3ExprIterate2.constprop.3:
+
+Disassembly of section .text.fts5ExprNodeZeroPoslist:
+
+Disassembly of section .text.fts5ExprNodeTest_AND:
+
+Disassembly of section .text.fts5ExprNodeNext_AND:
+
+Disassembly of section .text.fts5ExprNodeTest_NOT:
+
+Disassembly of section .text.fts5ExprNodeNext_NOT:
+
+Disassembly of section .text.sqlite3BtreeGetAutoVacuum:
+
+Disassembly of section .text.fts3NodeFree:
+
+Disassembly of section .text.sqlite3BtreeSetAutoVacuum:
+
+Disassembly of section .text.sqlite3BtreeSetCacheSize.isra.0:
+
+Disassembly of section .text.sqlite3PcacheMove:
+
+Disassembly of section .text.sqlite3BtreeSetSpillSize:
+
+Disassembly of section .text.sqlite3_value_int64:
+
+Disassembly of section .text.sqlite3_value_int:
+
+Disassembly of section .text.sameSrcAlias:
+
+Disassembly of section .text.jsonUnescapeOneChar:
+
+Disassembly of section .text.jsonLabelCompareEscaped:
+
+Disassembly of section .text.walRestartHdr:
+
+Disassembly of section .text.fts5PoslistOffsetsCallback:
+
+Disassembly of section .text.sqlite3BtreeSetPagerFlags.isra.0:
+
+Disassembly of section .text.jsonEachDisconnect:
+
+Disassembly of section .text.rowSetNDeepTree:
+
+Disassembly of section .text.filterHash.isra.0:
+
+Disassembly of section .text.sqlite3SrcListAssignCursors:
+
+Disassembly of section .text.sqlite3MallocZero:
+
+Disassembly of section .text.sqlite3PcacheRelease:
+
+Disassembly of section .text.sqlite3PagerUnrefNotNull:
+
+Disassembly of section .text.releasePage.part.0.isra.0:
+
+Disassembly of section .text.fts5MultiIterFree.part.0:
+
+Disassembly of section .text.fts3EvalUpdateCounts:
+
+Disassembly of section .text.unsetJoinExpr.constprop.0:
+
+Disassembly of section .text.sqlite3IdListDelete.part.0:
+
+Disassembly of section .text.sqlite3DbFree:
+
+Disassembly of section .text.btreeReleaseAllCursorPages.part.0:
+
+Disassembly of section .text.sqlite3BitvecDestroy:
+
+Disassembly of section .text.releaseAllSavepoints:
+
+Disassembly of section .text.pager_unlock:
+
+Disassembly of section .text.sqlite3RowSetDelete:
+
+Disassembly of section .text.fts3ExprIterate2.constprop.2:
+
+Disassembly of section .text.vdbeMergeEngineNew:
+
+Disassembly of section .text.computeYMD_HMS:
+
+Disassembly of section .text.fts3ExprIterate2:
+
+Disassembly of section .text.walEncodeFrame:
+
+Disassembly of section .text.pcache1ResizeHash:
+
+Disassembly of section .text.pcache1Create:
+
+Disassembly of section .text.columnTypeImpl:
+
+Disassembly of section .text.freeP4FuncCtx:
+
+Disassembly of section .text.vdbeSorterOpenTempFile:
+
+Disassembly of section .text.pcache1Alloc:
+
+Disassembly of section .text.sqlite3PagerSetPagesize:
+
+Disassembly of section .text.readJournalHdr:
+
+Disassembly of section .text.allocateTempSpace:
+
+Disassembly of section .text.resolveP2Values:
+
+Disassembly of section .text.agginfoFree:
+
+Disassembly of section .text.sqlite3_str_reset:
+
+Disassembly of section .text.sqlite3VdbeMemFinalize:
+
+Disassembly of section .text.vdbeMemClearExternAndSetNull:
+
+Disassembly of section .text.vdbeMemClear:
+
+Disassembly of section .text.sqlite3ValueFree:
+
+Disassembly of section .text.releaseMemArray.part.0:
+
+Disassembly of section .text.sqlite3_result_pointer:
+
+Disassembly of section .text.sqlite3_transfer_bindings:
+
+Disassembly of section .text.sqlite3_value_free:
+
+Disassembly of section .text.rtreeMatchArgFree:
+
+Disassembly of section .text.sqlite3ErrorFinish:
+
+Disassembly of section .text.apiHandleError:
+
+Disassembly of section .text.sqlite3_column_value:
+
+Disassembly of section .text.sqlite3_column_type:
+
+Disassembly of section .text.sqlite3_column_int64:
+
+Disassembly of section .text.fts5RowidMethod:
+
+Disassembly of section .text.sqlite3_column_int:
+
+Disassembly of section .text.sqlite3_column_double:
+
+Disassembly of section .text.vdbeReleaseAndSetInt64:
+
+Disassembly of section .text.sqlite3_result_int:
+
+Disassembly of section .text.subtypeFunc:
+
+Disassembly of section .text.signFunc:
+
+Disassembly of section .text.sqlite3_result_int64:
+
+Disassembly of section .text.vdbeClrCopy:
+
+Disassembly of section .text.sqlite3VdbeMemShallowCopy:
+
+Disassembly of section .text.sqlite3_result_double:
+
+Disassembly of section .text.sqlite3_result_null:
+
+Disassembly of section .text.out2PrereleaseWithClear:
+
+Disassembly of section .text.sqlite3ErrorFinish.constprop.0:
+
+Disassembly of section .text.termCanDriveIndex.isra.0:
+
+Disassembly of section .text.callFinaliser:
+
+Disassembly of section .text.pager_end_transaction:
+
+Disassembly of section .text.jsonParseReset:
+
+Disassembly of section .text.freeP4Mem:
+
+Disassembly of section .text.fts3PoslistMerge:
+
+Disassembly of section .text.sqlite3SetJoinExpr:
+
+Disassembly of section .text.jsonParseFree.part.0:
+
+Disassembly of section .text.fts5HashAddPoslistSize:
+
+Disassembly of section .text.fts5ExprCheckPoslists:
+
+Disassembly of section .text.fts5DlidxLvlNext:
+
+Disassembly of section .text.sqlite3ExprSimplifiedAndOr:
+
+Disassembly of section .text.sqlite3VtabUnlock:
+
+Disassembly of section .text.sqlite3VtabSavepoint:
+
+Disassembly of section .text.pagerOpenWal:
+
+Disassembly of section .text.sqlite3PagerOpenWal:
+
+Disassembly of section .text.sqlite3CollapseDatabaseArray:
+
+Disassembly of section .text.jsonEachCursorReset:
+
+Disassembly of section .text.fts3ExprLHitGather:
+
+Disassembly of section .text.jsonEachClose:
+
+Disassembly of section .text.fts5SegIterLoadNPos.part.0.isra.0:
+
+Disassembly of section .text.btreeParseCellPtrNoPayload:
+
+Disassembly of section .text.jsonCacheDeleteGeneric:
+
+Disassembly of section .text.sqlite3VdbeSorterReset:
+
+Disassembly of section .text.sqlite3VdbeRecordUnpack:
+
+Disassembly of section .text.sqlite3ExprIsInteger:
+
+Disassembly of section .text.whereLoopOutputAdjust:
+
+Disassembly of section .text.statAccumDestructor:
+
+Disassembly of section .text.sqlite3BitvecSet:
+
+Disassembly of section .text.pagerAddPageToRollbackJournal:
+
+Disassembly of section .text.sqlite3BtreeSetPageSize:
+
+Disassembly of section .text.subjournalPageIfRequired:
+
+Disassembly of section .text.whereLoopClear:
+
+Disassembly of section .text.setupLookaside:
+
+Disassembly of section .text.sqlite3Realloc:
+
+Disassembly of section .text.memdbWrite:
+
+Disassembly of section .text.walIndexPageRealloc:
+
+Disassembly of section .text.walCleanupHash:
+
+Disassembly of section .text.pagerOpenSavepoint:
+
+Disassembly of section .text.vdbePmaReadBlob:
+
+Disassembly of section .text.vdbePmaReadVarint.constprop.0:
+
+Disassembly of section .text.sqlite3GetVarint32:
+
+Disassembly of section .text.sqlite3ExprDataType:
+
+Disassembly of section .text.sqlite3WalkExprNN:
+
+Disassembly of section .text.sqlite3WalkExprList:
+
+Disassembly of section .text.sqlite3ExprIsSingleTableConstraint:
+
+Disassembly of section .text.sqlite3ExprImpliesNonNullRow:
+
+Disassembly of section .text.impliesNotNullRow:
+
+Disassembly of section .text.analyzeAggFuncArgs:
+
+Disassembly of section .text.walkWindowList:
+
+Disassembly of section .text.sqlite3WalkSelect:
+
+Disassembly of section .text.renameWalkTrigger:
+
+Disassembly of section .text.sqlite3SelectPrep:
+
+Disassembly of section .text.selectWindowRewriteSelectCb:
+
+Disassembly of section .text.whereIsCoveringIndex.isra.0:
+
+Disassembly of section .text.fts5ApiPhraseNext:
+
+Disassembly of section .text.sqlite3Fts5PoslistNext64:
+
+Disassembly of section .text.fts5ApiPhraseNextColumn:
+
+Disassembly of section .text.sqlite3Fts5GetVarint32:
+
+Disassembly of section .text.jsonbValidityCheck.part.0:
+
+Disassembly of section .text.vdbePmaReaderNext:
+
+Disassembly of section .text.vdbeMergeEngineStep:
+
+Disassembly of section .text.vdbeIncrPopulate:
+
+Disassembly of section .text.vdbeIncrPopulateThread:
+
+Disassembly of section .text.vdbePmaReaderIncrMergeInit:
+
+Disassembly of section .text.vdbeMergeEngineInit:
+
+Disassembly of section .text.vdbeMergeEngineLevel0:
+
+Disassembly of section .text.vdbePmaReaderBgIncrInit:
+
+Disassembly of section .text.sqlite3WhereExprUsageFull:
+
+Disassembly of section .text.whereOmitNoopJoin.constprop.0:
+
+Disassembly of section .text.exprSelectUsage:
+
+Disassembly of section .text.pcache1FetchStage2:
+
+Disassembly of section .text.pcache1Fetch:
+
+Disassembly of section .text.fts3PoslistPhraseMerge.constprop.0:
+
+Disassembly of section .text.fts3EvalNearTrim:
+
+Disassembly of section .text.sqlite3HashInsert:
+
+Disassembly of section .text.deleteTable:
+
+Disassembly of section .text.sqlite3DeleteTable:
+
+Disassembly of section .text.sqlite3DeleteTableGeneric:
+
+Disassembly of section .text.sqlite3SrcListDelete:
+
+Disassembly of section .text.clearSelect:
+
+Disassembly of section .text.sqlite3SelectDelete.part.0:
+
+Disassembly of section .text.sqlite3SelectDelete:
+
+Disassembly of section .text.sqlite3ExprDeleteNN:
+
+Disassembly of section .text.sqlite3ExprDelete:
+
+Disassembly of section .text.exprListDeleteNN:
+
+Disassembly of section .text.sqlite3ExprListDelete:
+
+Disassembly of section .text.sqlite3DeleteColumnNames:
+
+Disassembly of section .text.sqlite3ParseObjectReset:
+
+Disassembly of section .text.sqlite3DeleteReturning:
+
+Disassembly of section .text.sqlite3WithDelete.part.0:
+
+Disassembly of section .text.sqlite3WithDeleteGeneric:
+
+Disassembly of section .text.sqlite3WindowDelete:
+
+Disassembly of section .text.upsertDelete:
+
+Disassembly of section .text.sqlite3FreeIndex:
+
+Disassembly of section .text.whereIndexedExprCleanup:
+
+Disassembly of section .text.sqlite3WhereClauseClear:
+
+Disassembly of section .text.whereInfoFree:
+
+Disassembly of section .text.fkTriggerDelete:
+
+Disassembly of section .text.sqlite3DeleteTriggerStep:
+
+Disassembly of section .text.sqlite3DeleteTrigger.part.0:
+
+Disassembly of section .text.sqlite3SchemaClear:
+
+Disassembly of section .text.sqlite3ResetAllSchemasOfConnection:
+
+Disassembly of section .text.sqlite3ResetOneSchema:
+
+Disassembly of section .text.yy_destructor.isra.0:
+
+Disassembly of section .text.freeP4:
+
+Disassembly of section .text.sqlite3VdbeDelete:
+
+Disassembly of section .text.dbReallocFinish:
+
+Disassembly of section .text.sqlite3VdbeMemGrow:
+
+Disassembly of section .text.sqlite3VdbeMemExpandBlob:
+
+Disassembly of section .text.vdbeMemAddTerminator:
+
+Disassembly of section .text.createAggContext:
+
+Disassembly of section .text.sqlite3_aggregate_context:
+
+Disassembly of section .text.last_valueInvFunc:
+
+Disassembly of section .text.ntileInvFunc:
+
+Disassembly of section .text.ntileValueFunc:
+
+Disassembly of section .text.cume_distValueFunc:
+
+Disassembly of section .text.percent_rankInvFunc:
+
+Disassembly of section .text.percent_rankValueFunc:
+
+Disassembly of section .text.percent_rankStepFunc:
+
+Disassembly of section .text.rankValueFunc:
+
+Disassembly of section .text.rankStepFunc:
+
+Disassembly of section .text.dense_rankValueFunc:
+
+Disassembly of section .text.dense_rankStepFunc:
+
+Disassembly of section .text.row_numberValueFunc:
+
+Disassembly of section .text.row_numberStepFunc:
+
+Disassembly of section .text.jsonGroupInverse:
+
+Disassembly of section .text.countInverse:
+
+Disassembly of section .text.countFinalize:
+
+Disassembly of section .text.countStep:
+
+Disassembly of section .text.avgFinalize:
+
+Disassembly of section .text.totalFinalize:
+
+Disassembly of section .text.sumInverse:
+
+Disassembly of section .text.sumStep:
+
+Disassembly of section .text.cume_distInvFunc:
+
+Disassembly of section .text.cume_distStepFunc:
+
+Disassembly of section .text.computeNumericType:
+
+Disassembly of section .text.sqlite3VdbeMemMakeWriteable:
+
+Disassembly of section .text.sqlite3VdbeMemSetStr:
+
+Disassembly of section .text.sqlite3_result_error_toobig:
+
+Disassembly of section .text.sqlite3_result_error:
+
+Disassembly of section .text.ntileStepFunc:
+
+Disassembly of section .text.sumFinalize:
+
+Disassembly of section .text.absFunc:
+
+Disassembly of section .text.toLocaltime:
+
+Disassembly of section .text.sqlite3_result_error16:
+
+Disassembly of section .text.sqlite3VdbeMemCopy:
+
+Disassembly of section .text.valueToText:
+
+Disassembly of section .text.valueBytes:
+
+Disassembly of section .text.sqlite3_value_bytes16:
+
+Disassembly of section .text.sqlite3_column_bytes16:
+
+Disassembly of section .text.sqlite3_value_bytes:
+
+Disassembly of section .text.sqlite3_column_bytes:
+
+Disassembly of section .text.bytelengthFunc:
+
+Disassembly of section .text.sqlite3_value_text16le:
+
+Disassembly of section .text.sqlite3_value_text:
+
+Disassembly of section .text.sqlite3_value_blob:
+
+Disassembly of section .text.sqlite3_column_blob:
+
+Disassembly of section .text.jsonFuncArgMightBeBinary:
+
+Disassembly of section .text.sqlite3_column_text:
+
+Disassembly of section .text.groupConcatInverse:
+
+Disassembly of section .text.unicodeFunc:
+
+Disassembly of section .text.lengthFunc:
+
+Disassembly of section .text.sqlite3_str_vappendf:
+
+Disassembly of section .text.sqlite3_str_appendf:
+
+Disassembly of section .text.sqlite3ErrorMsg:
+
+Disassembly of section .text.sqlite3OomFault.part.0:
+
+Disassembly of section .text.sqlite3AuthCheck:
+
+Disassembly of section .text.sqlite3ResolveExprNames:
+
+Disassembly of section .text.sqlite3ResolveExprListNames:
+
+Disassembly of section .text.sqlite3ExprSetHeightAndFlags.part.0:
+
+Disassembly of section .text.sqlite3PExprAddSelect:
+
+Disassembly of section .text.fixSelectCb:
+
+Disassembly of section .text.fixExprCb:
+
+Disassembly of section .text.sqlite3JoinType:
+
+Disassembly of section .text.triggersReallyExist:
+
+Disassembly of section .text.parserDoubleLinkSelect.part.0:
+
+Disassembly of section .text.sqlite3CheckObjectName:
+
+Disassembly of section .text.isAlterableTable:
+
+Disassembly of section .text.disallowAggregatesInOrderByCb:
+
+Disassembly of section .text.sqlite3IsReadOnly:
+
+Disassembly of section .text.sqlite3ExprCheckIN:
+
+Disassembly of section .text.sqlite3ResolveSelfReference:
+
+Disassembly of section .text.sqlite3_result_error_nomem:
+
+Disassembly of section .text.rtreedepth:
+
+Disassembly of section .text.dbMallocRawFinish:
+
+Disassembly of section .text.sqlite3DbMallocRawNN:
+
+Disassembly of section .text.sqlite3HexToBlob:
+
+Disassembly of section .text.sqlite3VdbeMakeReady:
+
+Disassembly of section .text.sqlite3DbRealloc:
+
+Disassembly of section .text.sqlite3FkLocateIndex:
+
+Disassembly of section .text.sqlite3FkOldmask.part.0:
+
+Disassembly of section .text.whereClauseInsert:
+
+Disassembly of section .text.sqlite3WhereSplit:
+
+Disassembly of section .text.sampleCopy:
+
+Disassembly of section .text.sampleInsert:
+
+Disassembly of section .text.samplePushPrevious:
+
+Disassembly of section .text.statPush:
+
+Disassembly of section .text.exprINAffinity.isra.0:
+
+Disassembly of section .text.vdbeSorterListToPMA:
+
+Disassembly of section .text.vdbeSorterFlushThread:
+
+Disassembly of section .text.vdbeSorterFlushPMA:
+
+Disassembly of section .text.sqlite3NameFromToken:
+
+Disassembly of section .text.sqlite3DbSpanDup:
+
+Disassembly of section .text.sqlite3VdbeMemTranslate:
+
+Disassembly of section .text.sqlite3_result_value:
+
+Disassembly of section .text.first_valueFinalizeFunc:
+
+Disassembly of section .text.nth_valueFinalizeFunc:
+
+Disassembly of section .text.last_valueValueFunc:
+
+Disassembly of section .text.last_valueFinalizeFunc:
+
+Disassembly of section .text.minMaxFinalize:
+
+Disassembly of section .text.minMaxValue:
+
+Disassembly of section .text.sqlite3_result_text64:
+
+Disassembly of section .text.hexFunc:
+
+Disassembly of section .text.sqlite3VdbeMemStringify:
+
+Disassembly of section .text.applyAffinity:
+
+Disassembly of section .text.sqlite3VdbeMemCast:
+
+Disassembly of section .text.sqlite3_result_text16be:
+
+Disassembly of section .text.sqlite3_result_text16le:
+
+Disassembly of section .text.sqlite3_result_text16:
+
+Disassembly of section .text.sqlite3_result_text:
+
+Disassembly of section .text.pragmaVtabColumn:
+
+Disassembly of section .text.sourceidFunc:
+
+Disassembly of section .text.typeofFunc:
+
+Disassembly of section .text.compileoptiongetFunc:
+
+Disassembly of section .text.versionFunc:
+
+Disassembly of section .text.statColumn:
+
+Disassembly of section .text.fts5SourceIdFunc:
+
+Disassembly of section .text.fts5VocabColumnMethod:
+
+Disassembly of section .text.fts3auxColumnMethod:
+
+Disassembly of section .text.fts3tokColumnMethod:
+
+Disassembly of section .text.soundexFunc:
+
+Disassembly of section .text.groupConcatValue:
+
+Disassembly of section .text.lowerFunc:
+
+Disassembly of section .text.upperFunc:
+
+Disassembly of section .text.replaceFunc:
+
+Disassembly of section .text.trimFunc:
+
+Disassembly of section .text.sqlite3_result_error_code:
+
+Disassembly of section .text.groupConcatFinalize:
+
+Disassembly of section .text.jsonBlobExpandAndAppendNode:
+
+Disassembly of section .text.jsonBlobAppendNode:
+
+Disassembly of section .text.sqlite3ExprAddFunctionOrderBy:
+
+Disassembly of section .text.jsonBlobExpandAndAppendOneByte:
+
+Disassembly of section .text.sqlite3ExprListAppendGrow:
+
+Disassembly of section .text.sqlite3AllocateIndexObject:
+
+Disassembly of section .text.resizeResolveLabel:
+
+Disassembly of section .text.sqlite3VdbeResolveLabel:
+
+Disassembly of section .text.addModuleArgument:
+
+Disassembly of section .text.sqlite3ColumnSetColl:
+
+Disassembly of section .text.sqlite3TwoPartName:
+
+Disassembly of section .text.sqlite3VtabImportErrmsg:
+
+Disassembly of section .text.sqlite3SrcListIndexedBy:
+
+Disassembly of section .text.selectRefEnter:
+
+Disassembly of section .text.growOpArray.isra.0:
+
+Disassembly of section .text.sqlite3VdbeAddOpList.constprop.3:
+
+Disassembly of section .text.sqlite3VdbeAddOpList.constprop.1:
+
+Disassembly of section .text.growOp3:
+
+Disassembly of section .text.sqlite3VdbeAddOp3:
+
+Disassembly of section .text.sqlite3VdbeAddOp3.constprop.0:
+
+Disassembly of section .text.sqlite3CodeChangeCount:
+
+Disassembly of section .text.addOp4IntSlow:
+
+Disassembly of section .text.sqlite3VdbeAddOp4Int:
+
+Disassembly of section .text.integrityCheckResultRow:
+
+Disassembly of section .text.finalizeAggFunctions:
+
+Disassembly of section .text.sqlite3CompleteInsertion:
+
+Disassembly of section .text.growVTrans:
+
+Disassembly of section .text.jsonBlobMakeEditable:
+
+Disassembly of section .text.sqlite3SrcListEnlarge:
+
+Disassembly of section .text.sqlite3ExprAddCollateString:
+
+Disassembly of section .text.jsonBlobEdit:
+
+Disassembly of section .text.findOrCreateAggInfoColumn:
+
+Disassembly of section .text.sqlite3SrcListAppend:
+
+Disassembly of section .text.sqlite3StrAccumEnlarge:
+
+Disassembly of section .text.sqlite3_str_appendchar:
+
+Disassembly of section .text.enlargeAndAppend:
+
+Disassembly of section .text.sqlite3_str_append:
+
+Disassembly of section .text.sqlite3_str_appendall:
+
+Disassembly of section .text.explainAppendTerm:
+
+Disassembly of section .text.checkAppendMsg:
+
+Disassembly of section .text.jsonBlobChangePayloadSize:
+
+Disassembly of section .text.jsonTranslateTextToBlob:
+
+Disassembly of section .text.jsonConvertTextToBlob:
+
+Disassembly of section .text.jsonErrorFunc:
+
+Disassembly of section .text.sqlite3_set_auxdata:
+
+Disassembly of section .text.jsonCacheInsert.constprop.0:
+
+Disassembly of section .text.sqlite3VdbeTransferError:
+
+Disassembly of section .text.jsonAfterEditSizeAdjust:
+
+Disassembly of section .text.jsonMergePatch:
+
+Disassembly of section .text.jsonLookupStep:
+
+Disassembly of section .text.jsonEachPathLength:
+
+Disassembly of section .text.sqlite3WithAdd:
+
+Disassembly of section .text.sqlite3IdListAppend:
+
+Disassembly of section .text.sqlite3ExprListAppendNew:
+
+Disassembly of section .text.sqlite3ExprListAppend:
+
+Disassembly of section .text.sqlite3GetVdbe.part.0:
+
+Disassembly of section .text.sqlite3ForceNotReadOnly:
+
+Disassembly of section .text.windowAggFinal.isra.0:
+
+Disassembly of section .text.windowReadPeerValues.isra.0:
+
+Disassembly of section .text.sqlite3KeyInfoAlloc:
+
+Disassembly of section .text.sqlite3VdbeMemSetRowSet:
+
+Disassembly of section .text.jsonEachOpenEach:
+
+Disassembly of section .text.sqlite3DbStrNDup:
+
+Disassembly of section .text.jsonEachOpenTree:
+
+Disassembly of section .text.extendFJMatch:
+
+Disassembly of section .text.sqlite3VdbeSetNumCols:
+
+Disassembly of section .text.setPragmaResultColumnNames:
+
+Disassembly of section .text.sqlite3PExpr:
+
+Disassembly of section .text.sqlite3AddGenerated:
+
+Disassembly of section .text.sqlite3CreateColumnExpr:
+
+Disassembly of section .text.sqlite3Expr:
+
+Disassembly of section .text.sqlite3ExprAlloc:
+
+Disassembly of section .text.sqlite3SelectNew:
+
+Disassembly of section .text.whereAddLimitExpr:
+
+Disassembly of section .text.sqlite3WhereAddLimit:
+
+Disassembly of section .text.exprTableRegister:
+
+Disassembly of section .text.sqlite3ParserAddCleanup:
+
+Disassembly of section .text.sqlite3RenameTokenMap.part.0:
+
+Disassembly of section .text.sqlite3AddColumn:
+
+Disassembly of section .text.sqlite3SrcListAppendFromTerm:
+
+Disassembly of section .text.convertCompoundSelectToSubquery:
+
+Disassembly of section .text.parserAddExprIdListTerm:
+
+Disassembly of section .text.sqlite3DbMallocZero:
+
+Disassembly of section .text.sqlite3VtabOverloadFunction:
+
+Disassembly of section .text.resizeIndexObject:
+
+Disassembly of section .text.sqlite3FindFunction:
+
+Disassembly of section .text.sqlite3ExprListSetName.part.0:
+
+Disassembly of section .text.sqlite3AddCheckConstraint:
+
+Disassembly of section .text.triggerStepAllocate:
+
+Disassembly of section .text.tokenExpr:
+
+Disassembly of section .text.sqlite3ExprFunction:
+
+Disassembly of section .text.sqlite3VdbeAllocUnpackedRecord:
+
+Disassembly of section .text.vdbeSorterSetupMerge:
+
+Disassembly of section .text.vdbeChangeP4Full:
+
+Disassembly of section .text.sqlite3VdbeChangeP4:
+
+Disassembly of section .text.codeApplyAffinity.isra.0:
+
+Disassembly of section .text.sqlite3VdbeMultiLoad:
+
+Disassembly of section .text.pragmaFunclistLine:
+
+Disassembly of section .text.sqlite3VdbeLoadString:
+
+Disassembly of section .text.returnSingleText.part.0:
+
+Disassembly of section .text.codeReal.part.0:
+
+Disassembly of section .text.sqlite3VdbeAddParseSchemaOp:
+
+Disassembly of section .text.renameReloadSchema:
+
+Disassembly of section .text.returnSingleInt:
+
+Disassembly of section .text.sqlite3HaltConstraint:
+
+Disassembly of section .text.sqlite3VdbeAddFunctionCall.isra.0:
+
+Disassembly of section .text.callStatGet:
+
+Disassembly of section .text.windowCheckValue:
+
+Disassembly of section .text.sqlite3Savepoint:
+
+Disassembly of section .text.codeInteger:
+
+Disassembly of section .text.sqlite3TableAffinity:
+
+Disassembly of section .text.generateOutputSubroutine:
+
+Disassembly of section .text.sqlite3UpsertNew:
+
+Disassembly of section .text.sqlite3DbStrDup:
+
+Disassembly of section .text.whereLoopResize:
+
+Disassembly of section .text.whereLoopInsert:
+
+Disassembly of section .text.sqlite3ExprAnd:
+
+Disassembly of section .text.havingToWhereExprCb:
+
+Disassembly of section .text.sqlite3WindowDup:
+
+Disassembly of section .text.exprDup.constprop.0:
+
+Disassembly of section .text.sqlite3ExprListDup.constprop.0:
+
+Disassembly of section .text.sqlite3WindowChain:
+
+Disassembly of section .text.exprListAppendList:
+
+Disassembly of section .text.sqlite3UpsertDup:
+
+Disassembly of section .text.propagateConstantExprRewriteOne:
+
+Disassembly of section .text.sqlite3ExprListAppendVector:
+
+Disassembly of section .text.sqlite3ResolveOrderGroupBy:
+
+Disassembly of section .text.sqlite3SelectDup.constprop.0:
+
+Disassembly of section .text.sqlite3WithDup:
+
+Disassembly of section .text.sqlite3SelectDup:
+
+Disassembly of section .text.exprDup:
+
+Disassembly of section .text.sqlite3ExprListDup:
+
+Disassembly of section .text.sqlite3AddDefaultValue:
+
+Disassembly of section .text.sqlite3SrcListDup:
+
+Disassembly of section .text.sqlite3TriggerStepSrc:
+
+Disassembly of section .text.fkActionTrigger:
+
+Disassembly of section .text.renameWalkWith.isra.0:
+
+Disassembly of section .text.renameTableSelectCb:
+
+Disassembly of section .text.renameColumnSelectCb:
+
+Disassembly of section .text.renameUnmapSelectCb:
+
+Disassembly of section .text.propagateConstantExprRewrite:
+
+Disassembly of section .text.sqlite3ExprForVectorField:
+
+Disassembly of section .text.printfTempBuf:
+
+Disassembly of section .text.sqlite3WindowAlloc:
+
+Disassembly of section .text.strAccumFinishRealloc:
+
+Disassembly of section .text.sqlite3MPrintf:
+
+Disassembly of section .text.sqlite3GenerateColumnNames:
+
+Disassembly of section .text.sqlite3RowidConstraint:
+
+Disassembly of section .text.sqlite3_str_finish:
+
+Disassembly of section .text.sqlite3VdbeError:
+
+Disassembly of section .text.sqlite3_log:
+
+Disassembly of section .text.sqlite3CorruptError:
+
+Disassembly of section .text.verifyDbFile:
+
+Disassembly of section .text.walLimitSize:
+
+Disassembly of section .text.errlogFunc:
+
+Disassembly of section .text.robust_open:
+
+Disassembly of section .text.sqlite3MemRealloc:
+
+Disassembly of section .text.sqlite3MemMalloc:
+
+Disassembly of section .text.sqlite3_error_offset:
+
+Disassembly of section .text.closePendingFds:
+
+Disassembly of section .text.unixUnlock:
+
+Disassembly of section .text.unixShmPurge:
+
+Disassembly of section .text.unixShmUnmap:
+
+Disassembly of section .text.unixTruncate:
+
+Disassembly of section .text.nolockClose:
+
+Disassembly of section .text.unixRandomness:
+
+Disassembly of section .text.closeUnixFile:
+
+Disassembly of section .text.dotlockClose:
+
+Disassembly of section .text.unixClose:
+
+Disassembly of section .text.pthreadMutexFree:
+
+Disassembly of section .text.unixSync:
+
+Disassembly of section .text.sqlite3_vtab_on_conflict:
+
+Disassembly of section .text.sqlite3_stmt_status:
+
+Disassembly of section .text.sqlite3_set_last_insert_rowid:
+
+Disassembly of section .text.sqlite3_collation_needed:
+
+Disassembly of section .text.sqlite3_collation_needed16:
+
+Disassembly of section .text.sqlite3_extended_result_codes:
+
+Disassembly of section .text.sqlite3_interrupt:
+
+Disassembly of section .text.sqlite3_limit:
+
+Disassembly of section .text.sqlite3_busy_handler:
+
+Disassembly of section .text.sqlite3_is_interrupted:
+
+Disassembly of section .text.sqlite3_db_status:
+
+Disassembly of section .text.sqlite3_trace_v2:
+
+Disassembly of section .text.sqlite3_progress_handler:
+
+Disassembly of section .text.sqlite3_set_authorizer:
+
+Disassembly of section .text.btreeCellSizeCheck.constprop.0:
+
+Disassembly of section .text.sqlite3_autovacuum_pages:
+
+Disassembly of section .text.sqlite3_vsnprintf:
+
+Disassembly of section .text.sqlite3_backup_remaining:
+
+Disassembly of section .text.sqlite3_backup_pagecount:
+
+Disassembly of section .text.sqlite3_snprintf:
+
+Disassembly of section .text.memdbFullPathname:
+
+Disassembly of section .text.renameEditSql:
+
+Disassembly of section .text.openDirectory:
+
+Disassembly of section .text.unixDlError:
+
+Disassembly of section .text.sqlite3_db_release_memory:
+
+Disassembly of section .text.sqlite3_get_autocommit:
+
+Disassembly of section .text.sqlite3_last_insert_rowid:
+
+Disassembly of section .text.last_insert_rowid:
+
+Disassembly of section .text.sqlite3_changes64:
+
+Disassembly of section .text.changes:
+
+Disassembly of section .text.sqlite3_changes:
+
+Disassembly of section .text.sqlite3_total_changes64:
+
+Disassembly of section .text.total_changes:
+
+Disassembly of section .text.sqlite3_total_changes:
+
+Disassembly of section .text.sqlite3_busy_timeout:
+
+Disassembly of section .text.sqlite3_clear_bindings:
+
+Disassembly of section .text.unixDelete:
+
+Disassembly of section .text.vdbeUnbind.part.0:
+
+Disassembly of section .text.sqlite3_bind_pointer:
+
+Disassembly of section .text.sqlite3_bind_int64:
+
+Disassembly of section .text.sqlite3_bind_int:
+
+Disassembly of section .text.sqlite3_bind_double:
+
+Disassembly of section .text.sqlite3_bind_blob64:
+
+Disassembly of section .text.sqlite3_bind_text:
+
+Disassembly of section .text.sqlite3_bind_text16:
+
+Disassembly of section .text.sqlite3_bind_text64:
+
+Disassembly of section .text.walFindFrame.constprop.0:
+
+Disassembly of section .text.readDbPage:
+
+Disassembly of section .text.pagerUndoCallback:
+
+Disassembly of section .text.sqlite3_status64:
+
+Disassembly of section .text.sqlite3_memory_used:
+
+Disassembly of section .text.sqlite3_memory_highwater:
+
+Disassembly of section .text.sqlite3_status:
+
+Disassembly of section .text.sqlite3_db_config:
+
+Disassembly of section .text.unixMapfile:
+
+Disassembly of section .text.unixFetch:
+
+Disassembly of section .text.unixLockSharedMemory:
+
+Disassembly of section .text.sqlite3_compileoption_used:
+
+Disassembly of section .text.compileoptionusedFunc:
+
+Disassembly of section .text.sqlite3_update_hook:
+
+Disassembly of section .text.sqlite3_wal_hook:
+
+Disassembly of section .text.sqlite3_wal_autocheckpoint:
+
+Disassembly of section .text.sqlite3_commit_hook:
+
+Disassembly of section .text.sqlite3_rollback_hook:
+
+Disassembly of section .text.sqlite3_result_zeroblob64:
+
+Disassembly of section .text.sqlite3_result_zeroblob:
+
+Disassembly of section .text.zeroblobFunc:
+
+Disassembly of section .text.sqlite3_next_stmt:
+
+Disassembly of section .text.sqlite3_trace:
+
+Disassembly of section .text.walIndexAppend:
+
+Disassembly of section .text.btreeGetUnusedPage:
+
+Disassembly of section .text.sqlite3_bind_blob:
+
+Disassembly of section .text.sqlite3_profile:
+
+Disassembly of section .text.sqlite3_db_filename:
+
+Disassembly of section .text.sqlite3_file_control:
+
+Disassembly of section .text.sqlite3_bind_null:
+
+Disassembly of section .text.sqlite3_db_mutex:
+
+Disassembly of section .text.sqlite3_extended_errcode:
+
+Disassembly of section .text.sqlite3_bind_zeroblob:
+
+Disassembly of section .text.sqlite3_bind_value:
+
+Disassembly of section .text.sqlite3_bind_zeroblob64:
+
+Disassembly of section .text.sqlite3_errcode:
+
+Disassembly of section .text.sqlite3_db_name:
+
+Disassembly of section .text.ptrmapGet:
+
+Disassembly of section .text.getOverflowPage:
+
+Disassembly of section .text.sqlite3_vtab_config:
+
+Disassembly of section .text.btreeInitPage:
+
+Disassembly of section .text.getAndInitPage:
+
+Disassembly of section .text.moveToLeftmost:
+
+Disassembly of section .text.moveToChild:
+
+Disassembly of section .text.zeroPage:
+
+Disassembly of section .text.checkPtrmap:
+
+Disassembly of section .text.checkList:
+
+Disassembly of section .text.sqlite3_errmsg:
+
+Disassembly of section .text.moveToRoot:
+
+Disassembly of section .text.btreeLast:
+
+Disassembly of section .text.sqlite3BtreeFirst:
+
+Disassembly of section .text.sqlite3_complete:
+
+Disassembly of section .text.corruptSchema:
+
+Disassembly of section .text.sqlite3BtreeCursor:
+
+Disassembly of section .text.pageFindSlot:
+
+Disassembly of section .text.pageInsertArray:
+
+Disassembly of section .text.pthreadMutexAlloc:
+
+Disassembly of section .text.btreeComputeFreeSpace:
+
+Disassembly of section .text.checkTreePage:
+
+Disassembly of section .text.appendOnePathElement:
+
+Disassembly of section .text.unixFullPathname:
+
+Disassembly of section .text.pageReinit:
+
+Disassembly of section .text.sqlite3_db_readonly:
+
+Disassembly of section .text.freeSpace:
+
+Disassembly of section .text.pageFreeArray:
+
+Disassembly of section .text.dropCell.part.0:
+
+Disassembly of section .text.sqlite3_txn_state:
+
+Disassembly of section .text.defragmentPage:
+
+Disassembly of section .text.sqlite3UniqueConstraint:
+
+Disassembly of section .text.sqlite3WhereExplainBloomFilter.isra.0:
+
+Disassembly of section .text.quoteFunc:
+
+Disassembly of section .text.printfFunc:
+
+Disassembly of section .text.sqlite3VdbeExpandSql:
+
+Disassembly of section .text.sqlite3_expanded_sql:
+
+Disassembly of section .text.sqlite3BtreeIntegrityCheck:
+
+Disassembly of section .text.sqlite3WhereExplainOneScan.isra.0:
+
+Disassembly of section .text.autoIncBegin:
+
+Disassembly of section .text.sqlite3VMPrintf:
+
+Disassembly of section .text.sqlite3ErrorWithMsg:
+
+Disassembly of section .text.sqlite3CreateFunc:
+
+Disassembly of section .text.sqlite3_create_function16:
+
+Disassembly of section .text.sqlite3VdbeExplain:
+
+Disassembly of section .text.sqlite3VtabMakeWritable:
+
+Disassembly of section .text.sqlite3SchemaGet:
+
+Disassembly of section .text.lockTable:
+
+Disassembly of section .text.sqlite3TableLock:
+
+Disassembly of section .text.sqlite3FindCollSeq.part.0:
+
+Disassembly of section .text.sqlite3GetCollSeq:
+
+Disassembly of section .text.sqlite3ExprCollSeq:
+
+Disassembly of section .text.sqlite3SubqueryColumnTypes:
+
+Disassembly of section .text.selectAddSubqueryTypeInfo:
+
+Disassembly of section .text.substExpr:
+
+Disassembly of section .text.substSelect.part.0:
+
+Disassembly of section .text.flattenSubquery:
+
+Disassembly of section .text.sqlite3KeyInfoFromExprList:
+
+Disassembly of section .text.codeDistinct:
+
+Disassembly of section .text.windowCodeRangeTest:
+
+Disassembly of section .text.pushDownWhereTerms.isra.0:
+
+Disassembly of section .text.multiSelectCollSeq:
+
+Disassembly of section .text.multiSelectOrderByKeyInfo.constprop.0:
+
+Disassembly of section .text.sqlite3ExprCompareCollSeq:
+
+Disassembly of section .text.codeCompare.part.0.isra.0:
+
+Disassembly of section .text.sqlite3_vtab_collation:
+
+Disassembly of section .text.constInsert:
+
+Disassembly of section .text.findConstInWhere:
+
+Disassembly of section .text.createCollation:
+
+Disassembly of section .text.sqlite3_create_collation_v2:
+
+Disassembly of section .text.sqlite3_create_collation:
+
+Disassembly of section .text.sqlite3_create_collation16:
+
+Disassembly of section .text.sqlite3SetTextEncoding:
+
+Disassembly of section .text.sqlite3KeyInfoOfIndex:
+
+Disassembly of section .text.valueNew:
+
+Disassembly of section .text.computeIndexAffStr:
+
+Disassembly of section .text.whereAddIndexedExpr:
+
+Disassembly of section .text.sqlite3_column_decltype:
+
+Disassembly of section .text.sqlite3_column_origin_name:
+
+Disassembly of section .text.sqlite3_column_database_name:
+
+Disassembly of section .text.sqlite3_column_table_name:
+
+Disassembly of section .text.sqlite3_column_name:
+
+Disassembly of section .text.sqlite3_value_text16:
+
+Disassembly of section .text.sqlite3_column_text16:
+
+Disassembly of section .text.sqlite3_column_name16:
+
+Disassembly of section .text.sqlite3_errmsg16:
+
+Disassembly of section .text.sqlite3_column_decltype16:
+
+Disassembly of section .text.sqlite3_column_database_name16:
+
+Disassembly of section .text.sqlite3_column_table_name16:
+
+Disassembly of section .text.sqlite3_column_origin_name16:
+
+Disassembly of section .text.sqlite3_value_text16be:
+
+Disassembly of section .text.vdbeCompareMemString:
+
+Disassembly of section .text.sqlite3MemCompare:
+
+Disassembly of section .text.minmaxStep:
+
+Disassembly of section .text.sqlite3VdbeRecordCompareWithSkip:
+
+Disassembly of section .text.sqlite3VdbeRecordCompare:
+
+Disassembly of section .text.vdbeSorterCompare:
+
+Disassembly of section .text.vdbeRecordCompareInt:
+
+Disassembly of section .text.vdbeRecordCompareString:
+
+Disassembly of section .text.whereKeyStats.isra.0:
+
+Disassembly of section .text.vdbeSorterCompareText:
+
+Disassembly of section .text.vdbeSorterCompareInt:
+
+Disassembly of section .text.minmaxFunc:
+
+Disassembly of section .text.nullifFunc:
+
+Disassembly of section .text.sqlite3_result_blob:
+
+Disassembly of section .text.statGet:
+
+Disassembly of section .text.statInit:
+
+Disassembly of section .text.unhexFunc:
+
+Disassembly of section .text.agginfoPersistExprCb:
+
+Disassembly of section .text.sqlite3RowSetTest:
+
+Disassembly of section .text.sqlite3VdbeSetP4KeyInfo:
+
+Disassembly of section .text.sqlite3LocateCollSeq:
+
+Disassembly of section .text.generateSortTail:
+
+Disassembly of section .text.sqlite3_create_function_v2:
+
+Disassembly of section .text.sqlite3_create_window_function:
+
+Disassembly of section .text.sqlite3VdbeChangeToNoop.isra.0:
+
+Disassembly of section .text.sqlite3AddReturning:
+
+Disassembly of section .text.patternCompare:
+
+Disassembly of section .text.likeFunc:
+
+Disassembly of section .text.sqlite3_strglob:
+
+Disassembly of section .text.analysisLoader:
+
+Disassembly of section .text.sqlite3_strlike:
+
+Disassembly of section .text.sqlite3_create_function:
+
+Disassembly of section .text.stem.constprop.0:
+
+Disassembly of section .text.fixDistinctOpenEph.part.0.isra.0:
+
+Disassembly of section .text.sqlite3_result_blob64:
+
+Disassembly of section .text.substrFunc:
+
+Disassembly of section .text.sqlite3VtabCreateModule:
+
+Disassembly of section .text.sqlite3_create_module_v2:
+
+Disassembly of section .text.sqlite3RtreeInit:
+
+Disassembly of section .text.sqlite3_drop_modules:
+
+Disassembly of section .text.sqlite3_create_module:
+
+Disassembly of section .text.sqlite3JsonTableFunctions:
+
+Disassembly of section .text.sqlite3DbstatRegister:
+
+Disassembly of section .text.fts5PorterCb:
+
+Disassembly of section .text.sqlite3VdbeAppendP4:
+
+Disassembly of section .text.valueFromExpr:
+
+Disassembly of section .text.stat4ValueFromExpr.constprop.0:
+
+Disassembly of section .text.whereEqualScanEst:
+
+Disassembly of section .text.sqlite3Stat4ProbeSetValue:
+
+Disassembly of section .text.sqlite3ExprCompare.part.0:
+
+Disassembly of section .text.exprImpliesNotNull:
+
+Disassembly of section .text.sqlite3ExprImpliesExpr:
+
+Disassembly of section .text.whereUsablePartialIndex:
+
+Disassembly of section .text.sqlite3ExprCompare.part.0.constprop.0:
+
+Disassembly of section .text.sqlite3ExprListCompare:
+
+Disassembly of section .text.sqlite3WindowCompare:
+
+Disassembly of section .text.gatherSelectWindowsCallback:
+
+Disassembly of section .text.whereScanNext:
+
+Disassembly of section .text.whereScanInitIndexExpr.constprop.0:
+
+Disassembly of section .text.whereScanInit:
+
+Disassembly of section .text.xferCompatibleIndex:
+
+Disassembly of section .text.resolveOrderByTermToExprList:
+
+Disassembly of section .text.resolveOrderGroupBy:
+
+Disassembly of section .text.resolveSelectStep:
+
+Disassembly of section .text.exprNodeIsConstantOrGroupBy:
+
+Disassembly of section .text.analyzeAggregate:
+
+Disassembly of section .text.whereIsCoveringIndexWalkCallback:
+
+Disassembly of section .text.selectWindowRewriteExprCb:
+
+Disassembly of section .text.exprMightBeIndexed2:
+
+Disassembly of section .text.wherePathSatisfiesOrderBy:
+
+Disassembly of section .text.wherePathSolver.isra.0:
+
+Disassembly of section .text.whereApplyPartialIndexConstraints:
+
+Disassembly of section .text.sqlite3_vtab_rhs_value:
+
+Disassembly of section .text.hasVowel:
+
+Disassembly of section .text.windowIfNewPeer:
+
+Disassembly of section .text.m_gt_1:
+
+Disassembly of section .text.m_eq_1:
+
+Disassembly of section .text.star_oh:
+
+Disassembly of section .text.wherePartIdxExpr:
+
+Disassembly of section .text.sqlite3OpenTable:
+
+Disassembly of section .text.autoIncrementEnd:
+
+Disassembly of section .text.sqlite3OpenTableAndIndices:
+
+Disassembly of section .text.whereLoopAddBtreeIndex:
+
+Disassembly of section .text.whereLoopAddBtree:
+
+Disassembly of section .text.resetAccumulator:
+
+Disassembly of section .text.sqlite3CreateForeignKey:
+
+Disassembly of section .text.fkLookupParent:
+
+Disassembly of section .text.vtabCallConstructor:
+
+Disassembly of section .text.m_gt_0:
+
+Disassembly of section .text.sqlite3_memory_alarm:
+
+Disassembly of section .text.sqlite3_os_end:
+
+Disassembly of section .text.sqlite3_enable_load_extension:
+
+Disassembly of section .text.sqlite3_config:
+
+Disassembly of section .text.sqlite3_initialize:
+
+Disassembly of section .text.sqlite3_vfs_find:
+
+Disassembly of section .text.sqlite3_sleep:
+
+Disassembly of section .text.sqlite3_vfs_register:
+
+Disassembly of section .text.sqlite3_os_init:
+
+Disassembly of section .text.sqlite3_vfs_unregister:
+
+Disassembly of section .text.sqlite3_mutex_alloc:
+
+Disassembly of section .text.memdbOpen:
+
+Disassembly of section .text.sqlite3_soft_heap_limit64:
+
+Disassembly of section .text.sqlite3_soft_heap_limit:
+
+Disassembly of section .text.sqlite3_hard_heap_limit64:
+
+Disassembly of section .text.sqlite3_malloc:
+
+Disassembly of section .text.memjrnlWrite:
+
+Disassembly of section .text.sqlite3_value_dup:
+
+Disassembly of section .text.first_valueStepFunc:
+
+Disassembly of section .text.nth_valueStepFunc:
+
+Disassembly of section .text.last_valueStepFunc:
+
+Disassembly of section .text.instrFunc:
+
+Disassembly of section .text.pragmaVtabOpen:
+
+Disassembly of section .text.statGetPage:
+
+Disassembly of section .text.rtreeBestIndex:
+
+Disassembly of section .text.sqlite3Fts5Init:
+
+Disassembly of section .text.fts5TriCreate:
+
+Disassembly of section .text.fts5PorterCreate:
+
+Disassembly of section .text.fts5AsciiCreate:
+
+Disassembly of section .text.fts3OpenMethod:
+
+Disassembly of section .text.unicodeOpen:
+
+Disassembly of section .text.fts3auxOpenMethod:
+
+Disassembly of section .text.simpleOpen:
+
+Disassembly of section .text.simpleCreate:
+
+Disassembly of section .text.porterOpen:
+
+Disassembly of section .text.porterCreate:
+
+Disassembly of section .text.fts3tokOpenMethod:
+
+Disassembly of section .text.sqlite3_malloc64:
+
+Disassembly of section .text.sqlite3_str_new:
+
+Disassembly of section .text.rtreenode:
+
+Disassembly of section .text.walIndexReadHdr:
+
+Disassembly of section .text.walTryBeginRead:
+
+Disassembly of section .text.jsonParseFuncArg:
+
+Disassembly of section .text.jsonValidFunc:
+
+Disassembly of section .text.concatFuncCore:
+
+Disassembly of section .text.concatwsFunc:
+
+Disassembly of section .text.concatFunc:
+
+Disassembly of section .text.charFunc:
+
+Disassembly of section .text.statOpen:
+
+Disassembly of section .text.rtreeOpen:
+
+Disassembly of section .text.fts5CreateTokenizer:
+
+Disassembly of section .text.fts5Bm25Function:
+
+0000000000000000 <fts5Bm25Function>:
+   0:	sub	sp, sp, #0xb0
+   4:	stp	x29, x30, [sp, #64]
+   8:	add	x29, sp, #0x40
+   c:	stp	x19, x20, [sp, #80]
+  10:	mov	x20, x0
+  14:	mov	x19, x1
+  18:	adrp	x0, 0 <__stack_chk_guard>
+  1c:	ldr	x0, [x0]
+  20:	stp	x21, x22, [sp, #96]
+  24:	ldr	x5, [x20, #120]
+  28:	stp	x23, x24, [sp, #112]
+  2c:	stp	x25, x26, [sp, #128]
+  30:	mov	w26, w3
+  34:	stp	x27, x28, [sp, #144]
+  38:	mov	x27, x4
+  3c:	ldr	x1, [x0]
+  40:	str	x1, [sp, #56]
+  44:	mov	x1, #0x0                   	// #0
+  48:	str	wzr, [sp, #28]
+  4c:	mov	x0, x19
+  50:	str	x2, [sp]
+  54:	blr	x5
+  58:	mov	x23, x0
+  5c:	cbz	x0, 240 <fts5Bm25Function+0x240>
+  60:	ldr	x21, [x23, #24]
+  64:	mov	w1, #0x0                   	// #0
+  68:	ldrsw	x2, [x23]
+  6c:	add	x22, sp, #0x30
+  70:	mov	x0, x21
+  74:	lsl	x2, x2, #3
+  78:	bl	0 <memset>
+  7c:	ldr	x2, [x20, #64]
+  80:	add	x1, sp, #0x1c
+  84:	mov	x0, x19
+  88:	blr	x2
+  8c:	mov	w28, w0
+  90:	cbnz	w0, 3e0 <fts5Bm25Function+0x3e0>
+  94:	ldr	w0, [sp, #28]
+  98:	add	x25, sp, #0x28
+  9c:	add	x24, sp, #0x20
+  a0:	cmp	w0, w28
+  a4:	b.le	144 <fts5Bm25Function+0x144>
+  a8:	ldr	x5, [x20, #72]
+  ac:	mov	x2, x24
+  b0:	mov	x4, x22
+  b4:	mov	x3, x25
+  b8:	mov	w1, w28
+  bc:	mov	x0, x19
+  c0:	blr	x5
+  c4:	mov	w2, w0
+  c8:	cbz	w0, 114 <fts5Bm25Function+0x114>
+  cc:	ldr	x0, [sp]
+  d0:	mov	w1, w2
+  d4:	bl	0 <fts5Bm25Function>
+  d8:	adrp	x0, 0 <__stack_chk_guard>
+  dc:	ldr	x0, [x0]
+  e0:	ldr	x2, [sp, #56]
+  e4:	ldr	x1, [x0]
+  e8:	subs	x2, x2, x1
+  ec:	mov	x1, #0x0                   	// #0
+  f0:	b.ne	3e8 <fts5Bm25Function+0x3e8>  // b.any
+  f4:	ldp	x29, x30, [sp, #64]
+  f8:	ldp	x19, x20, [sp, #80]
+  fc:	ldp	x21, x22, [sp, #96]
+ 100:	ldp	x23, x24, [sp, #112]
+ 104:	ldp	x25, x26, [sp, #128]
+ 108:	ldp	x27, x28, [sp, #144]
+ 10c:	add	sp, sp, #0xb0
+ 110:	ret
+ 114:	ldr	w0, [sp, #40]
+ 118:	fmov	d0, #1.000000000000000000e+00
+ 11c:	cmp	w0, w26
+ 120:	b.lt	234 <fts5Bm25Function+0x234>  // b.tstop
+ 124:	ldrsw	x0, [sp, #32]
+ 128:	add	w28, w28, #0x1
+ 12c:	ldr	d1, [x21, x0, lsl #3]
+ 130:	fadd	d0, d1, d0
+ 134:	str	d0, [x21, x0, lsl #3]
+ 138:	ldr	w0, [sp, #28]
+ 13c:	cmp	w0, w28
+ 140:	b.gt	a8 <fts5Bm25Function+0xa8>
+ 144:	ldr	x3, [x20, #96]
+ 148:	mov	x2, x22
+ 14c:	mov	w1, #0xffffffff            	// #-1
+ 150:	mov	x0, x19
+ 154:	blr	x3
+ 158:	mov	w2, w0
+ 15c:	ldr	w1, [sp, #48]
+ 160:	cbnz	w0, cc <fts5Bm25Function+0xcc>
+ 164:	ldr	w3, [x23]
+ 168:	cmp	w3, #0x0
+ 16c:	b.le	3cc <fts5Bm25Function+0x3cc>
+ 170:	scvtf	d2, w1
+ 174:	fmov	d4, #7.500000000000000000e-01
+ 178:	ldr	d3, [x23, #8]
+ 17c:	fmov	d1, #2.500000000000000000e-01
+ 180:	mov	x0, #0x3333333333333333    	// #3689348814741910323
+ 184:	movk	x0, #0x3ff3, lsl #48
+ 188:	fmov	d0, x0
+ 18c:	fmul	d2, d2, d4
+ 190:	ldr	x1, [x23, #16]
+ 194:	fdiv	d2, d2, d3
+ 198:	fadd	d2, d2, d1
+ 19c:	fmul	d2, d2, d0
+ 1a0:	cmp	w3, #0x1
+ 1a4:	b.eq	3d8 <fts5Bm25Function+0x3d8>  // b.none
+ 1a8:	adrp	x4, 0 <fts5Bm25Function>
+ 1ac:	lsr	w2, w3, #1
+ 1b0:	movi	d0, #0x0
+ 1b4:	mov	x0, #0x0                   	// #0
+ 1b8:	dup	v6.2d, v2.d[0]
+ 1bc:	lsl	x2, x2, #4
+ 1c0:	ldr	q5, [x4]
+ 1c4:	nop
+ 1c8:	ldr	q3, [x21, x0]
+ 1cc:	ldr	q4, [x1, x0]
+ 1d0:	add	x0, x0, #0x10
+ 1d4:	fmul	v1.2d, v3.2d, v5.2d
+ 1d8:	fadd	v3.2d, v6.2d, v3.2d
+ 1dc:	fdiv	v1.2d, v1.2d, v3.2d
+ 1e0:	fmul	v1.2d, v1.2d, v4.2d
+ 1e4:	mov	d3, v1.d[1]
+ 1e8:	fadd	d0, d0, d1
+ 1ec:	fadd	d0, d3, d0
+ 1f0:	cmp	x0, x2
+ 1f4:	b.ne	1c8 <fts5Bm25Function+0x1c8>  // b.any
+ 1f8:	and	w2, w3, #0xfffffffe
+ 1fc:	tbz	w3, #0, 224 <fts5Bm25Function+0x224>
+ 200:	sxtw	x0, w2
+ 204:	adrp	x2, 0 <fts5Bm25Function>
+ 208:	ldr	d4, [x2]
+ 20c:	ldr	d1, [x21, x0, lsl #3]
+ 210:	ldr	d3, [x1, x0, lsl #3]
+ 214:	fadd	d2, d2, d1
+ 218:	fmul	d1, d1, d4
+ 21c:	fdiv	d1, d1, d2
+ 220:	fmadd	d0, d1, d3, d0
+ 224:	fneg	d0, d0
+ 228:	ldr	x0, [sp]
+ 22c:	bl	0 <fts5Bm25Function>
+ 230:	b	d8 <fts5Bm25Function+0xd8>
+ 234:	ldr	x0, [x27, w0, sxtw #3]
+ 238:	bl	0 <fts5Bm25Function>
+ 23c:	b	124 <fts5Bm25Function+0x124>
+ 240:	ldr	x1, [x20, #48]
+ 244:	stp	xzr, xzr, [sp, #32]
+ 248:	mov	x0, x19
+ 24c:	blr	x1
+ 250:	lsl	w22, w0, #1
+ 254:	mov	w21, w0
+ 258:	sxtw	x22, w22
+ 25c:	add	x22, x22, #0x4
+ 260:	lsl	x22, x22, #3
+ 264:	mov	x0, x22
+ 268:	bl	0 <fts5Bm25Function>
+ 26c:	mov	x23, x0
+ 270:	cbz	x0, 344 <fts5Bm25Function+0x344>
+ 274:	mov	x2, x22
+ 278:	mov	w1, #0x0                   	// #0
+ 27c:	bl	0 <memset>
+ 280:	sxtw	x25, w21
+ 284:	mov	x2, x23
+ 288:	add	x1, sp, #0x20
+ 28c:	ldr	x3, [x20, #24]
+ 290:	mov	x0, x19
+ 294:	str	w21, [x2], #32
+ 298:	add	x4, x2, w21, sxtw #3
+ 29c:	stp	x2, x4, [x23, #16]
+ 2a0:	blr	x3
+ 2a4:	mov	w2, w0
+ 2a8:	cbnz	w0, 330 <fts5Bm25Function+0x330>
+ 2ac:	ldr	x3, [x20, #32]
+ 2b0:	add	x2, sp, #0x28
+ 2b4:	mov	x0, x19
+ 2b8:	mov	w1, #0xffffffff            	// #-1
+ 2bc:	blr	x3
+ 2c0:	mov	w2, w0
+ 2c4:	cbnz	w0, 330 <fts5Bm25Function+0x330>
+ 2c8:	ldp	d1, d0, [sp, #32]
+ 2cc:	scvtf	d1, d1
+ 2d0:	scvtf	d0, d0
+ 2d4:	fdiv	d0, d0, d1
+ 2d8:	str	d0, [x23, #8]
+ 2dc:	cmp	w21, #0x0
+ 2e0:	b.le	390 <fts5Bm25Function+0x390>
+ 2e4:	adrp	x0, 0 <fts5Bm25Function>
+ 2e8:	adrp	x24, 0 <fts5Bm25Function>
+ 2ec:	add	x22, sp, #0x30
+ 2f0:	add	x24, x24, #0x0
+ 2f4:	stp	d8, d9, [sp, #160]
+ 2f8:	mov	x21, #0x0                   	// #0
+ 2fc:	ldr	d9, [x0]
+ 300:	fmov	d8, #5.000000000000000000e-01
+ 304:	nop
+ 308:	ldr	x4, [x20, #104]
+ 30c:	str	xzr, [sp, #48]
+ 310:	mov	x2, x22
+ 314:	mov	x3, x24
+ 318:	mov	w1, w21
+ 31c:	mov	x0, x19
+ 320:	blr	x4
+ 324:	mov	w2, w0
+ 328:	cbz	w0, 34c <fts5Bm25Function+0x34c>
+ 32c:	ldp	d8, d9, [sp, #160]
+ 330:	mov	x0, x23
+ 334:	str	w2, [sp, #12]
+ 338:	bl	0 <fts5Bm25Function>
+ 33c:	ldr	w2, [sp, #12]
+ 340:	b	cc <fts5Bm25Function+0xcc>
+ 344:	mov	w2, #0x7                   	// #7
+ 348:	b	330 <fts5Bm25Function+0x330>
+ 34c:	ldr	d0, [sp, #32]
+ 350:	ldr	d1, [sp, #48]
+ 354:	sub	d0, d0, d1
+ 358:	scvtf	d1, d1
+ 35c:	scvtf	d0, d0
+ 360:	fadd	d1, d1, d8
+ 364:	fadd	d0, d0, d8
+ 368:	fdiv	d0, d0, d1
+ 36c:	bl	0 <log>
+ 370:	fcmpe	d0, #0.0
+ 374:	ldr	x0, [x23, #16]
+ 378:	b.ls	3b4 <fts5Bm25Function+0x3b4>  // b.plast
+ 37c:	str	d0, [x0, x21, lsl #3]
+ 380:	add	x21, x21, #0x1
+ 384:	cmp	x25, x21
+ 388:	b.ne	308 <fts5Bm25Function+0x308>  // b.any
+ 38c:	ldp	d8, d9, [sp, #160]
+ 390:	mov	x1, x23
+ 394:	ldr	x3, [x20, #112]
+ 398:	mov	x0, x19
+ 39c:	adrp	x2, 0 <fts5Bm25Function>
+ 3a0:	ldr	x2, [x2]
+ 3a4:	blr	x3
+ 3a8:	mov	w2, w0
+ 3ac:	cbz	w0, 60 <fts5Bm25Function+0x60>
+ 3b0:	b	cc <fts5Bm25Function+0xcc>
+ 3b4:	str	d9, [x0, x21, lsl #3]
+ 3b8:	add	x21, x21, #0x1
+ 3bc:	cmp	x25, x21
+ 3c0:	b.ne	308 <fts5Bm25Function+0x308>  // b.any
+ 3c4:	ldp	d8, d9, [sp, #160]
+ 3c8:	b	390 <fts5Bm25Function+0x390>
+ 3cc:	mov	x0, #0x8000000000000000    	// #-9223372036854775808
+ 3d0:	fmov	d0, x0
+ 3d4:	b	228 <fts5Bm25Function+0x228>
+ 3d8:	movi	d0, #0x0
+ 3dc:	b	200 <fts5Bm25Function+0x200>
+ 3e0:	mov	w2, w0
+ 3e4:	b	cc <fts5Bm25Function+0xcc>
+ 3e8:	stp	d8, d9, [sp, #160]
+ 3ec:	bl	0 <__stack_chk_fail>
+
+Disassembly of section .text.fts5AsciiTokenize:
+
+Disassembly of section .text.fts5UnicodeTokenize:
+
+Disassembly of section .text.fts5HashEntrySort:
+
+Disassembly of section .text.sqlite3Fts5MallocZero:
+
+Disassembly of section .text.sqlite3Fts5HashNew:
+
+Disassembly of section .text.fts5ConfigGobbleWord:
+
+Disassembly of section .text.sqlite3Fts3SegReaderNew:
+
+Disassembly of section .text.fts3DoclistOrMerge:
+
+Disassembly of section .text.fts3EvalPhraseMergeToken:
+
+Disassembly of section .text.fts3AllocateMSI:
+
+Disassembly of section .text.fts3EvalTestExpr:
+
+Disassembly of section .text.fts3tokFilterMethod:
+
+Disassembly of section .text.sqlite3_set_clientdata:
+
+Disassembly of section .text.sqlite3_create_filename:
+
+Disassembly of section .text.geomCallback:
+
+Disassembly of section .text.fts3Rehash:
+
+Disassembly of section .text.fts5ApiSetAuxdata:
+
+Disassembly of section .text.sqlite3Fts3HashInsert:
+
+Disassembly of section .text.fts5IndexOptimizeStruct:
+
+Disassembly of section .text.sqlite3Fts5TermsetAdd:
+
+Disassembly of section .text.fts5StorageIntegrityCallback:
+
+Disassembly of section .text.sqlite3Fts5ConfigParseRank:
+
+Disassembly of section .text.sqlite3Fts5ConfigSetValue:
+
+Disassembly of section .text.fts5ParseSetColset:
+
+Disassembly of section .text.sqlite3_realloc:
+
+Disassembly of section .text.unixShmMap:
+
+Disassembly of section .text.sqlite3_realloc64:
+
+Disassembly of section .text.jsonStringGrow:
+
+Disassembly of section .text.jsonAppendString:
+
+Disassembly of section .text.jsonPrintf:
+
+Disassembly of section .text.jsonAppendPathName:
+
+Disassembly of section .text.jsonEachNext:
+
+Disassembly of section .text.groupConcatStep:
+
+Disassembly of section .text.fts5UnicodeAddExceptions:
+
+Disassembly of section .text.fts5UnicodeCreate:
+
+Disassembly of section .text.fts5SegIterReverseInitPage:
+
+Disassembly of section .text.fts5StructureAddLevel:
+
+Disassembly of section .text.fts5ParseTokenize:
+
+Disassembly of section .text.sqlite3Fts5HashWrite:
+
+Disassembly of section .text.fts5StorageInsertCallback:
+
+Disassembly of section .text.fts3PendingListAppendVarint:
+
+Disassembly of section .text.fts3PendingTermsAdd:
+
+Disassembly of section .text.fts3StringAppend:
+
+Disassembly of section .text.unicodeNext:
+
+Disassembly of section .text.unicodeAddExceptions:
+
+Disassembly of section .text.unicodeCreate:
+
+Disassembly of section .text.simpleNext:
+
+Disassembly of section .text.porterNext:
+
+Disassembly of section .text.fts3NodeAddTerm.constprop.0:
+
+Disassembly of section .text.fts5SentenceFinderCb:
+
+Disassembly of section .text.fts5StructurePromote.part.0:
+
+Disassembly of section .text.fts3AppendToNode:
+
+Disassembly of section .text.nodeReaderNext:
+
+Disassembly of section .text.fts5ExprSynonymList:
+
+Disassembly of section .text.fts5AppendRowid:
+
+Disassembly of section .text.sqlite3Fts5BufferAppendVarint:
+
+Disassembly of section .text.sqlite3Fts5PoslistWriterAppend:
+
+Disassembly of section .text.fts5ExprPopulatePoslistsCb:
+
+Disassembly of section .text.sqlite3Fts5BufferAppendBlob:
+
+Disassembly of section .text.fts5MergeRowidLists:
+
+Disassembly of section .text.fts5AppendPoslist:
+
+Disassembly of section .text.jsonAppendCharExpand:
+
+Disassembly of section .text.jsonReturnStringAsBlob:
+
+Disassembly of section .text.jsonReturnString:
+
+Disassembly of section .text.jsonObjectFinal:
+
+Disassembly of section .text.jsonArrayFinal:
+
+Disassembly of section .text.jsonArrayValue:
+
+Disassembly of section .text.jsonObjectValue:
+
+Disassembly of section .text.jsonStringExpandAndAppend:
+
+Disassembly of section .text.jsonTranslateBlobToText:
+
+Disassembly of section .text.jsonReturnParse:
+
+Disassembly of section .text.jsonPatchFunc:
+
+Disassembly of section .text.jsonReturnFromBlob:
+
+Disassembly of section .text.jsonEachColumn:
+
+Disassembly of section .text.jsonAppendSqlValue:
+
+Disassembly of section .text.jsonObjectStep:
+
+Disassembly of section .text.jsonArrayStep:
+
+Disassembly of section .text.jsonQuoteFunc:
+
+Disassembly of section .text.jsonObjectFunc:
+
+Disassembly of section .text.jsonArrayFunc:
+
+Disassembly of section .text.fts3TruncateNode:
+
+Disassembly of section .text.fts5MergePrefixLists:
+
+Disassembly of section .text.fts5VocabInstanceNewTerm:
+
+Disassembly of section .text.fts5IterSetOutputsTokendata:
+
+Disassembly of section .text.sqlite3_vmprintf:
+
+Disassembly of section .text.sqlite3Fts5Mprintf:
+
+Disassembly of section .text.fts5SetVtabError:
+
+Disassembly of section .text.sqlite3Fts5ParseError:
+
+Disassembly of section .text.sqlite3Fts5ParseSetColset:
+
+Disassembly of section .text.sqlite3Fts5ParseColset.isra.0:
+
+Disassembly of section .text.sqlite3Fts5BufferAppendPrintf:
+
+Disassembly of section .text.sqlite3Fts3ErrMsg:
+
+Disassembly of section .text.sqlite3Fts5Mprintf.constprop.0:
+
+Disassembly of section .text.sqlite3_mprintf:
+
+Disassembly of section .text.memdbFileControl:
+
+Disassembly of section .text.sqlite3AuthReadCol:
+
+Disassembly of section .text.resolveExprStep:
+
+Disassembly of section .text.sqlite3_load_extension:
+
+Disassembly of section .text.loadExt:
+
+Disassembly of section .text.sqlite3_get_table_cb:
+
+Disassembly of section .text.roundFunc:
+
+Disassembly of section .text.sqlite3_overload_function:
+
+Disassembly of section .text.fts5CreateAux:
+
+Disassembly of section .text.sqlite3Fts3Init:
+
+Disassembly of section .text.sqlite3InvalidFunction:
+
+Disassembly of section .text.jsonEachFilter:
+
+Disassembly of section .text.rtreeCheckAppendMsg:
+
+Disassembly of section .text.fts5ApiCallback:
+
+Disassembly of section .text.fts5BestIndexMethod:
+
+Disassembly of section .text.sqlite3Fts5GetTokenizer:
+
+Disassembly of section .text.sqlite3Fts3InitTokenizer:
+
+Disassembly of section .text.fts3Appendf:
+
+Disassembly of section .text.fts3TokenizerFunc:
+
+Disassembly of section .text.sqlite3ParseUri.constprop.0:
+
+Disassembly of section .text.jsonTypeFunc:
+
+Disassembly of section .text.cdateFunc:
+
+Disassembly of section .text.ctimeFunc:
+
+Disassembly of section .text.ctimestampFunc:
+
+Disassembly of section .text.jsonInsertIntoBlob:
+
+Disassembly of section .text.jsonReplaceFunc:
+
+Disassembly of section .text.jsonSetFunc:
+
+Disassembly of section .text.fts5HighlightFunction:
+
+Disassembly of section .text.jsonRemoveFunc:
+
+Disassembly of section .text.fts5SnippetFunction:
+
+Disassembly of section .text.jsonArrayLengthFunc:
+
+Disassembly of section .text.parseDateOrTime:
+
+Disassembly of section .text.jsonExtractFunc:
+
+Disassembly of section .text.fts5HighlightCb:
+
+Disassembly of section .text.parseModifier.isra.0:
+
+Disassembly of section .text.isDate.constprop.0:
+
+Disassembly of section .text.timediffFunc:
+
+Disassembly of section .text.isDate:
+
+Disassembly of section .text.strftimeFunc:
+
+Disassembly of section .text.datetimeFunc:
+
+Disassembly of section .text.timeFunc:
+
+Disassembly of section .text.dateFunc:
+
+Disassembly of section .text.unixepochFunc:
+
+Disassembly of section .text.juliandayFunc:
+
+Disassembly of section .text.sqlite3_randomness:
+
+Disassembly of section .text.unixGetTempname:
+
+Disassembly of section .text.unixFileControl:
+
+Disassembly of section .text.unixOpen:
+
+Disassembly of section .text.walCheckpoint:
+
+Disassembly of section .text.sqlite3WalCheckpoint:
+
+Disassembly of section .text.sqlite3WalClose:
+
+Disassembly of section .text.randomBlob:
+
+Disassembly of section .text.randomFunc:
+
+Disassembly of section .text.sqlite3_test_control:
+
+Disassembly of section .text.writeJournalHdr.constprop.0:
+
+Disassembly of section .text.pager_write:
+
+Disassembly of section .text.pagerWriteLargeSector:
+
+Disassembly of section .text.sqlite3PagerWrite:
+
+Disassembly of section .text.backupOnePage:
+
+Disassembly of section .text.backupUpdate:
+
+Disassembly of section .text.pagerWalFrames:
+
+Disassembly of section .text.pager_write_pagelist:
+
+Disassembly of section .text.pagerStress:
+
+Disassembly of section .text.sqlite3_db_cacheflush:
+
+Disassembly of section .text.pagerPlaybackSavepoint:
+
+Disassembly of section .text.pager_playback:
+
+Disassembly of section .text.sqlite3PagerRollback:
+
+Disassembly of section .text.pagerUnlockAndRollback:
+
+Disassembly of section .text.getPageNormal:
+
+Disassembly of section .text.getPageMMap:
+
+Disassembly of section .text.sqlite3PagerClose.isra.0:
+
+Disassembly of section .text.sqlite3BtreeOpen:
+
+Disassembly of section .text.sqlite3OpenTempDatabase:
+
+Disassembly of section .text.findBtree:
+
+Disassembly of section .text.sqlite3_backup_init:
+
+Disassembly of section .text.sqlite3CodeVerifySchema:
+
+Disassembly of section .text.sqlite3BeginWriteOperation:
+
+Disassembly of section .text.sqlite3BeginWriteOperation.constprop.0:
+
+Disassembly of section .text.sqlite3CodeVerifyNamedSchema:
+
+Disassembly of section .text.whereLoopAddVirtualOne:
+
+Disassembly of section .text.whereLoopAddVirtual:
+
+Disassembly of section .text.whereLoopAddOr:
+
+Disassembly of section .text.whereLoopAddAll:
+
+Disassembly of section .text.btreeEndTransaction:
+
+Disassembly of section .text.sqlite3BtreeCommitPhaseTwo:
+
+Disassembly of section .text.sqlite3PagerSharedLock:
+
+Disassembly of section .text.sqlite3PagerSetJournalMode:
+
+Disassembly of section .text.sqlite3BtreeUpdateMeta:
+
+Disassembly of section .text.newDatabase:
+
+Disassembly of section .text.ptrmapPut:
+
+Disassembly of section .text.ptrmapPutOvflPtr:
+
+Disassembly of section .text.setChildPtrmaps:
+
+Disassembly of section .text.copyNodeContent.part.0:
+
+Disassembly of section .text.btreeOverwriteContent:
+
+Disassembly of section .text.btreeOverwriteOverflowCell:
+
+Disassembly of section .text.btreeOverwriteCell:
+
+Disassembly of section .text.insertCell:
+
+Disassembly of section .text.accessPayload:
+
+Disassembly of section .text.saveCursorKey:
+
+Disassembly of section .text.sqlite3BtreeTripAllCursors:
+
+Disassembly of section .text.saveCursorsOnList:
+
+Disassembly of section .text.sqlite3BtreeRollback.isra.0:
+
+Disassembly of section .text.sqlite3RollbackAll:
+
+Disassembly of section .text.sqlite3BtreeClose.isra.0:
+
+Disassembly of section .text.detachFunc:
+
+Disassembly of section .text.invalidateTempStorage:
+
+Disassembly of section .text.sqlite3LeaveMutexAndCloseZombie.part.0:
+
+Disassembly of section .text.sqlite3Close:
+
+Disassembly of section .text.sqlite3_close:
+
+Disassembly of section .text.sqlite3_close_v2:
+
+Disassembly of section .text.sqlite3_backup_finish:
+
+Disassembly of section .text.freeCursorWithCache:
+
+Disassembly of section .text.sqlite3VdbeFreeCursorNN:
+
+Disassembly of section .text.allocateCursor:
+
+Disassembly of section .text.sqlite3VdbeFrameRestore:
+
+Disassembly of section .text.sqlite3BtreeSavepoint.part.0:
+
+Disassembly of section .text.vdbeCloseStatement:
+
+Disassembly of section .text.sqlite3BtreeIndexMoveto:
+
+Disassembly of section .text.btreeRestoreCursorPosition:
+
+Disassembly of section .text.sqlite3VdbeHandleMovedCursor:
+
+Disassembly of section .text.btreePrevious.constprop.0:
+
+Disassembly of section .text.btreeNext.constprop.0:
+
+Disassembly of section .text.sqlite3BtreeNext.isra.0:
+
+Disassembly of section .text.sqlite3BtreeTableMoveto:
+
+Disassembly of section .text.sqlite3VdbeFinishMoveto:
+
+Disassembly of section .text.accessPayloadChecked:
+
+Disassembly of section .text.sqlite3VdbeMemFromBtreeZeroOffset:
+
+Disassembly of section .text.sqlite3_vtab_in_first:
+
+Disassembly of section .text.sqlite3_vtab_in_next:
+
+Disassembly of section .text.vdbeColumnFromOverflow:
+
+Disassembly of section .text.relocatePage:
+
+Disassembly of section .text.btreeBeginTrans:
+
+Disassembly of section .text.sqlite3BtreeSetVersion:
+
+Disassembly of section .text.freePage2:
+
+Disassembly of section .text.freePage.part.0:
+
+Disassembly of section .text.clearCellOverflow.isra.0:
+
+Disassembly of section .text.clearDatabasePage:
+
+Disassembly of section .text.sqlite3BtreeClearTable:
+
+Disassembly of section .text.allocateBtreePage:
+
+Disassembly of section .text.incrVacuumStep:
+
+Disassembly of section .text.balance_nonroot:
+
+Disassembly of section .text.balance:
+
+Disassembly of section .text.sqlite3BtreeDelete:
+
+Disassembly of section .text.sqlite3BtreeCreateTable:
+
+Disassembly of section .text.sqlite3BtreeInsert:
+
+Disassembly of section .text.sqlite3PagerCommitPhaseOne.part.0:
+
+Disassembly of section .text.sqlite3BtreeCommitPhaseOne.part.0:
+
+Disassembly of section .text.sqlite3VdbeHalt:
+
+Disassembly of section .text.renameParseCleanup:
+
+Disassembly of section .text.sqlite3_reset:
+
+Disassembly of section .text.statResetCsr:
+
+Disassembly of section .text.sqlite3_finalize:
+
+Disassembly of section .text.sqlite3_blob_close:
+
+Disassembly of section .text.rtreeEndTransaction:
+
+Disassembly of section .text.rtreeSavepoint:
+
+Disassembly of section .text.fts5RollbackMethod:
+
+Disassembly of section .text.fts5RollbackToMethod:
+
+Disassembly of section .text.sqlite3Fts3ExprFree:
+
+Disassembly of section .text.fts3ExprParse:
+
+Disassembly of section .text.fts3ExprBalance:
+
+Disassembly of section .text.fts3ExprBalance.constprop.5:
+
+Disassembly of section .text.fts3ExprBalance.constprop.4:
+
+Disassembly of section .text.fts3ExprBalance.constprop.3:
+
+Disassembly of section .text.fts3ExprBalance.constprop.2:
+
+Disassembly of section .text.fts3ExprBalance.constprop.1:
+
+Disassembly of section .text.fts5ExprPhraseFree.part.0:
+
+Disassembly of section .text.sqlite3Fts5ParseTerm:
+
+Disassembly of section .text.sqlite3Fts5ParseNearset:
+
+Disassembly of section .text.sqlite3Fts5ParseNodeFree.part.0:
+
+Disassembly of section .text.sqlite3Fts5ParseNode:
+
+Disassembly of section .text.sqlite3Fts5ExprNew:
+
+Disassembly of section .text.sqlite3Fts5ExprAnd:
+
+Disassembly of section .text.fts3auxCloseMethod:
+
+Disassembly of section .text.rtreeRelease.part.0:
+
+Disassembly of section .text.rtreeDisconnect:
+
+Disassembly of section .text.fts5VocabCloseMethod:
+
+Disassembly of section .text.sqlite3Fts5IndexClose.part.0:
+
+Disassembly of section .text.fts3DisconnectMethod:
+
+Disassembly of section .text.fts3auxDisconnectMethod:
+
+Disassembly of section .text.statClose:
+
+Disassembly of section .text.fts5FreeCursorComponents:
+
+Disassembly of section .text.fts5CloseMethod:
+
+Disassembly of section .text.fts3ClearCursor:
+
+Disassembly of section .text.fts3EofMethod:
+
+Disassembly of section .text.fts3CloseMethod:
+
+Disassembly of section .text.pragmaVtabClose:
+
+Disassembly of section .text.fts5DisconnectMethod:
+
+Disassembly of section .text.sqlite3_blob_write:
+
+Disassembly of section .text.sqlite3_blob_read:
+
+Disassembly of section .text.fts3SegReaderRequire:
+
+Disassembly of section .text.fts3SegReaderNextDocid:
+
+Disassembly of section .text.fts3SegReaderNextDocid.constprop.0:
+
+Disassembly of section .text.sqlite3Fts3MsrIncrNext.constprop.0:
+
+Disassembly of section .text.fts3EvalNextRow.part.0:
+
+Disassembly of section .text.sqlite3_backup_step:
+
+Disassembly of section .text.sqlite3ColumnsFromExprList.isra.0:
+
+Disassembly of section .text.sqlite3ResultSetOfSelect:
+
+Disassembly of section .text.sqlite3Select:
+
+Disassembly of section .text.sqlite3CodeSubselect:
+
+Disassembly of section .text.sqlite3CodeRhsOfIN:
+
+Disassembly of section .text.sqlite3FindInIndex.constprop.0:
+
+Disassembly of section .text.sqlite3ExprCodeIN:
+
+Disassembly of section .text.sqlite3ExprIfTrue:
+
+Disassembly of section .text.sqlite3ExprIfFalse:
+
+Disassembly of section .text.sqlite3ExprCodeTarget:
+
+Disassembly of section .text.sqlite3ExprCode.part.0:
+
+Disassembly of section .text.sqlite3FinishCoding:
+
+Disassembly of section .text.sqlite3IndexedExprLookup:
+
+Disassembly of section .text.sqlite3ExprCodeRunJustOnce:
+
+Disassembly of section .text.computeLimitRegisters:
+
+Disassembly of section .text.codeExprOrVector:
+
+Disassembly of section .text.sqlite3Vacuum:
+
+Disassembly of section .text.sqlite3ExprCodeFactorable:
+
+Disassembly of section .text.codeReturningTrigger:
+
+Disassembly of section .text.sqlite3ExprCodeGeneratedColumn:
+
+Disassembly of section .text.sqlite3ExprCodeGetColumnOfTable.part.0:
+
+Disassembly of section .text.sqlite3ExprCodeGetColumnOfTable:
+
+Disassembly of section .text.analyzeOneTable:
+
+Disassembly of section .text.sqlite3ComputeGeneratedColumns:
+
+Disassembly of section .text.sqlite3ExprCodeTemp:
+
+Disassembly of section .text.exprCodeVector:
+
+Disassembly of section .text.codeEqualityTerm:
+
+Disassembly of section .text.codeAllEqualityTerms:
+
+Disassembly of section .text.filterPullDown:
+
+Disassembly of section .text.exprAnalyze:
+
+Disassembly of section .text.sqlite3ExprCodeExprList.isra.0:
+
+Disassembly of section .text.windowAggStep.isra.0:
+
+Disassembly of section .text.windowReturnOneRow:
+
+Disassembly of section .text.windowCodeOp:
+
+Disassembly of section .text.pushOntoSorter:
+
+Disassembly of section .text.selectInnerLoop:
+
+Disassembly of section .text.sqlite3ConstructBloomFilter:
+
+Disassembly of section .text.updateAccumulator:
+
+Disassembly of section .text.sqlite3GenerateIndexKey:
+
+Disassembly of section .text.sqlite3RefillIndex:
+
+Disassembly of section .text.constructAutomaticIndex:
+
+Disassembly of section .text.sqlite3WhereBegin:
+
+Disassembly of section .text.sqlite3WhereRightJoinLoop:
+
+Disassembly of section .text.sqlite3WhereEnd:
+
+Disassembly of section .text.sqlite3WhereCodeOneLoopStart:
+
+Disassembly of section .text.sqlite3WindowCodeStep:
+
+Disassembly of section .text.fkScanChildren:
+
+Disassembly of section .text.sqlite3GenerateRowIndexDelete.isra.0:
+
+Disassembly of section .text.multiSelect:
+
+Disassembly of section .text.sqlite3MaterializeView.constprop.0:
+
+Disassembly of section .text.updateFromSelect.isra.0:
+
+Disassembly of section .text.viewGetColumnNames:
+
+Disassembly of section .text.renameResolveTrigger:
+
+Disassembly of section .text.sqlite3EndTable:
+
+Disassembly of section .text.yy_reduce.isra.0:
+
+Disassembly of section .text.sqlite3RunParser:
+
+Disassembly of section .text.sqlite3Prepare:
+
+Disassembly of section .text.sqlite3LockAndPrepare.part.0:
+
+Disassembly of section .text.sqlite3Prepare16:
+
+Disassembly of section .text.sqlite3_prepare16:
+
+Disassembly of section .text.sqlite3_prepare16_v2:
+
+Disassembly of section .text.sqlite3_prepare16_v3:
+
+Disassembly of section .text.sqlite3_prepare:
+
+Disassembly of section .text.sqlite3_prepare_v2:
+
+Disassembly of section .text.rtreeCheckPrepare:
+
+Disassembly of section .text.rtreeConstraintError:
+
+Disassembly of section .text.sqlite3_prepare_v3:
+
+Disassembly of section .text.fts5StorageGetStmt:
+
+Disassembly of section .text.fts3SqlStmt:
+
+Disassembly of section .text.fts5PrepareStatement.constprop.0:
+
+Disassembly of section .text.fts3SqlStmt.constprop.0:
+
+Disassembly of section .text.fts5WriteInit:
+
+Disassembly of section .text.sqlite3Reprepare:
+
+Disassembly of section .text.sqlite3_stmt_explain:
+
+Disassembly of section .text.sqlite3InitCallback:
+
+Disassembly of section .text.sqlite3InitOne:
+
+Disassembly of section .text.sqlite3VdbeExec:
+
+Disassembly of section .text.sqlite3_step:
+
+Disassembly of section .text.pragmaVtabNext:
+
+Disassembly of section .text.sqlite3_exec:
+
+Disassembly of section .text.sqlite3Checkpoint:
+
+Disassembly of section .text.sqlite3_wal_checkpoint_v2:
+
+Disassembly of section .text.sqlite3_wal_checkpoint:
+
+Disassembly of section .text.sqlite3WalDefaultHook:
+
+Disassembly of section .text.sqlite3_get_table:
+
+Disassembly of section .text.rtreeRename:
+
+Disassembly of section .text.rtreeDestroy:
+
+Disassembly of section .text.fts5IntegrityMethod:
+
+Disassembly of section .text.fts5ExecPrintf:
+
+Disassembly of section .text.fts5DestroyMethod:
+
+Disassembly of section .text.fts3Integrity:
+
+Disassembly of section .text.fts3SavepointMethod:
+
+Disassembly of section .text.fts3DbExec:
+
+Disassembly of section .text.fts3DestroyMethod:
+
+Disassembly of section .text.sqlite3_serialize:
+
+Disassembly of section .text.sqlite3_deserialize:
+
+Disassembly of section .text.execSql:
+
+Disassembly of section .text.execSqlF:
+
+Disassembly of section .text.sqlite3RunVacuum:
+
+Disassembly of section .text.statNext:
+
+Disassembly of section .text.statFilter:
+
+Disassembly of section .text.rtreeCheckMapping:
+
+Disassembly of section .text.nodeWrite:
+
+Disassembly of section .text.nodeRelease.part.0:
+
+Disassembly of section .text.updateMapping:
+
+Disassembly of section .text.rtreeSearchPointSwap:
+
+Disassembly of section .text.rtreeSearchPointPop:
+
+Disassembly of section .text.resetCursor:
+
+Disassembly of section .text.rtreeClose:
+
+Disassembly of section .text.rtreeEnqueue:
+
+Disassembly of section .text.rtreeSearchPointNew:
+
+Disassembly of section .text.rowidWrite:
+
+Disassembly of section .text.parentWrite:
+
+Disassembly of section .text.fts5SecureDeleteIdxEntry:
+
+Disassembly of section .text.fts5DataWrite:
+
+Disassembly of section .text.fts5WriteDlidxAppend:
+
+Disassembly of section .text.fts5WriteFlushLeaf:
+
+Disassembly of section .text.fts5StructureWrite.part.0:
+
+Disassembly of section .text.fts5StorageSaveTotals:
+
+Disassembly of section .text.sqlite3Fts5IndexReinit:
+
+Disassembly of section .text.fts5WriteFlushBtree.part.0:
+
+Disassembly of section .text.fts5WriteAppendTerm:
+
+Disassembly of section .text.fts5WriteFinish:
+
+Disassembly of section .text.fts5DataDelete:
+
+Disassembly of section .text.sqlite3Fts5StorageDocsize:
+
+Disassembly of section .text.fts5SeekCursor:
+
+Disassembly of section .text.fts5ApiColumnText:
+
+Disassembly of section .text.fts5ApiColumnSize:
+
+Disassembly of section .text.fts5CsrPoslist:
+
+Disassembly of section .text.fts5CacheInstArray:
+
+Disassembly of section .text.fts5ApiInstToken:
+
+Disassembly of section .text.fts5ApiInst:
+
+Disassembly of section .text.fts5ApiInstCount:
+
+Disassembly of section .text.fts5ApiPhraseFirstColumn:
+
+Disassembly of section .text.fts5ApiPhraseFirst:
+
+Disassembly of section .text.sqlite3Fts5StorageContentInsert:
+
+Disassembly of section .text.fts5ColumnMethod:
+
+Disassembly of section .text.fts5SorterNext:
+
+Disassembly of section .text.fts3WriteSegdir:
+
+Disassembly of section .text.fts3PromoteSegments:
+
+Disassembly of section .text.fts3CursorSeek:
+
+Disassembly of section .text.sqlite3Fts3EvalTestDeferred:
+
+Disassembly of section .text.fts3InsertData:
+
+Disassembly of section .text.fts3InsertDocsize:
+
+Disassembly of section .text.fts3UpdateDocTotals:
+
+Disassembly of section .text.fts3NextMethod:
+
+Disassembly of section .text.sqlite3Fts3PendingTermsFlush.part.0:
+
+Disassembly of section .text.rtreeCheckNode:
+
+Disassembly of section .text.sqlite3AnalysisLoad:
+
+Disassembly of section .text.fts5StorageCount.constprop.0.isra.0:
+
+Disassembly of section .text.fts5BeginMethod:
+
+Disassembly of section .text.pragmaVtabFilter:
+
+Disassembly of section .text.fts5OpenMethod:
+
+Disassembly of section .text.rtreeInsertCell:
+
+Disassembly of section .text.fts3MatchinfoSelectDoctotal:
+
+Disassembly of section .text.rtreeCheckTable:
+
+Disassembly of section .text.rtreeIntegrity:
+
+Disassembly of section .text.rtreecheck:
+
+Disassembly of section .text.fts3DeleteAll:
+
+Disassembly of section .text.fts3ColumnMethod:
+
+Disassembly of section .text.blobSeekToRow:
+
+Disassembly of section .text.sqlite3_blob_reopen:
+
+Disassembly of section .text.sqlite3Init:
+
+Disassembly of section .text.sqlite3ReadSchema:
+
+Disassembly of section .text.attachFunc:
+
+Disassembly of section .text.sqlite3_table_column_metadata:
+
+Disassembly of section .text.fts3BeginMethod:
+
+Disassembly of section .text.codeAttach:
+
+Disassembly of section .text.sqlite3Reindex:
+
+Disassembly of section .text.sqlite3LocateTable:
+
+Disassembly of section .text.sqlite3FkCheck:
+
+Disassembly of section .text.sqlite3Pragma:
+
+Disassembly of section .text.sqlite3_blob_open:
+
+Disassembly of section .text.nodeAcquire.part.0:
+
+Disassembly of section .text.ChooseLeaf:
+
+Disassembly of section .text.rtreeRowid:
+
+Disassembly of section .text.rtreeStepToLeaf:
+
+Disassembly of section .text.rtreeNext:
+
+Disassembly of section .text.rtreeColumn:
+
+Disassembly of section .text.deleteCell:
+
+Disassembly of section .text.removeNode:
+
+Disassembly of section .text.rtreeDeleteRowid:
+
+Disassembly of section .text.rtreeUpdate:
+
+Disassembly of section .text.rtreeFilter:
+
+Disassembly of section .text.fts5DataRead:
+
+Disassembly of section .text.fts5MultiIterIsDeleted:
+
+Disassembly of section .text.fts5MultiIterNext2.part.0:
+
+Disassembly of section .text.fts5DlidxIterInit:
+
+Disassembly of section .text.fts5StructureReadUncached:
+
+Disassembly of section .text.fts5StructureRead:
+
+Disassembly of section .text.fts5StorageInsertDocsize.part.0:
+
+Disassembly of section .text.fts5StorageLoadTotals.part.0:
+
+Disassembly of section .text.fts5ApiColumnTotalSize:
+
+Disassembly of section .text.fts5ApiRowCount:
+
+Disassembly of section .text.fts5DlidxIterPrevR.isra.0:
+
+Disassembly of section .text.fts5DlidxIterNextR.isra.0:
+
+Disassembly of section .text.fts5SegIterNextPage:
+
+Disassembly of section .text.fts5LeafSeek:
+
+Disassembly of section .text.fts5SegIterLoadTerm:
+
+Disassembly of section .text.fts5SegIterNext_None:
+
+Disassembly of section .text.fts5SegIterInit.part.0:
+
+Disassembly of section .text.fts5SegIterNext:
+
+Disassembly of section .text.sqlite3Fts3ReadBlock:
+
+Disassembly of section .text.fts3SelectLeaf:
+
+Disassembly of section .text.fts3SegReaderCursor:
+
+Disassembly of section .text.fts3EvalAllocateReaders:
+
+Disassembly of section .text.fts3SegReaderNext.constprop.0:
+
+Disassembly of section .text.sqlite3Fts3SegReaderStep:
+
+Disassembly of section .text.fts3auxNextMethod:
+
+Disassembly of section .text.fts3SegReaderStart:
+
+Disassembly of section .text.fts3SegmentMerge:
+
+Disassembly of section .text.fts3DoOptimize:
+
+Disassembly of section .text.fts3OptimizeFunc:
+
+Disassembly of section .text.fts3DeleteByRowid:
+
+Disassembly of section .text.fts3RenameMethod:
+
+Disassembly of section .text.fts3IntegrityCheck:
+
+Disassembly of section .text.fts3auxFilterMethod:
+
+Disassembly of section .text.fts3TermSelect.constprop.0:
+
+Disassembly of section .text.fts3EvalSelectDeferred:
+
+Disassembly of section .text.fts3EvalPhraseStart:
+
+Disassembly of section .text.fts3EvalRestart:
+
+Disassembly of section .text.sqlite3Fts3EvalPhrasePoslist:
+
+Disassembly of section .text.fts3ExprLocalHitsCb:
+
+Disassembly of section .text.fts3ExprTermOffsetInit:
+
+Disassembly of section .text.fts3OffsetsFunc:
+
+Disassembly of section .text.fts3SnippetFindPositions:
+
+Disassembly of section .text.sqlite3Fts3Snippet:
+
+Disassembly of section .text.fts3SnippetFunc:
+
+Disassembly of section .text.fts3ExprGlobalHitsCb:
+
+Disassembly of section .text.fts3ExprIterate2.constprop.1:
+
+Disassembly of section .text.fts3MatchinfoFunc:
+
+Disassembly of section .text.fts3EvalStartReaders:
+
+Disassembly of section .text.sqlite3Fts5StorageConfigValue:
+
+Disassembly of section .text.sqlite3Fts5StorageDeleteAll:
+
+Disassembly of section .text.fts3EvalTokenCosts:
+
+Disassembly of section .text.fts3FilterMethod:
+
+Disassembly of section .text.sqlite3Fts3Incrmerge:
+
+Disassembly of section .text.fts3SyncMethod:
+
+Disassembly of section .text.fts3UpdateMethod:
+
+Disassembly of section .text.fts5SegIterReverseNewPage:
+
+Disassembly of section .text.fts5MultiIterNext:
+
+Disassembly of section .text.fts5MultiIterFinishSetup:
+
+Disassembly of section .text.sqlite3Fts5IterNextFrom:
+
+Disassembly of section .text.fts5ExprNodeTest_STRING:
+
+Disassembly of section .text.fts5VocabNextMethod:
+
+Disassembly of section .text.fts5ExprNodeNext_STRING:
+
+Disassembly of section .text.fts5ExprNodeNext_TERM:
+
+Disassembly of section .text.fts5SegIterNext_Reverse:
+
+Disassembly of section .text.fts5MultiIterNew:
+
+Disassembly of section .text.fts5FlushSecureDelete:
+
+Disassembly of section .text.fts5IndexMergeLevel:
+
+Disassembly of section .text.fts5IndexMerge:
+
+Disassembly of section .text.fts5FlushOneHash:
+
+Disassembly of section .text.fts5IndexFlush:
+
+Disassembly of section .text.fts5RenameMethod:
+
+Disassembly of section .text.sqlite3Fts5StorageIndexInsert:
+
+Disassembly of section .text.sqlite3Fts5StorageDelete:
+
+Disassembly of section .text.sqlite3Fts5FlushToDisk:
+
+Disassembly of section .text.fts5VocabOpenMethod:
+
+Disassembly of section .text.fts5ReleaseMethod:
+
+Disassembly of section .text.fts5SavepointMethod:
+
+Disassembly of section .text.fts5SyncMethod:
+
+Disassembly of section .text.sqlite3Fts5IndexQuery:
+
+Disassembly of section .text.fts5VocabFilterMethod:
+
+Disassembly of section .text.fts5ExprNodeFirst:
+
+Disassembly of section .text.sqlite3Fts5ExprFirst:
+
+Disassembly of section .text.fts5NextMethod:
+
+Disassembly of section .text.fts5ApiQueryPhrase:
+
+Disassembly of section .text.fts5FilterMethod:
+
+Disassembly of section .text.fts5SegiterPoslist:
+
+Disassembly of section .text.fts5IterSetOutputs_Col:
+
+Disassembly of section .text.fts5IterSetOutputs_Col100:
+
+Disassembly of section .text.fts5IterSetOutputs_Full:
+
+Disassembly of section .text.fts5UpdateMethod:
+
+Disassembly of section .text.fts5IterSetOutputs_Nocolset:
+
+Disassembly of section .text.sqlite3SrcListLookup:
+
+Disassembly of section .text.sqlite3BeginTrigger:
+
+Disassembly of section .text.sqlite3Update.constprop.0:
+
+Disassembly of section .text.sqlite3UpsertDoUpdate:
+
+Disassembly of section .text.codeRowTrigger:
+
+Disassembly of section .text.sqlite3TriggerColmask:
+
+Disassembly of section .text.sqlite3CodeRowTriggerDirect:
+
+Disassembly of section .text.sqlite3CodeRowTrigger:
+
+Disassembly of section .text.sqlite3GenerateRowDelete:
+
+Disassembly of section .text.sqlite3GenerateConstraintChecks:
+
+Disassembly of section .text.sqlite3Insert:
+
+Disassembly of section .text.sqlite3DeleteFrom.constprop.0:
+
+Disassembly of section .text.sqlite3StartTable:
+
+Disassembly of section .text.sqlite3NestedParse:
+
+Disassembly of section .text.sqlite3DropTriggerPtr:
+
+Disassembly of section .text.destroyRootPage:
+
+Disassembly of section .text.sqlite3DropTable:
+
+Disassembly of section .text.sqlite3CreateIndex:
+
+Disassembly of section .text.sqlite3AddPrimaryKey:
+
+Disassembly of section .text.sqlite3FinishTrigger:
+
+Disassembly of section .text.openStatTable:
+
+Disassembly of section .text.analyzeDatabase:
+
+Disassembly of section .text.analyzeTable:
+
+Disassembly of section .text.sqlite3Analyze:
+
+Disassembly of section .text.sqlite3AlterRenameTable:
+
+Disassembly of section .text.sqlite3AlterFinishAddColumn:
+
+Disassembly of section .text.sqlite3VtabFinishParse:
+
+Disassembly of section .text.sqlite3AlterRenameColumn:
+
+Disassembly of section .text.sqlite3AlterDropColumn:
+
+Disassembly of section .text.sqlite3_declare_vtab.part.0:
+
+Disassembly of section .text.sqlite3_declare_vtab:
+
+Disassembly of section .text.pragmaVtabConnect:
+
+Disassembly of section .text.jsonEachConnect:
+
+Disassembly of section .text.statConnect:
+
+Disassembly of section .text.fts5VocabInitVtab:
+
+Disassembly of section .text.fts5VocabConnectMethod:
+
+Disassembly of section .text.fts5VocabCreateMethod:
+
+Disassembly of section .text.fts5InitVtab:
+
+Disassembly of section .text.fts5ConnectMethod:
+
+Disassembly of section .text.fts5CreateMethod:
+
+Disassembly of section .text.fts3InitVtab:
+
+Disassembly of section .text.fts3ConnectMethod:
+
+Disassembly of section .text.fts3CreateMethod:
+
+Disassembly of section .text.fts3auxConnectMethod:
+
+Disassembly of section .text.fts3tokConnectMethod:
+
+Disassembly of section .text.rtreeInit:
+
+Disassembly of section .text.rtreeConnect:
+
+Disassembly of section .text.rtreeCreate:
+
+Disassembly of section .text.renameParseSql:
+
+Disassembly of section .text.renameQuotefixFunc:
+
+Disassembly of section .text.dropColumnFunc:
+
+Disassembly of section .text.renameTableTest:
+
+Disassembly of section .text.renameTableFunc:
+
+Disassembly of section .text.renameColumnFunc:
+
+Disassembly of section .text.selectExpander:
+
+Disassembly of section .text.sqlite3_auto_extension:
+
+Disassembly of section .text.sqlite3_reset_auto_extension:
+
+Disassembly of section .text.sqlite3_shutdown:
+
+Disassembly of section .text.sqlite3_complete16:
+
+Disassembly of section .text.openDatabase:
+
+Disassembly of section .text.sqlite3_open:
+
+Disassembly of section .text.sqlite3_open_v2:
+
+Disassembly of section .text.sqlite3_open16:
+
+Disassembly of section .text.sqlite3_global_recover:
+
+Disassembly of section .text.sqlite3_rtree_geometry_callback:
+
+Disassembly of section .text.sqlite3_rtree_query_callback:

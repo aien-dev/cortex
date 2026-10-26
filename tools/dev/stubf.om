@@ -1,0 +1,28 @@
+global qnm uchar 65536
+global qnml ulong 1
+global qct uchar 16777216
+global qctl ulong 1
+global qq uchar 65536
+global qql ulong 1
+global qok uchar 4194304
+global qlim ulong 1
+global qrd ulong 64
+global qrb f64 64
+global qlp uchar 4194304
+global qlpl ulong 1
+global qls uchar 16777216
+global qlsl ulong 1
+fn fts_put e ulong r ulong to void
+end
+fn fts_del e ulong to void
+end
+fn fts_reset to void
+end
+fn fts_search to long
+ret 0
+end
+fn like_set to void
+end
+fn like_test to bool
+ret false
+end

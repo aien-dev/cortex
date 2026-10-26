@@ -1,0 +1,1983 @@
+note om/json.om - JsonNum module (owner JsonNum). Seeded Omega, OM-2 unit; f64.om and uni_rust.om first.
+note Reproduces serde_json 1.0.151 (features std + raw_value; NOT float_roundtrip / arbitrary_precision /
+note preserve_order): from_slice::<Value> acceptance, error text + category, serde_path_to_error 0.1.20
+note paths, compact serializer (to_string), canonical re-serialization (objects = BTreeMap, keys by bytes,
+note last duplicate wins). Verified by tests/json/run.sh (evidence/json/run.log).
+note INPUT   jin uchar 12582912: document at jin[0 .. jinl) (<= 4194304 bytes; the rest is scratch for
+note         RawValue re-parses and js_canon_buf). jinl ulong 1. jes uchar 4194304 for js_canon_buf /
+note         js_esc_buf. jrvm uchar 1: 0 (default) Value semantics: an object whose FIRST key is
+note         "$serde_json::private::RawValue" is replaced by from_str(its string value); 1 = keep it as a
+note         plain object (what a typed struct sees).
+note PARSE   js_parse to bool (with end(): trailing non-whitespace = error); js_parsep to bool (prefix:
+note         first value only, trailing bytes ignored - axum Json). Root -> jroot (ulong 1).
+note ERROR   jem uchar 1024 / jeml: exact serde Display text "<msg> at line L column C"; jecat uchar 1:
+note         1 Eof, 2 Syntax, 3 Data (custom: RawValue cases), 9 capacity (ours, "capacity exceeded").
+note         Partial tree on failure: every completed node stays valid; containers still open are
+note         incomplete (js_done false); js_pend n = member being read when the error hit (an
+note         incomplete container, placeholder kind 9 key read/no value, 10 value started and failed,
+note         11 next_key failed) or jnone. js_path appends the serde_path_to_error path, false if empty.
+note NODES   jnone = 18446744073709551615. js_kind n -> 0 null 1 false 2 true 3 u64 4 i64 5 f64 6 string
+note         7 array 8 object (9..11 placeholders). js_len n completed members (document order,
+note         duplicates kept), js_child n i, js_find obj key (view uchar *; last duplicate = BTreeMap),
+note         js_key m / js_str n -> decoded bytes in jsv (uchar 12582912) / jsvl, js_num n -> u64 value,
+note         i64 two's complement or f64 bits, js_spos/js_epos n -> absolute jin index of first byte /
+note         after last byte, js_kend m -> index after the member key's closing quote.
+note POSITION js_line idx / js_col idx (serde position_of_index, main document); serde's invalid-type
+note         position is js_epos for scalars and strings, js_spos for arrays/objects; a struct visitor's
+note         own error (duplicate field, missing field) is at js_vpos idx (duplicate: js_vpos (js_kend m),
+note         missing: js_epos object). js_dbg_str n appends Rust {:?} of a string node to job.
+note OUTPUT  job / jobl / jobx (f64.om). js_canon n: serde_json::to_string of the subtree; js_canon_buf
+note         off n: canonical text of jes[off .. off+n) (from_str), appends nothing and returns false if
+note         rejected, keeps the current tree. js_esc_txt s / js_esc_buf off n: quoted escaped string.
+note Capacities: 3145728 nodes, 9437184 child slots, 12582912 pool bytes; exceeding them = category 9.
+const jncap ulong 3145728
+const jincap ulong 12582912
+const jspcap ulong 12582912
+const jclcap ulong 9437184
+const jstcap ulong 6291456
+global jin uchar 12582912
+global jinl ulong 1
+global jes uchar 4194304
+global jroot ulong 1
+global jem uchar 1024
+global jeml ulong 1
+global jecat uchar 1
+global jsv uchar 12582912
+global jsvl ulong 1
+global jrvm uchar 1
+global jnk uchar 3145728
+global jnv ulong 3145728
+global jnl uint 3145728
+global jns uint 3145728
+global jne uint 3145728
+global jnko uint 3145728
+global jnkl uint 3145728
+global jnkq uint 3145728
+global jnn ulong 1
+global jcl uint 9437184
+global jcln ulong 1
+global jst uint 6291456
+global jstn ulong 1
+global jsp uchar 12582912
+global jspn ulong 1
+global jpi ulong 1
+global jpe ulong 1
+global jpb ulong 1
+global jpd ulong 1
+global jinu ulong 1
+global jqk uchar 1
+global jqv ulong 1
+global jqo ulong 1
+global jql ulong 1
+global jqh ulong 1
+global jsav ulong 16
+global jfail uchar 1
+global jrvs uchar 1
+text jtmsg "EOF while parsing a list|EOF while parsing an object|EOF while parsing a string|EOF while parsing a value|expected `:`|expected `,` or `]`|expected `,` or `}`|expected ident|expected value|invalid escape|invalid number|number out of range|invalid unicode code point|control character (\\u0000-\\u001F) found while parsing a string|key must be a string|lone leading surrogate in hex escape|trailing comma|trailing characters|unexpected end of hex escape|recursion limit exceeded|"
+text jtatl " at line "
+text jtcol " column "
+text jtull "ull"
+text jtrue "rue"
+text jtalse "alse"
+text jtfalse "false"
+text jttrue "true"
+text jtrawk "$serde_json::private::RawValue"
+text jtinv "invalid type: "
+text jtexp ", expected raw value"
+text jtbool "boolean `"
+text jtint "integer `"
+text jtflt "floating point `"
+text jtseq "sequence"
+text jtmap "map"
+text jtcap "capacity exceeded"
+note ---- error reporting (serde_json Error Display: "<code> at line L column C") ----
+fn js_ejm c uchar to void
+n = get jeml 0
+if lt n 1024
+put jem n c
+put jeml 0 add n 1
+end
+end
+fn js_ejt s view uchar * to void
+for i ulong len s
+js_ejm get s i
+end
+end
+fn js_ejn v ulong to void
+num_u64 v
+for i ulong get jfbl 0
+js_ejm get jfb i
+end
+end
+note append " at line L column C" for absolute index idx of the current region (serde position_of_index)
+fn js_epos_txt idx ulong to void
+b = get jpb 0
+js_ejt jtatl
+js_ejn js_lnb b idx
+js_ejt jtcol
+js_ejn sub idx js_solb b idx
+end
+note serde ErrorCode text for code 1..20
+fn js_ecode c uchar to void
+k = uchar 1
+for i ulong len jtmsg
+b = get jtmsg i
+if eq b 124
+k = add k 1
+if gt k c
+ret
+end
+else
+if eq k c
+js_ejm b
+end
+end
+end
+end
+note Error::syntax(code, position_of_index(idx)); returns false
+fn js_erri c uchar idx ulong to void
+put jeml 0 0
+js_ecode c
+js_epos_txt idx
+put jecat 0 2
+if le c 4
+put jecat 0 1
+end
+put jfail 0 1
+end
+note self.error(): position of the current index
+fn js_eerr c uchar to void
+js_erri c get jpi 0
+end
+note self.peek_error(): min(len, index + 1)
+fn js_perr c uchar to void
+i = add get jpi 0 1
+if gt i get jpe 0
+i = get jpe 0
+end
+js_erri c i
+end
+fn js_ecap to void
+put jeml 0 0
+js_ejt jtcap
+put jecat 0 9
+put jfail 0 1
+end
+note ---- reader helpers ----
+note skip ' ' '\n' '\t' '\r'; returns the next byte or 256 at the end
+fn js_ws to uint
+i = get jpi 0
+e = get jpe 0
+for b ulong 4000
+for t ulong 4000
+if ge i e
+put jpi 0 i
+ret 256
+end
+c = get jin i
+if and ne c 32 and ne c 10 and ne c 9 ne c 13
+put jpi 0 i
+ret uint c
+end
+i = add i 1
+end
+end
+put jpi 0 i
+ret 256
+end
+fn js_peek to uint
+i = get jpi 0
+if ge i get jpe 0
+ret 256
+end
+ret uint get jin i
+end
+fn js_ident s view uchar * to bool
+for k ulong len s
+i = get jpi 0
+if ge i get jpe 0
+js_eerr 4
+ret false
+end
+c = get jin i
+put jpi 0 add i 1
+if ne c get s k
+js_eerr 8
+ret false
+end
+end
+ret true
+end
+note ---- numbers (serde_json 1.0.151 de.rs, default features) -> jqk (3 u64, 4 i64, 5 f64), jqv ----
+fn js_nf pos bool sig ulong ex long to bool
+if not num_parts pos sig ex
+js_eerr 12
+ret false
+end
+put jqk 0 5
+put jqv 0 get jfr 0
+ret true
+end
+note i32 saturating start +/- exp
+fn js_nexp pos bool sig ulong st long to bool
+put jpi 0 add get jpi 0 1
+pe = true
+c = js_peek
+if eq c 43
+put jpi 0 add get jpi 0 1
+else
+if eq c 45
+put jpi 0 add get jpi 0 1
+pe = false
+end
+end
+i = get jpi 0
+if ge i get jpe 0
+js_eerr 4
+ret false
+end
+c = uint get jin i
+put jpi 0 add get jpi 0 1
+if not and ge c 48 le c 57
+js_eerr 11
+ret false
+end
+ex = long sub c 48
+for b ulong 4000
+for t ulong 4000
+c = js_peek
+if not and ge c 48 le c 57
+if not pe
+ex = neg ex
+end
+ex = add st ex
+if gt ex 2147483647
+ex = 2147483647
+end
+if lt ex -2147483648
+ex = -2147483648
+end
+ret js_nf pos sig ex
+end
+put jpi 0 add get jpi 0 1
+d = long sub c 48
+if ge ex 214748364
+if or gt ex 214748364 gt d 7
+ret js_nexo pos eq sig 0 pe
+end
+end
+ex = add mul ex 10 d
+end
+end
+js_ecap
+ret false
+end
+fn js_nexo pos bool zero bool pe bool to bool
+if and not zero pe
+js_eerr 12
+ret false
+end
+for b ulong 4000
+for t ulong 4000
+c = js_peek
+if not and ge c 48 le c 57
+put jqk 0 5
+put jqv 0 0
+if not pos
+put jqv 0 9223372036854775808
+end
+ret true
+end
+put jpi 0 add get jpi 0 1
+end
+end
+js_ecap
+ret false
+end
+note serde overflow!(sig * 10 + d, u64::MAX)
+fn js_ndec pos bool sig ulong eb long to bool
+put jpi 0 add get jpi 0 1
+ea = long 0
+for b ulong 4000
+for t ulong 4000
+c = js_peek
+if not and ge c 48 le c 57
+if eq ea 0
+if eq c 256
+js_perr 4
+ret false
+end
+js_perr 11
+ret false
+end
+if or eq c 101 eq c 69
+ret js_nexp pos sig add eb ea
+end
+ret js_nf pos sig add eb ea
+end
+d = ulong sub c 48
+if ge sig 1844674407370955161
+if or gt sig 1844674407370955161 gt d 5
+ret js_ndov pos sig add eb ea
+end
+end
+put jpi 0 add get jpi 0 1
+sig = add mul sig 10 d
+ea = sub ea 1
+end
+end
+js_ecap
+ret false
+end
+fn js_ndov pos bool sig ulong ex long to bool
+for b ulong 4000
+for t ulong 4000
+c = js_peek
+if not and ge c 48 le c 57
+if or eq c 101 eq c 69
+ret js_nexp pos sig ex
+end
+ret js_nf pos sig ex
+end
+put jpi 0 add get jpi 0 1
+end
+end
+js_ecap
+ret false
+end
+fn js_nlong pos bool sig ulong to bool
+ex = long 0
+for b ulong 4000
+for t ulong 4000
+c = js_peek
+if and ge c 48 le c 57
+put jpi 0 add get jpi 0 1
+ex = add ex 1
+else
+if eq c 46
+ret js_ndec pos sig ex
+end
+if or eq c 101 eq c 69
+ret js_nexp pos sig ex
+end
+ret js_nf pos sig ex
+end
+end
+end
+js_ecap
+ret false
+end
+fn js_nnum pos bool sig ulong to bool
+c = js_peek
+if eq c 46
+ret js_ndec pos sig 0
+end
+if or eq c 101 eq c 69
+ret js_nexp pos sig 0
+end
+if pos
+put jqk 0 3
+put jqv 0 sig
+ret true
+end
+if or eq sig 0 gt sig 9223372036854775808
+put jqk 0 5
+put jqv 0 bitcast ulong neg f64 sig
+ret true
+end
+put jqk 0 4
+put jqv 0 sub 0 sig
+ret true
+end
+note parse_integer (after an optional '-' was eaten)
+fn js_nint pos bool to bool
+i = get jpi 0
+if ge i get jpe 0
+js_eerr 4
+ret false
+end
+c = uint get jin i
+put jpi 0 add get jpi 0 1
+if eq c 48
+if and ge js_peek 48 le js_peek 57
+js_perr 11
+ret false
+end
+ret js_nnum pos 0
+end
+if not and ge c 48 le c 57
+js_eerr 11
+ret false
+end
+sig = ulong sub c 48
+for b ulong 4000
+for t ulong 4000
+c = js_peek
+if not and ge c 48 le c 57
+ret js_nnum pos sig
+end
+d = ulong sub c 48
+if ge sig 1844674407370955161
+if or gt sig 1844674407370955161 gt d 5
+ret js_nlong pos sig
+end
+end
+put jpi 0 add get jpi 0 1
+sig = add mul sig 10 d
+end
+end
+js_ecap
+ret false
+end
+note ---- strings: SliceRead::parse_str (validate = true); decoded bytes appended to jsp -> jqo/jql ----
+fn js_spush c uchar to void
+n = get jspn 0
+put jsp n c
+put jspn 0 add n 1
+end
+fn js_scp v uint to void
+if lt v 128
+js_spush uchar v
+ret
+end
+if lt v 2048
+js_spush uchar or 192 shr v 6
+js_spush uchar or 128 and v 63
+ret
+end
+if lt v 65536
+js_spush uchar or 224 shr v 12
+js_spush uchar or 128 and shr v 6 63
+js_spush uchar or 128 and v 63
+ret
+end
+js_spush uchar or 240 shr v 18
+js_spush uchar or 128 and shr v 12 63
+js_spush uchar or 128 and shr v 6 63
+js_spush uchar or 128 and v 63
+end
+note decode_hex_escape -> jqh
+fn js_hex4 to bool
+i = get jpi 0
+e = get jpe 0
+if lt sub e i 4
+put jpi 0 e
+js_eerr 3
+ret false
+end
+put jpi 0 add i 4
+v = uint 0
+bad = false
+for k ulong 4
+c = uint get jin add i k
+h = uint 99
+if and ge c 48 le c 57
+h = sub c 48
+end
+if and ge c 65 le c 70
+h = sub c 55
+end
+if and ge c 97 le c 102
+h = sub c 87
+end
+if eq h 99
+bad = true
+end
+v = or shl v 4 and h 15
+end
+if bad
+js_eerr 10
+ret false
+end
+put jqh 0 ulong v
+ret true
+end
+fn js_uesc to bool
+if not js_hex4
+ret false
+end
+n = uint get jqh 0
+if and ge n 56320 le n 57343
+js_eerr 16
+ret false
+end
+if or lt n 55296 gt n 56319
+js_scp n
+ret true
+end
+c = js_peek
+if eq c 256
+js_eerr 3
+ret false
+end
+put jpi 0 add get jpi 0 1
+if ne c 92
+js_eerr 19
+ret false
+end
+c = js_peek
+if eq c 256
+js_eerr 3
+ret false
+end
+put jpi 0 add get jpi 0 1
+if ne c 117
+js_eerr 19
+ret false
+end
+if not js_hex4
+ret false
+end
+n2 = uint get jqh 0
+if or lt n2 56320 gt n2 57343
+js_eerr 16
+ret false
+end
+js_scp add or shl sub n 55296 10 sub n2 56320 65536
+ret true
+end
+fn js_esc to bool
+i = get jpi 0
+if ge i get jpe 0
+js_eerr 3
+ret false
+end
+c = get jin i
+put jpi 0 add i 1
+if or eq c 34 or eq c 92 eq c 47
+js_spush c
+ret true
+end
+if eq c 98
+js_spush 8
+ret true
+end
+if eq c 102
+js_spush 12
+ret true
+end
+if eq c 110
+js_spush 10
+ret true
+end
+if eq c 114
+js_spush 13
+ret true
+end
+if eq c 116
+js_spush 9
+ret true
+end
+if eq c 117
+ret js_uesc
+end
+js_eerr 10
+ret false
+end
+note continuation byte check for js_utf8
+note core::str::from_utf8 acceptance of jsp[s .. e)
+fn js_utf8 s ulong e ulong to bool
+i = s
+for b ulong 4000
+for t ulong 4000
+if ge i e
+ret true
+end
+c = get jsp i
+if lt c 128
+i = add i 1
+else
+k = ulong 0
+lo = uchar 128
+hi = uchar 191
+if and ge c 194 le c 223
+k = 1
+end
+if and ge c 224 le c 239
+k = 2
+if eq c 224
+lo = 160
+end
+if eq c 237
+hi = 159
+end
+end
+if and ge c 240 le c 244
+k = 3
+if eq c 240
+lo = 144
+end
+if eq c 244
+hi = 143
+end
+end
+if eq k 0
+ret false
+end
+if gt add i k sub e 1
+ret false
+end
+d = get jsp add i 1
+if or lt d lo gt d hi
+ret false
+end
+if ge k 2
+if ne and get jsp add i 2 192 128
+ret false
+end
+end
+if eq k 3
+if ne and get jsp add i 3 192 128
+ret false
+end
+end
+i = add add i k 1
+end
+end
+end
+ret true
+end
+fn js_pstr to bool
+i = get jpi 0
+e = get jpe 0
+s0 = get jspn 0
+if gt sub e i sub jspcap s0
+js_ecap
+ret false
+end
+o = s0
+for b ulong 4000
+for t ulong 4000
+if ge i e
+put jpi 0 e
+put jspn 0 o
+js_eerr 3
+ret false
+end
+c = get jin i
+if eq c 34
+i = add i 1
+put jpi 0 i
+put jspn 0 o
+if not js_utf8 s0 o
+js_eerr 13
+ret false
+end
+put jqo 0 s0
+put jql 0 sub o s0
+ret true
+end
+if eq c 92
+put jpi 0 add i 1
+put jspn 0 o
+if not js_esc
+ret false
+end
+i = get jpi 0
+o = get jspn 0
+else
+if lt c 32
+put jpi 0 add i 1
+js_eerr 14
+ret false
+end
+put jsp o c
+o = add o 1
+i = add i 1
+end
+end
+end
+js_ecap
+ret false
+end
+note ---- nodes ----
+fn js_new k uchar st ulong to ulong
+n = get jnn 0
+if ge n jncap
+ret jnone
+end
+put jnk n k
+put jns n uint st
+put jne n uint st
+put jnv n 0
+put jnl n 0
+put jnko n 0
+put jnkl n 0
+put jnkq n 0
+put jnn 0 add n 1
+ret n
+end
+fn js_scal st ulong to ulong
+n = js_new get jqk 0 st
+if eq n jnone
+ret n
+end
+put jnv n get jqv 0
+put jne n uint get jpi 0
+ret n
+end
+fn js_push v ulong to bool
+n = get jstn 0
+if ge n jstcap
+js_ecap
+ret false
+end
+put jst n uint v
+put jstn 0 add n 1
+ret true
+end
+note key order (Rust String Ord: bytes, then length) of member nodes a, b: -1, 0, 1
+fn js_kcmp a ulong b ulong to int
+ao = ulong get jnko a
+al = ulong get jnkl a
+bo = ulong get jnko b
+bl = ulong get jnkl b
+m = al
+if lt bl m
+m = bl
+end
+k = ulong 0
+for c ulong 4000
+for t ulong 4000
+if ge k m
+if lt al bl
+ret -1
+end
+if gt al bl
+ret 1
+end
+ret 0
+end
+x = get jsp add ao k
+y = get jsp add bo k
+if lt x y
+ret -1
+end
+if gt x y
+ret 1
+end
+k = add k 1
+end
+end
+ret 0
+end
+note merge jcl[a .. m) and jcl[m .. z) into jst[o ..]
+fn js_merge a ulong m ulong z ulong o ulong to void
+j = m
+for c ulong 4000
+for t ulong 4000
+if and ge a m ge j z
+ret
+end
+x = jnone
+if lt a m
+x = ulong get jcl a
+end
+if lt j z
+y = ulong get jcl j
+tk = true
+if ne x jnone
+tk = gt js_kcmp x y 0
+end
+if tk
+x = y
+j = add j 1
+else
+a = add a 1
+end
+else
+a = add a 1
+end
+put jst o uint x
+o = add o 1
+end
+end
+end
+note bounds of the run pair starting at a (width w, end e) then merge
+fn js_mrg2 a ulong w ulong e ulong o ulong to void
+m = add a w
+if gt m e
+m = e
+end
+z = add m w
+if gt z e
+z = e
+end
+js_merge a m z o
+end
+note stable sort of jcl[s .. s+n) by key, temp jst[t .. t+n)
+fn js_ksort s ulong n ulong t ulong to void
+w = ulong 1
+e = add s n
+for p ulong 64
+if ge w n
+ret
+end
+a = s
+for q ulong 4194304
+if ge a e
+break
+end
+js_mrg2 a w e add t sub a s
+a = add a mul w 2
+end
+js_cpch s t n
+w = mul w 2
+end
+end
+note copy jst[base .. base+n) to jcl[off ..] (and to jcl[off+n+1 ..] when obj)
+fn js_cpch off ulong base ulong n ulong to void
+for b ulong 4000
+for c ulong 4000
+if eq n 0
+ret
+end
+x = get jst base
+put jcl off x
+off = add off 1
+base = add base 1
+n = sub n 1
+end
+end
+end
+note container end: children jst[base .. top) -> jcl (raw); objects also get [m, sorted unique keys]
+fn js_fin nd ulong base ulong obj bool to bool
+top = get jstn 0
+n = sub top base
+off = get jcln 0
+need = n
+if obj
+need = add mul n 2 1
+end
+if gt need sub jclcap off
+js_ecap
+ret false
+end
+js_cpch off base n
+if obj
+js_cpch add add off n 1 base n
+end
+put jnv nd off
+put jnl nd uint n
+put jne nd uint get jpi 0
+put jstn 0 base
+if not obj
+put jcln 0 add off n
+ret true
+end
+s = add add off n 1
+if gt n sub jstcap top
+js_ecap
+ret false
+end
+js_ksort s n top
+m = js_uniq s n
+put jcl add off n uint m
+put jcln 0 add s m
+ret true
+end
+note keep the last member of each run of equal keys (BTreeMap insert = last wins); returns count
+fn js_uniq s ulong n ulong to ulong
+m = ulong 0
+k = ulong 0
+for b ulong 4000
+for c ulong 4000
+if ge k n
+ret m
+end
+x = get jcl add s k
+keep = true
+if lt add k 1 n
+if eq js_kcmp ulong x ulong get jcl add add s k 1 0
+keep = false
+end
+end
+if keep
+put jcl add s m x
+m = add m 1
+end
+k = add k 1
+end
+end
+ret m
+end
+note ---- values (Deserializer::deserialize_any for serde_json::Value) ----
+note On failure jfail = 1. A container that was open keeps its completed members and is marked
+note incomplete (kind bit 16); its pending member (the one being read when the error hit) is stored
+note after the member list: an incomplete container, a placeholder kind 10 (value started and failed),
+note a placeholder kind 9 (object: key read, failed before the value started), or none.
+fn js_val to ulong
+c = js_ws
+st = get jpi 0
+if eq c 256
+js_perr 4
+ret jnone
+end
+if eq c 110
+put jpi 0 add get jpi 0 1
+if not js_ident jtull
+ret jnone
+end
+put jqk 0 0
+ret js_scal st
+end
+if eq c 116
+put jpi 0 add get jpi 0 1
+if not js_ident jtrue
+ret jnone
+end
+put jqk 0 2
+ret js_scal st
+end
+if eq c 102
+put jpi 0 add get jpi 0 1
+if not js_ident jtalse
+ret jnone
+end
+put jqk 0 1
+ret js_scal st
+end
+if eq c 45
+put jpi 0 add get jpi 0 1
+if not js_nint false
+ret jnone
+end
+ret js_scal st
+end
+if and ge c 48 le c 57
+if not js_nint true
+ret jnone
+end
+ret js_scal st
+end
+if eq c 34
+put jpi 0 add get jpi 0 1
+if not js_pstr
+ret jnone
+end
+put jqk 0 6
+put jqv 0 get jqo 0
+n = js_scal st
+if ne n jnone
+put jnl n uint get jql 0
+end
+ret n
+end
+if eq c 91
+ret js_arr st
+end
+if eq c 123
+ret js_obj st
+end
+js_perr 9
+ret jnone
+end
+fn js_deep to bool
+d = get jpd 0
+d = sub d 1
+put jpd 0 d
+if eq d 0
+js_perr 20
+ret false
+end
+ret true
+end
+note placeholder member for a failed value (k 10) or a key without value (k 9)
+fn js_ph k uchar to ulong
+n = js_new k get jpi 0
+if ne n jnone
+put jnk n or k 16
+end
+ret n
+end
+note incomplete container: completed members jst[base .. top) then the pending member
+fn js_finp nd ulong base ulong pend ulong to ulong
+top = get jstn 0
+n = sub top base
+off = get jcln 0
+if gt add n 1 sub jclcap off
+put jstn 0 base
+put jnk nd or get jnk nd 16
+put jnv nd off
+put jnl nd 0
+ret nd
+end
+js_cpch off base n
+p = uint 4294967295
+if ne pend jnone
+p = uint pend
+end
+put jcl add off n p
+put jcln 0 add add off n 1
+put jnv nd off
+put jnl nd uint n
+put jne nd uint get jpi 0
+put jnk nd or get jnk nd 16
+put jstn 0 base
+ret nd
+end
+fn js_arr st ulong to ulong
+if not js_deep
+ret jnone
+end
+put jpi 0 add get jpi 0 1
+nd = js_new 7 st
+if eq nd jnone
+js_ecap
+ret jnone
+end
+base = get jstn 0
+first = true
+for b ulong 4000
+for t ulong 4000
+c = js_ws
+if eq c 256
+js_perr 1
+ret js_finp nd base jnone
+end
+if eq c 93
+put jpi 0 add get jpi 0 1
+put jpd 0 add get jpd 0 1
+if not js_fin nd base false
+ret js_finp nd base jnone
+end
+ret nd
+end
+if first
+first = false
+else
+if ne c 44
+js_perr 6
+ret js_finp nd base jnone
+end
+put jpi 0 add get jpi 0 1
+c = js_ws
+if eq c 93
+js_perr 17
+ret js_finp nd base jnone
+end
+if eq c 256
+js_perr 4
+ret js_finp nd base jnone
+end
+end
+v = js_val
+if eq get jfail 0 1
+if eq v jnone
+v = js_ph 10
+end
+ret js_finp nd base v
+end
+if not js_push v
+ret js_finp nd base jnone
+end
+end
+end
+js_ecap
+ret js_finp nd base jnone
+end
+note has_next_key: returns 1 = key follows (index at '"'), 0 = '}' , 2 = error
+fn js_hnk first bool to uchar
+c = js_ws
+if eq c 256
+js_perr 2
+ret 2
+end
+if eq c 125
+ret 0
+end
+if first
+if ne c 34
+js_perr 15
+ret 2
+end
+ret 1
+end
+if ne c 44
+js_perr 7
+ret 2
+end
+put jpi 0 add get jpi 0 1
+c = js_ws
+if eq c 34
+ret 1
+end
+if eq c 125
+js_perr 17
+ret 2
+end
+if eq c 256
+js_perr 4
+ret 2
+end
+js_perr 15
+ret 2
+end
+fn js_colon to bool
+c = js_ws
+if eq c 58
+put jpi 0 add get jpi 0 1
+ret true
+end
+if eq c 256
+js_perr 2
+ret false
+end
+js_perr 5
+ret false
+end
+note key just parsed (jqo/jql) equals serde_json's RawValue token
+fn js_israw to bool
+if ne get jql 0 len jtrawk
+ret false
+end
+o = get jqo 0
+for k ulong len jtrawk
+if ne get jsp add o k get jtrawk k
+ret false
+end
+end
+ret true
+end
+fn js_setk v ulong ko ulong kl ulong ke ulong to void
+if ne v jnone
+put jnko v uint ko
+put jnkl v uint kl
+put jnkq v uint ke
+end
+end
+fn js_obj st ulong to ulong
+if not js_deep
+ret jnone
+end
+put jpi 0 add get jpi 0 1
+nd = js_new 8 st
+if eq nd jnone
+js_ecap
+ret jnone
+end
+base = get jstn 0
+first = true
+for b ulong 4000
+for t ulong 4000
+h = js_hnk first
+if eq h 2
+ret js_finp nd base js_ph 11
+end
+if eq h 0
+put jpi 0 add get jpi 0 1
+put jpd 0 add get jpd 0 1
+if not js_fin nd base true
+ret js_finp nd base jnone
+end
+ret nd
+end
+put jpi 0 add get jpi 0 1
+if not js_pstr
+ret js_finp nd base js_ph 11
+end
+ko = get jqo 0
+kl = get jql 0
+ke = get jpi 0
+if first
+if eq get jrvm 0 0
+if js_israw
+r = js_rawv
+if eq get jfail 0 1
+ret js_rawf nd base ko kl ke
+end
+ret r
+end
+end
+end
+first = false
+if not js_colon
+v = js_ph 9
+js_setk v ko kl ke
+ret js_finp nd base v
+end
+v = js_val
+if eq get jfail 0 1
+if eq v jnone
+v = js_ph 10
+end
+js_setk v ko kl ke
+ret js_finp nd base v
+end
+js_setk v ko kl ke
+if not js_push v
+ret js_finp nd base jnone
+end
+end
+end
+js_ecap
+ret js_finp nd base jnone
+end
+note ---- serde_json raw_value feature: Value's visit_map with first key "$serde_json::private::RawValue" ----
+note value must be a string; its contents are parsed again by serde_json::from_str (fresh depth); errors
+note there become de::Error::custom (category Data). The rest of the map must then be '}'.
+fn js_rawv to ulong
+put jrvs 0 1
+if not js_colon
+ret jnone
+end
+put jrvs 0 2
+c = js_ws
+if eq c 256
+js_perr 4
+ret jnone
+end
+if ne c 34
+js_rinv c
+ret jnone
+end
+put jpi 0 add get jpi 0 1
+if not js_pstr
+ret jnone
+end
+put jrvs 0 3
+r = js_sub get jqo 0 get jql 0 false
+put jrvs 0 3
+if eq get jfail 0 1
+if ne get jecat 0 9
+put jecat 0 3
+end
+ret jnone
+end
+c = js_ws
+if eq c 125
+put jpi 0 add get jpi 0 1
+put jpd 0 add get jpd 0 1
+ret r
+end
+if eq c 44
+js_perr 17
+ret jnone
+end
+if eq c 256
+js_perr 2
+ret jnone
+end
+js_perr 18
+ret jnone
+end
+note partial tree for a failed RawValue member: stage 1 (colon) -> placeholder 9, stage 2 (value) ->
+note placeholder 10, both keyed by the token (serde_path_to_error shows the key only for stage 2);
+note stage 3 (the inner from_str or the closing '}') -> no pending member
+fn js_rawf nd ulong base ulong ko ulong kl ulong ke ulong to ulong
+v = jnone
+if eq get jrvs 0 1
+v = js_ph 9
+end
+if eq get jrvs 0 2
+v = js_ph 10
+end
+js_setk v ko kl ke
+ret js_finp nd base v
+end
+note peek_invalid_type for BoxedFromString ("expected raw value"); always returns false
+fn js_rinv c uint to void
+if or eq c 110 or eq c 116 eq c 102
+put jpi 0 add get jpi 0 1
+if eq c 110
+if not js_ident jtull
+ret
+end
+end
+if eq c 116
+if not js_ident jtrue
+ret
+end
+end
+if eq c 102
+if not js_ident jtalse
+ret
+end
+end
+else
+if eq c 45
+put jpi 0 add get jpi 0 1
+if not js_nint false
+ret
+end
+else
+if and ge c 48 le c 57
+if not js_nint true
+ret
+end
+else
+if and ne c 91 ne c 123
+js_perr 9
+ret
+end
+end
+end
+end
+put jeml 0 0
+js_ejt jtinv
+js_unexp c
+js_ejt jtexp
+js_epos_txt get jpi 0
+put jecat 0 3
+put jfail 0 1
+ret
+end
+note serde Unexpected text for the value just read (first byte c); numbers from jqk/jqv
+fn js_unexp c uint to void
+if eq c 110
+js_ejt jtnull
+ret
+end
+if eq c 91
+js_ejt jtseq
+ret
+end
+if eq c 123
+js_ejt jtmap
+ret
+end
+if or eq c 116 eq c 102
+js_ejt jtbool
+if eq c 116
+js_ejt jttrue
+else
+js_ejt jtfalse
+end
+js_ejm 96
+ret
+end
+k = get jqk 0
+if eq k 5
+js_ejt jtflt
+num_ryu get jqv 0 true
+else
+js_ejt jtint
+if eq k 3
+num_u64 get jqv 0
+else
+num_i64 bitcast long get jqv 0
+end
+end
+for i ulong get jfbl 0
+js_ejm get jfb i
+end
+js_ejm 96
+end
+note parse jsp[o .. o+n) as a separate document (from_str: own region, depth 128, then end())
+fn js_sub o ulong n ulong pfx bool to ulong
+u = get jinu 0
+if gt n sub jincap u
+js_ecap
+ret jnone
+end
+js_cpb 0 u o n
+si = get jpi 0
+se = get jpe 0
+sb = get jpb 0
+sd = get jpd 0
+put jinu 0 add u n
+r = js_doc u add u n pfx
+put jinu 0 u
+put jpi 0 si
+put jpe 0 se
+put jpb 0 sb
+put jpd 0 sd
+ret r
+end
+note from_slice/from_str over jin[b .. e): value, then end() unless pfx (axum Json: no end());
+note returns the root (possibly an incomplete container) or jnone; success iff jfail = 0
+fn js_doc b ulong e ulong pfx bool to ulong
+put jpi 0 b
+put jpe 0 e
+put jpb 0 b
+put jpd 0 128
+r = js_val
+if eq get jfail 0 1
+ret r
+end
+if not pfx
+if ne js_ws 256
+js_perr 18
+end
+end
+ret r
+end
+note ---- public parse API ----
+fn js_parse0 pfx bool to bool
+num_init
+put jnn 0 0
+put jcln 0 0
+put jstn 0 0
+put jspn 0 0
+put jeml 0 0
+put jecat 0 0
+put jfail 0 0
+n = get jinl 0
+put jinu 0 n
+r = js_doc 0 n pfx
+put jpb 0 0
+put jroot 0 r
+ret eq get jfail 0 0
+end
+note serde_json::from_slice::<Value>(jin[0 .. jinl)) -> jroot; false: message jem/jeml, category jecat,
+note partial tree reachable from jroot (jnone when the failing value was a scalar at the root)
+fn js_parse to bool
+ret js_parse0 false
+end
+note as js_parse, but only the first value is read; trailing bytes are ignored (axum Json extractor)
+fn js_parsep to bool
+ret js_parse0 true
+end
+note kind: 0 null 1 false 2 true 3 u64 4 i64 5 f64 6 string 7 array 8 object; partial trees also
+note have placeholders 9 (key read, no value), 10 (value started, failed), 11 (next key failed)
+fn js_kind n ulong to uchar
+ret and get jnk n 15
+end
+note false for an incomplete container or a placeholder (parse failed inside it)
+fn js_done n ulong to bool
+ret eq and get jnk n 16 0
+end
+note completed members of an array / object (raw document order, duplicate keys included)
+fn js_len n ulong to ulong
+k = and get jnk n 15
+if or eq k 7 eq k 8
+ret ulong get jnl n
+end
+ret 0
+end
+note pending member of an incomplete container, else jnone
+fn js_pend n ulong to ulong
+if js_done n
+ret jnone
+end
+k = and get jnk n 15
+if and ne k 7 ne k 8
+ret jnone
+end
+p = get jcl add get jnv n ulong get jnl n
+if eq p 4294967295
+ret jnone
+end
+ret ulong p
+end
+note serde_path_to_error path (Value target) of the failure, appended to job: keys "a.b", indices "[i]",
+note "?" where serde could not capture a key (error inside next_key). Returns false and appends nothing
+note when the path is empty or only "?" segments (serde_path_to_error then prints no "path: " prefix).
+fn js_path to bool
+n = get jroot 0
+s0 = get jobl 0
+w = false
+real = false
+for it ulong 1000000
+if eq n jnone
+break
+end
+p = js_pend n
+if eq p jnone
+break
+end
+pk = and get jnk p 15
+if eq and get jnk n 15 7
+js_byte 91
+js_u64 js_len n
+js_byte 93
+real = true
+else
+if eq pk 9
+break
+end
+if w
+js_byte 46
+end
+if eq pk 11
+js_byte 63
+else
+js_esc_raw ulong get jnko p ulong get jnkl p
+real = true
+end
+end
+w = true
+n = p
+end
+if not real
+put jobl 0 s0
+end
+ret real
+end
+note copy pool bytes jsp[o .. o+n) to job unescaped
+fn js_esc_raw o ulong n ulong to void
+for b ulong 4000
+for c ulong 4000
+if eq n 0
+ret
+end
+js_byte get jsp o
+o = add o 1
+n = sub n 1
+end
+end
+end
+note Rust <str as Debug> of the string node n ("..." with \0 \t \r \n \\ \" and \u{hex}), appended to job
+fn js_dbg_str n ulong to void
+o = get jnv n
+e = add o ulong get jnl n
+js_byte 34
+i = o
+for b ulong 4000
+for t ulong 4000
+if ge i e
+js_byte 34
+ret
+end
+c = get jsp i
+if lt c 128
+js_dbg1 c
+i = add i 1
+else
+i = js_dbgm i e
+end
+end
+end
+js_byte 34
+end
+fn js_dbg1 c uchar to void
+if eq c 0
+js_byte 92
+js_byte 48
+ret
+end
+if eq c 9
+js_byte 92
+js_byte 116
+ret
+end
+if eq c 13
+js_byte 92
+js_byte 114
+ret
+end
+if eq c 10
+js_byte 92
+js_byte 110
+ret
+end
+if or eq c 92 eq c 34
+js_byte 92
+js_byte c
+ret
+end
+if or lt c 32 eq c 127
+js_dbgu uint c
+ret
+end
+js_byte c
+end
+fn js_dbgu v uint to void
+js_byte 92
+js_byte 117
+js_byte 123
+s = uint 28
+st = false
+for k ulong 8
+d = and shr v s 15
+if or st or ne d 0 eq s 0
+st = true
+js_byte get jthex d
+end
+if ne s 0
+s = sub s 4
+end
+end
+js_byte 125
+end
+note one multi-byte char of jsp at i (valid UTF-8); returns next index
+fn js_dbgm i ulong e ulong to ulong
+c = uint get jsp i
+k = ulong 1
+v = and c 31
+if ge c 224
+k = 2
+v = and c 15
+end
+if ge c 240
+k = 3
+v = and c 7
+end
+for q ulong k
+v = or shl v 6 and uint get jsp add add i q 1 63
+end
+if ru_inr v 2
+js_dbgu v
+else
+for q ulong add k 1
+js_byte get jsp add i q
+end
+end
+ret add add i k 1
+end
+fn js_child n ulong i ulong to ulong
+ret ulong get jcl add get jnv n i
+end
+fn js_num n ulong to ulong
+ret get jnv n
+end
+fn js_spos n ulong to ulong
+ret ulong get jns n
+end
+fn js_epos n ulong to ulong
+ret ulong get jne n
+end
+fn js_kend n ulong to ulong
+ret ulong get jnkq n
+end
+note position serde reports for a data error raised by a struct/map visitor itself (duplicate field after
+note its key, missing field before the closing brace): skip JSON whitespace from idx, then step over a
+note '}' (serde's end_map runs before fix_position). Duplicate field: js_vpos (js_kend m).
+fn js_vpos idx ulong to ulong
+e = get jinl 0
+for it ulong 100000000
+if ge idx e
+ret idx
+end
+c = get jin idx
+if eq c 125
+ret add idx 1
+end
+if and ne c 32 and ne c 10 and ne c 9 ne c 13
+ret idx
+end
+idx = add idx 1
+end
+ret idx
+end
+fn js_lnb b ulong idx ulong to ulong
+ln = ulong 1
+k = b
+for c ulong 4000
+for t ulong 4000
+if ge k idx
+ret ln
+end
+if eq get jin k 10
+ln = add ln 1
+end
+k = add k 1
+end
+end
+ret ln
+end
+fn js_solb b ulong idx ulong to ulong
+k = idx
+for c ulong 4000
+for t ulong 4000
+if le k b
+ret b
+end
+if eq get jin sub k 1 10
+ret k
+end
+k = sub k 1
+end
+end
+ret b
+end
+note serde line / column of absolute index idx in the main document
+fn js_line idx ulong to ulong
+ret js_lnb 0 idx
+end
+fn js_col idx ulong to ulong
+ret sub idx js_solb 0 idx
+end
+note byte copies into jin or jsv: sel 0 jsp -> jin, 1 jes -> jin, 2 jsp -> jsv
+note (js_tosv: pool bytes jsp[o .. o+n) to jsv/jsvl)
+fn js_cpb sel uchar d ulong o ulong n ulong to void
+for b ulong 4000
+for c ulong 4000
+if eq n 0
+ret
+end
+if eq sel 0
+x = get jsp o
+put jin d x
+else
+if eq sel 1
+x = get jes o
+put jin d x
+else
+x = get jsp o
+put jsv d x
+end
+end
+d = add d 1
+o = add o 1
+n = sub n 1
+end
+end
+end
+fn js_tosv o ulong n ulong to void
+put jsvl 0 n
+js_cpb 2 0 o n
+end
+fn js_str n ulong to void
+js_tosv get jnv n ulong get jnl n
+end
+fn js_key n ulong to void
+js_tosv ulong get jnko n ulong get jnkl n
+end
+note Value::get(key) on an object: the member kept by BTreeMap (last duplicate); jnone if absent
+fn js_find n ulong key view uchar * to ulong
+if ne and get jnk n 15 8
+ret jnone
+end
+off = get jnv n
+c = ulong get jnl n
+r = jnone
+i = ulong 0
+for b ulong 4000
+for t ulong 4000
+if ge i c
+ret r
+end
+m = ulong get jcl add off i
+if eq ulong get jnkl m len key
+if js_keq m key
+r = m
+end
+end
+i = add i 1
+end
+end
+ret r
+end
+fn js_keq m ulong key view uchar * to bool
+o = ulong get jnko m
+k = ulong 0
+for b ulong 4000
+for t ulong 4000
+if ge k len key
+ret true
+end
+if ne get jsp add o k get key k
+ret false
+end
+k = add k 1
+end
+end
+ret true
+end
+note ---- serializer (serde_json compact) ----
+fn js_esc1 c uchar to void
+js_byte 92
+if eq c 34
+js_byte 34
+ret
+end
+if eq c 92
+js_byte 92
+ret
+end
+if eq c 8
+js_byte 98
+ret
+end
+if eq c 12
+js_byte 102
+ret
+end
+if eq c 10
+js_byte 110
+ret
+end
+if eq c 13
+js_byte 114
+ret
+end
+if eq c 9
+js_byte 116
+ret
+end
+js_byte 117
+js_byte 48
+js_byte 48
+js_byte get jthex shr c 4
+js_byte get jthex and c 15
+end
+note escaped JSON string (with quotes) of pool bytes jsp[o .. o+n)
+fn js_esc_sp o ulong n ulong to void
+js_byte 34
+p = get jobl 0
+fast = le n div sub 16777216 p 6
+for b ulong 4000
+for t ulong 4000
+if eq n 0
+put jobl 0 p
+js_byte 34
+ret
+end
+c = get jsp o
+o = add o 1
+n = sub n 1
+if or lt c 32 or eq c 34 eq c 92
+put jobl 0 p
+js_esc1 c
+p = get jobl 0
+else
+if fast
+put job p c
+p = add p 1
+else
+put jobl 0 p
+js_byte c
+p = get jobl 0
+end
+end
+end
+end
+end
+note escaped JSON string of jes[off .. off+n)
+fn js_esc_buf off ulong n ulong to void
+js_byte 34
+p = get jobl 0
+fast = le n div sub 16777216 p 6
+for b ulong 4000
+for t ulong 4000
+if eq n 0
+put jobl 0 p
+js_byte 34
+ret
+end
+c = get jes off
+off = add off 1
+n = sub n 1
+if or lt c 32 or eq c 34 eq c 92
+put jobl 0 p
+js_esc1 c
+p = get jobl 0
+else
+if fast
+put job p c
+p = add p 1
+else
+put jobl 0 p
+js_byte c
+p = get jobl 0
+end
+end
+end
+end
+end
+fn js_esc_txt s view uchar * to void
+js_byte 34
+k = ulong 0
+for b ulong 4000
+for t ulong 4000
+if ge k len s
+js_byte 34
+ret
+end
+c = get s k
+k = add k 1
+if or lt c 32 or eq c 34 eq c 92
+js_esc1 c
+else
+js_byte c
+end
+end
+end
+end
+note serde_json::to_string of the subtree n (objects in sorted-key BTreeMap order)
+fn js_canon n ulong to void
+k = get jnk n
+if eq k 0
+js_raw jtnull
+ret
+end
+if eq k 1
+js_raw jtfalse
+ret
+end
+if eq k 2
+js_raw jttrue
+ret
+end
+if eq k 3
+js_u64 get jnv n
+ret
+end
+if eq k 4
+js_i64 bitcast long get jnv n
+ret
+end
+if eq k 5
+js_f64 get jnv n
+ret
+end
+if eq k 6
+js_esc_sp get jnv n ulong get jnl n
+ret
+end
+off = get jnv n
+c = ulong get jnl n
+if eq k 7
+js_byte 91
+js_canl off c false
+js_byte 93
+ret
+end
+js_byte 123
+js_canl add add off c 1 ulong get jcl add off c true
+js_byte 125
+end
+note members jcl[off .. off+c) comma separated; obj: "key":value
+fn js_canl off ulong c ulong obj bool to void
+i = ulong 0
+for b ulong 4000
+for t ulong 4000
+if ge i c
+ret
+end
+if ne i 0
+js_byte 44
+end
+x = ulong get jcl add off i
+if obj
+js_esc_sp ulong get jnko x ulong get jnkl x
+js_byte 58
+end
+js_canon x
+i = add i 1
+end
+end
+end
+note serde_json::to_string(&from_str::<Value>(jes[off .. off+n))) appended to job; false (nothing
+note appended) when the text is not accepted. The current tree (jroot and its nodes) is preserved.
+fn js_canon_buf off ulong n ulong to bool
+num_init
+put jsav 8 get jnn 0
+put jsav 9 get jcln 0
+put jsav 10 get jstn 0
+put jsav 11 get jspn 0
+put jsav 12 get jinu 0
+u = get jinu 0
+if gt n sub jincap u
+js_ecap
+ret false
+end
+js_cpb 1 u off n
+put jinu 0 add u n
+put jsav 13 ulong get jfail 0
+put jfail 0 0
+r = js_doc u add u n false
+ok = eq get jfail 0 0
+if ok
+js_canon r
+end
+put jfail 0 uchar get jsav 13
+put jnn 0 get jsav 8
+put jcln 0 get jsav 9
+put jstn 0 get jsav 10
+put jspn 0 get jsav 11
+put jinu 0 get jsav 12
+put jpb 0 0
+ret ok
+end

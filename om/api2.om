@@ -1,0 +1,643 @@
+note api2.om: handler bodies (search, recall, get, traverse, writes) on the store.
+global rsl ulong 64
+global rsb f64 64
+global rsk uchar 64
+global nres ulong 1
+global qtr uchar 4194304
+global qtrl ulong 1
+global qem f32 768
+global qemf ulong 1
+text tand " AND "
+text tor " OR "
+text tnot " NOT "
+text r_res "{\"results\":["
+text r_tail "],\"degraded\":[],\"elapsedMs\":"
+text r_lex ",\"lexicalScore\":"
+text r_gss ",\"graphScore\":0.0,\"semanticScore\":0.0,\"score\":"
+text r_ent "{\"entity\":"
+text r_fs "},\"finalScore\":"
+text r_cs ",\"componentScores\":{\"lexical\":"
+text r_sem ",\"semantic\":"
+text r_cr ",\"confidenceRecency\":0.95,\"graph\":0.0}}"
+text r_claims "{\"claims\":["
+text r_cend "]}"
+
+note ---- small byte helpers over qtr (the trimmed query) ----
+note Rust char::is_whitespace for the UTF-8 sequence at qtr[i]: its byte length, or 0
+fn ws_len i ulong n ulong to ulong
+c = get qtr i
+if or and ge c 9 le c 13 eq c 32
+ret 1
+end
+if lt c 128
+ret 0
+end
+if and eq c 194 lt add i 1 n
+d = get qtr add i 1
+if or eq d 133 eq d 160
+ret 2
+end
+ret 0
+end
+if lt add i 2 n
+ret ws_len3 c get qtr add i 1 get qtr add i 2
+end
+ret 0
+end
+fn ws_len3 a uchar b uchar c uchar to ulong
+if and and eq a 225 eq b 154 eq c 128
+ret 3
+end
+if and eq a 226 eq b 128
+if or le c 138 or eq c 168 or eq c 169 eq c 175
+if ge c 128
+ret 3
+end
+end
+end
+if and and eq a 226 eq b 129 eq c 159
+ret 3
+end
+if and and eq a 227 eq b 128 eq c 128
+ret 3
+end
+ret 0
+end
+fn qtr_has t view uchar * to bool
+n = get qtrl 0
+m = len t
+if gt m n
+ret false
+end
+for i ulong add sub n m 1
+if qtr_at i t
+ret true
+end
+end
+ret false
+end
+fn qtr_at i ulong t view uchar * to bool
+for k ulong len t
+if ne get qtr add i k get t k
+ret false
+end
+end
+ret true
+end
+
+note ---- result list ----
+fn res_has e ulong to bool
+for i ulong get nres 0
+if eq get rsl i e
+ret true
+end
+end
+ret false
+end
+fn res_add e ulong k uchar b f64 to void
+n = get nres 0
+if ge n len rsl
+ret
+end
+put rsl n e
+put rsk n k
+put rsb n b
+put nres 0 add n 1
+end
+
+note ---- FTS phase: run the MATCH text in qq for space d; fills the result list ----
+fn fts_run d ulong lim ulong to void
+for e ulong get nent 0
+v = uchar 0
+if and eq get esl e d eq get eret e 0
+v = 1
+end
+put qok e v
+end
+put qlim 0 lim
+n = fts_search
+put nres 0 0
+if le n 0
+ret
+end
+for i ulong ulong n
+res_add get qrd i 0 get qrb i
+end
+end
+note qq = clean_q (qtr without double quotes), optionally quoted
+fn qq_clean quote bool to void
+o = ulong 0
+if quote
+put qq 0 34
+o = 1
+end
+for i ulong get qtrl 0
+c = get qtr i
+if ne c 34
+put qq o c
+o = add o 1
+end
+end
+if quote
+put qq o 34
+o = add o 1
+end
+put qql 0 o
+end
+note qq = clean_q split on Unicode whitespace, joined with " AND "; returns the number of terms
+fn qq_and to ulong
+n = get qtrl 0
+o = ulong 0
+t = ulong 0
+i = ulong 0
+intok = false
+while lt i n bound 999999
+c = get qtr i
+w = ws_len i n
+if gt w 0
+intok = false
+i = add i w
+else
+if ne c 34
+if not intok
+if gt t 0
+for k ulong len tand
+put qq add o k get tand k
+end
+o = add o len tand
+end
+t = add t 1
+intok = true
+end
+put qq o c
+o = add o 1
+end
+i = add i 1
+end
+end
+put qql 0 o
+ret t
+end
+
+note ---- search ----
+fn api_search to ulong
+sp = get ap A_SPACE
+if eq sp NONE
+sp = stage_txt tdefsp
+end
+lim = get ap A_LIMIT
+if eq lim NONE
+lim = 12
+end
+if gt lim 50
+lim = 50
+end
+put nres 0 0
+d = dict_find sp
+if ne d NONE
+search_in d lim
+end
+js_raw r_res
+for i ulong get nres 0
+if gt i 0
+js_byte 44
+end
+o_search_row i
+end
+js_raw r_tail
+o_elapsed
+js_byte 125
+ret 200
+end
+fn search_in d ulong lim ulong to void
+q = get ap A_Q
+n = ulong 0
+if ne q NONE
+n = rf_len q
+o = rf_off q
+for i ulong n
+put jrs i get hs add o i
+end
+end
+ru_trim 0 n
+tro = get jtro 0
+tl = get jtrl 0
+for i ulong tl
+put qtr i get jrs add tro i
+end
+put qtrl 0 tl
+if eq tl 0
+search_list d lim
+ret
+end
+if or or qtr_has tand qtr_has tor or qtr_has tnot qtr_star
+qq_clean false
+fts_run d lim
+end
+if eq get nres 0 0
+qq_clean true
+fts_run d lim
+end
+if eq get nres 0 0
+if gt qq_and 1
+fts_run d lim
+end
+end
+if lt get nres 0 lim
+search_like d lim
+end
+if gt get nres 0 lim
+put nres 0 lim
+end
+end
+fn qtr_star to bool
+for i ulong get qtrl 0
+if eq get qtr i 42
+ret true
+end
+end
+ret false
+end
+note substring fallback: LIKE '%q%' on name or content, scan order, LIMIT lim rows, new ones appended
+fn search_like d ulong lim ulong to void
+n = get qtrl 0
+put qlp 0 37
+for i ulong n
+put qlp add i 1 get qtr i
+end
+put qlp add n 1 37
+put qlpl 0 add n 2
+like_set
+eo_range d
+a = get eor 0
+b = get eor 1
+got = ulong 0
+k = a
+while and lt k b lt got lim bound 999999
+e = get eord k
+if eq get eret e 0
+if like_ent e
+got = add got 1
+if not res_has e
+res_add e 1 0.0
+end
+end
+end
+k = add k 1
+end
+end
+fn like_ent e ulong to bool
+r = get enm e
+o = rf_off r
+n = rf_len r
+for i ulong n
+put qls i get hs add o i
+end
+put qlsl 0 n
+if like_test
+ret true
+end
+c = get ect e
+o = rf_off c
+n = rf_len c
+for i ulong n
+put qls i hc_get add o i
+end
+put qlsl 0 n
+ret like_test
+end
+note empty query: newest first by created_at (stable on scan order), LIMIT lim
+fn search_list d ulong lim ulong to void
+eo_range d
+a = get eor 0
+b = get eor 1
+for k ulong sub b a
+e = get eord add a k
+if eq get eret e 0
+list_insert e lim
+end
+end
+end
+fn list_insert e ulong lim ulong to void
+n = get nres 0
+p = n
+while gt p 0 bound 64
+if ge hs_cmp get eca get rsl sub p 1 get eca e 0
+break
+end
+p = sub p 1
+end
+if ge p lim
+ret
+end
+m = n
+if ge m lim
+m = sub lim 1
+end
+i = m
+while gt i p bound 64
+put rsl i get rsl sub i 1
+i = sub i 1
+end
+put rsl p e
+put rsk p 2
+if lt n lim
+put nres 0 add n 1
+end
+end
+fn o_search_row i ulong to void
+e = get rsl i
+k = get rsk i
+s = f64 0.4
+if eq k 0
+s = div 1.0 add 1.0 fabs get rsb i
+end
+if eq k 1
+s = 0.7
+end
+o_entity e
+js_raw r_lex
+js_f64 bitcast ulong s
+js_raw r_gss
+js_f64 bitcast ulong s
+js_byte 125
+end
+fn o_elapsed to void
+t = sub ulong monons get ap A_T0
+ms = mul div f64 t 1000000000.0 1000.0
+js_f64 bitcast ulong ms
+end
+
+note ---- recall ----
+global rcf f64 64
+global rcl f64 64
+global rcs f64 64
+fn api_recall to ulong
+sp = get ap A_SPACE
+if eq sp NONE
+sp = stage_txt tdefsp
+end
+lim = get ap A_LIMIT
+if eq lim NONE
+lim = 5
+end
+if gt lim 20
+lim = 20
+end
+enc_fetch_q
+put nres 0 0
+d = dict_find sp
+if ne d NONE
+recall_in d lim
+end
+js_raw r_res
+for i ulong get nres 0
+if gt i 0
+js_byte 44
+end
+js_raw r_ent
+o_entity get rsl i
+js_raw r_fs
+js_f64 bitcast ulong get rcf i
+js_raw r_cs
+js_f64 bitcast ulong get rcl i
+js_raw r_sem
+js_f64 bitcast ulong get rcs i
+js_raw r_cr
+end
+js_raw r_tail
+o_elapsed
+js_byte 125
+ret 200
+end
+fn recall_in d ulong lim ulong to void
+q = get ap A_Q
+o = rf_off q
+n = rf_len q
+for i ulong n
+put jrq i get hs add o i
+end
+put jrql 0 n
+ru_prep
+eo_range d
+a = get eor 0
+b = get eor 1
+for k ulong sub b a
+e = get eord add a k
+if eq get eret e 0
+recall_one e lim
+end
+end
+end
+fn recall_one e ulong lim ulong to void
+sem = f64 0.0
+if and eq get qemf 0 1 ne get eem e NONE
+sem = cos_em e
+end
+lex = recall_lex e
+fin = lex
+if eq get qemf 0 1
+fin = add mul 0.6 sem mul 0.4 lex
+end
+recall_insert e fin lex sem lim
+end
+fn recall_lex e ulong to f64
+r = get enm e
+o = rf_off r
+n = rf_len r
+for i ulong n
+put jrs i get hs add o i
+end
+put jrsl 0 n
+if ru_contains
+ret 0.9
+end
+c = get ect e
+o = rf_off c
+n = rf_len c
+for i ulong n
+put jrs i hc_get add o i
+end
+put jrsl 0 n
+if ru_contains
+ret 0.6
+end
+ret 0.0
+end
+note stable top-k: a new item goes after every kept item with a score >= its own
+fn recall_insert e ulong fin f64 lex f64 sem f64 lim ulong to void
+n = get nres 0
+p = n
+while gt p 0 bound 64
+if ge get rcf sub p 1 fin
+break
+end
+p = sub p 1
+end
+if ge p lim
+ret
+end
+m = n
+if ge m lim
+m = sub lim 1
+end
+i = m
+while gt i p bound 64
+j = sub i 1
+put rsl i get rsl j
+put rcf i get rcf j
+put rcl i get rcl j
+put rcs i get rcs j
+i = j
+end
+put rsl p e
+put rcf p fin
+put rcl p lex
+put rcs p sem
+if lt n lim
+put nres 0 add n 1
+end
+end
+note cosine similarity in f32 exactly as embeddings.rs (sequential sums, sqrt each, one divide)
+fn cos_em e ulong to f64
+r = get eem e
+if ne rf_len r 3072
+ret 0.0
+end
+o = rf_off r
+dot = f32 0.0
+na = f32 0.0
+nb = f32 0.0
+for i ulong 768
+a = get qem i
+bu = em_at add o mul i 4
+b = bitcast f32 bu
+dot = add dot mul a b
+na = add na mul a a
+nb = add nb mul b b
+end
+den = mul fsqrt na fsqrt nb
+if gt den 0.0
+ret f64 div dot den
+end
+ret 0.0
+end
+note omc at 3364a1df compiles `to f32` as `to void`; the bits travel as uint (reported to OmegaNext)
+fn em_at o ulong to uint
+v = or or ulong hc_get o shl ulong hc_get add o 1 8 or shl ulong hc_get add o 2 16 shl ulong hc_get add o 3 24
+ret uint v
+end
+
+note ---- get ----
+fn api_get to ulong
+t = get ap A_ID
+if eq t NONE
+t = get ap A_NAME
+end
+if or eq t NONE eq rf_len t 0
+js_raw e400id
+ret 400
+end
+sp = get ap A_SPACE
+if eq sp NONE
+sp = stage_txt tdefsp
+end
+d = dict_find sp
+if eq d NONE
+js_raw e404
+ret 404
+end
+eo_range d
+a = get eor 0
+b = get eor 1
+for k ulong sub b a
+e = get eord add a k
+if eq get eret e 0
+if or hs_eq get eid e t hs_eq get enm e t
+o_entity e
+js_byte 125
+ret 200
+end
+end
+end
+js_raw e404
+ret 404
+end
+
+note ---- traverse ----
+text k_csub ",\"subjectEntityId\":"
+text k_cprd ",\"predicate\":"
+text k_cobj ",\"objectEntityId\":"
+text k_clit ",\"literalValue\":"
+fn api_traverse to ulong
+s = get ap A_SUBJ
+sp = get ap A_SPACE
+if eq sp NONE
+sp = stage_txt tdefsp
+end
+d = dict_find sp
+js_raw r_claims
+k = ulong 0
+if ne d NONE
+for c ulong get nc 0
+if cl_in c d
+if hs_eq get csub c s
+k = o_claim_sep c k
+end
+end
+end
+for c ulong get nc 0
+if cl_in c d
+if and hs_eq get cobj c s not hs_eq get csub c s
+k = o_claim_sep c k
+end
+end
+end
+end
+js_raw r_cend
+ret 200
+end
+fn cl_in c ulong d ulong to bool
+ret and eq get cret c 0 eq get csl c d
+end
+fn o_claim_sep c ulong k ulong to ulong
+if gt k 0
+js_byte 44
+end
+o_claim c
+ret add k 1
+end
+fn o_claim c ulong to void
+js_raw k_id
+o_hs get cid c
+js_raw k_spid
+o_hs get csid c
+js_raw k_spsl
+o_hs get dref get csl c
+js_raw k_csub
+o_hs get csub c
+js_raw k_cprd
+o_hs get cprd c
+js_raw k_cobj
+o_hs get cobj c
+js_raw k_clit
+l = get clit c
+if eq l NONE
+js_raw tnull
+else
+o_canon l tnull
+end
+js_raw k_cf
+js_f64 bitcast ulong get ccf c
+js_raw k_md
+o_canon get cmd c tobj0
+js_raw k_ret
+if eq get cret c 0
+js_raw tfalse
+else
+js_raw ttrue
+end
+js_raw k_ca
+o_hs get cca c
+js_byte 125
+end

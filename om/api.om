@@ -1,0 +1,561 @@
+note api.om: routes, auth and the Cortex handlers (wire contract: spec/CORTEX-API.md).
+note Request strings are staged in hs at hst / hc at hct and committed only by writes.
+global hst ulong 1
+global hct ulong 1
+global ap ulong 48
+const A_Q ulong 0
+const A_SPACE ulong 1
+const A_LIMIT ulong 2
+const A_ID ulong 3
+const A_NAME ulong 4
+const A_TYPE ulong 5
+const A_CONT ulong 6
+const A_ALIAS ulong 7
+const A_META ulong 8
+const A_CONF ulong 9
+const A_VF ulong 10
+const A_VT ulong 11
+const A_EMB ulong 12
+const A_KIND ulong 13
+const A_SUBJ ulong 14
+const A_PRED ulong 15
+const A_OBJ ulong 16
+const A_LIT ulong 17
+const A_TT ulong 18
+const A_TID ulong 19
+const A_NOW ulong 20
+const A_T0 ulong 21
+const A_SPSET ulong 22
+const A_ROUTE ulong 23
+const A_ESET ulong 24
+const A_BUDGET ulong 25
+text tdefsp "atlas-memory"
+text tdeftype "discovery"
+text tempty ""
+text pt_wr "/api/cortex/write"
+text pt_srch "/api/cortex/search"
+text pt_rcl "/api/cortex/recall"
+text pt_get "/api/cortex/get"
+text pt_trav "/api/cortex/traverse"
+text pt_del "/api/cortex/delete"
+text pt_hlth "/health"
+text pt_stat "/status"
+text thealth "{\"runtime\":\"native-arm64-omega\",\"service\":\"cortex-rs\",\"space\":\"atlas-memory\",\"status\":\"ok\",\"version\":\"0.1.0\"}"
+text e401 "{\"error\":\"Unauthorized: invalid or missing Cortex bearer token\"}"
+text e503 "{\"error\":\"Service unavailable: Cortex authentication token unconfigured on host\"}"
+text e403 "{\"error\":\"Forbidden: token scope does not cover this space\"}"
+text e400id "{\"error\":\"Missing id or name parameter\"}"
+text e404 "{\"error\":\"Entity not found\"}"
+text e415 "Expected request with `Content-Type: application/json`"
+text e413 "Failed to buffer the request body: length limit exceeded"
+text eqs "Failed to deserialize query string: "
+text tbearer "Bearer "
+text tappl "application"
+text tjson "json"
+text tjson2 "+json"
+text tnull "null"
+text ttrue "true"
+text tfalse "false"
+text tobj0 "{}"
+text tarr0 "[]"
+
+note ---- staging helpers ----
+fn stage_jsv to ulong
+n = get jsvl 0
+o = get hst 0
+if gt add o n HSCAP
+trap 9
+end
+for i ulong n
+put hs add o i get jsv i
+end
+put hst 0 add o n
+ret rf_hs o n
+end
+fn stage_jsv_hc to ulong
+n = get jsvl 0
+o = get hct 0
+if gt add o n HCCAP
+trap 9
+end
+for i ulong n
+hc_put add o i get jsv i
+end
+put hct 0 add o n
+ret rf_hc o n
+end
+fn stage_txt t view uchar * to ulong
+o = get hst 0
+for i ulong len t
+put hs add o i get t i
+end
+put hst 0 add o len t
+ret rf_hs o len t
+end
+note stage the JSON output buffer (job[a..jobl)) as an hs string, then drop it from job
+fn stage_job a ulong to ulong
+n = sub get jobl 0 a
+o = get hst 0
+if gt add o n HSCAP
+trap 9
+end
+for i ulong n
+put hs add o i get job add a i
+end
+put hst 0 add o n
+put jobl 0 a
+ret rf_hs o n
+end
+fn st_begin to void
+put hst 0 get hsn 0
+put hct 0 get hcn 0
+for i ulong len ap
+put ap i NONE
+end
+end
+fn st_commit to void
+put hsn 0 get hst 0
+put hcn 0 get hct 0
+end
+
+note ---- JSON output of stored strings ----
+fn o_hs r ulong to void
+if eq r NONE
+js_raw tnull
+ret
+end
+o = rf_off r
+n = rf_len r
+for i ulong n
+put jes i get hs add o i
+end
+js_esc_buf 0 n
+end
+fn o_hc r ulong to void
+o = rf_off r
+n = rf_len r
+for i ulong n
+put jes i hc_get add o i
+end
+js_esc_buf 0 n
+end
+note canonical JSON of a stored json text; fallback text when it does not parse
+fn o_canon r ulong fb view uchar * to void
+o = rf_off r
+n = rf_len r
+for i ulong n
+put jes i get hs add o i
+end
+if not js_canon_buf 0 n
+js_raw fb
+end
+end
+text k_id "{\"id\":"
+text k_spid ",\"spaceId\":"
+text k_spsl ",\"spaceSlug\":"
+text k_ety ",\"entityType\":"
+text k_cn ",\"canonicalName\":"
+text k_ct ",\"content\":"
+text k_al ",\"aliases\":"
+text k_md ",\"metadata\":"
+text k_cf ",\"confidence\":"
+text k_rev ",\"revision\":"
+text k_ret ",\"retracted\":"
+text k_vf ",\"validFrom\":"
+text k_vt ",\"validTo\":"
+text k_ca ",\"createdAt\":"
+note the CortexEntity object without its closing brace
+fn o_entity e ulong to void
+js_raw k_id
+o_hs get eid e
+js_raw k_spid
+o_hs get esid e
+js_raw k_spsl
+o_hs get dref get esl e
+js_raw k_ety
+o_hs get dref get ety e
+js_raw k_cn
+o_hs get enm e
+js_raw k_ct
+o_hc get ect e
+js_raw k_al
+if eq get eav e 1
+o_canon get eal e tarr0
+else
+js_raw tarr0
+end
+js_raw k_md
+o_canon get emd e tobj0
+js_raw k_cf
+js_f64 bitcast ulong get ecf e
+js_raw k_rev
+js_i64 get erev e
+js_raw k_ret
+if eq get eret e 0
+js_raw tfalse
+else
+js_raw ttrue
+end
+js_raw k_vf
+o_hs get evf e
+js_raw k_vt
+o_hs get evt e
+js_raw k_ca
+o_hs get eca e
+end
+
+note ---- auth ----
+note tok: 0 len of CORTEX_TOKEN from the environment (NONE = unset or blank), 1 HOME len
+global tok uchar 4096
+global tokl ulong 2
+global thome uchar 4096
+global tfile uchar 4096
+text ttokpath "/.config/cortex/token"
+text tenvtok "CORTEX_TOKEN="
+text tenvhome "HOME="
+global envb uchar 65536
+fn env_get name view uchar * dst ulong to ulong
+c = ulong envcnt
+for i ulong c
+n = envread i envb 0 len envb
+if ge n long len name
+same = true
+for j ulong len name
+if ne get envb j get name j
+same = false
+end
+end
+if same
+rv = env_copy dst len name ulong n
+ret rv
+end
+end
+end
+ret NONE
+end
+note dst 0: tok (trimmed), 1: thome
+fn env_copy dst ulong a ulong n ulong to ulong
+k = sub n a
+for i ulong k
+put jrs i get envb add a i
+end
+if eq dst 1
+for i ulong k
+put thome i get jrs i
+end
+ret k
+end
+ru_trim 0 k
+o = get jtro 0
+l = get jtrl 0
+for i ulong l
+put tok i get jrs add o i
+end
+ret l
+end
+fn auth_init to void
+l = env_get tenvtok 0
+if eq l 0
+l = NONE
+end
+put tokl 0 l
+put tokl 1 env_get tenvhome 1
+end
+note load the token file when the environment has none (cortex-rs reads it on every request)
+fn auth_file to ulong
+h = get tokl 1
+if eq h NONE
+h = 0
+end
+for i ulong h
+put tfile i get thome i
+end
+for i ulong len ttokpath
+put tfile add h i get ttokpath i
+end
+fd = fopen tfile 0 add h len ttokpath 524288 0
+if lt fd 0
+ret 0
+end
+n = read int fd jrs 0 4096
+x = fclose int fd
+if or lt n 0 ne x 0
+ret 0
+end
+ru_trim 0 ulong n
+o = get jtro 0
+l = get jtrl 0
+for i ulong l
+put tok i get jrs add o i
+end
+ret l
+end
+note 0 ok, 401, 503 (and A_SPSET: NONE = full access, else the scoped token's index)
+fn auth_check to ulong
+l = get tokl 0
+if eq l NONE
+l = auth_file
+end
+if eq l 0
+ret 503
+end
+al = get hv H_AL
+if eq al NONE
+ret 401
+end
+ao = get hv H_AO
+if lt al len tbearer
+ret 401
+end
+for i ulong len tbearer
+if ne get rq add ao i get tbearer i
+ret 401
+end
+end
+o = add ao len tbearer
+n = sub al len tbearer
+for i ulong n
+put jrs i get rq add o i
+end
+ru_trim 0 n
+if auth_eq get jtro 0 get jtrl 0 l
+ret 0
+end
+ret scope_check get jtro 0 get jtrl 0
+end
+note constant-time compare of jrs[o..o+n) with tok[0..l)
+fn auth_eq o ulong n ulong l ulong to bool
+d = ulong 0
+if ne n l
+d = 1
+end
+k = n
+if gt k 4096
+k = 4096
+end
+for i ulong k
+x = ulong get jrs add o i
+y = ulong get tok i
+d = or d xor x y
+end
+ret eq d 0
+end
+
+note ---- routing ----
+note route ids: 1 health/status, 2 write, 3 search, 4 recall, 5 get, 6 traverse, 7 delete (extension), 0 unknown
+fn route_id to ulong
+o = get hv H_PO
+n = get hv H_PL
+if or rq_eq o n pt_hlth rq_eq o n pt_stat
+ret 1
+end
+if rq_eq o n pt_wr
+ret 2
+end
+if rq_eq o n pt_srch
+ret 3
+end
+if rq_eq o n pt_rcl
+ret 4
+end
+if rq_eq o n pt_get
+ret 5
+end
+if rq_eq o n pt_trav
+ret 6
+end
+if rq_eq o n pt_del
+ret 7
+end
+ret 0
+end
+note allow set per route (http_allow codes)
+fn route_allow r ulong to ulong
+if or eq r 1 eq r 5
+ret 1
+end
+if eq r 3
+ret 3
+end
+if eq r 0
+ret 0
+end
+ret 2
+end
+fn route_method_ok r ulong m ulong to bool
+if or eq r 1 eq r 5
+ret or eq m 1 eq m 2
+end
+if eq r 3
+ret or or eq m 1 eq m 2 eq m 3
+end
+ret eq m 3
+end
+fn send_txt c int st ulong ct ulong al ulong t view uchar * to void
+put jobl 0 0
+js_raw t
+http_send c st ct al get jobl 0
+end
+
+note one request on connection c
+fn api_conn c int to void
+st = http_read c
+if eq st 1
+ret
+end
+if ne st 0
+put jobl 0 0
+if eq st 413
+js_raw e413
+http_send c 413 2 0 get jobl 0
+ret
+end
+http_send c st 0 0 0
+ret
+end
+r = route_id
+put ap A_ROUTE r
+m = get hv H_METH
+if eq m 4
+http_preflight c route_allow r
+ret
+end
+if eq r 1
+if route_method_ok r m
+send_txt c 200 1 0 thealth
+else
+http_send c 405 0 1 0
+end
+ret
+end
+au = auth_check
+al = ulong 0
+if and ne r 0 not route_method_ok r m
+al = route_allow r
+end
+if eq au 401
+send_txt c 401 1 al e401
+ret
+end
+if eq au 503
+send_txt c 503 1 al e503
+ret
+end
+if eq r 0
+http_send c 404 0 0 0
+ret
+end
+if ne al 0
+http_send c 405 0 al 0
+ret
+end
+api_dispatch c r m
+end
+
+fn api_dispatch c int r ulong m ulong to void
+put jobl 0 0
+st_begin
+put ap A_T0 ulong monons
+if or eq r 5 and eq r 3 ne m 3
+api_get_or_search c r
+ret
+end
+if not json_ctype
+send_txt c 415 2 0 e415
+ret
+end
+bo = get hv H_BO
+bl = get hv H_BL
+for i ulong bl
+put jin i get rq add bo i
+end
+put jinl 0 bl
+st = ulong 0
+if eq r 2
+st = de_write
+end
+if eq r 3
+st = de_search
+end
+if eq r 4
+st = de_recall
+end
+if eq r 6
+st = de_traverse
+end
+if eq r 7
+st = de_delete
+end
+if ne st 0
+http_send c st 2 0 get jobl 0
+ret
+end
+put jobl 0 0
+st = api_run r
+http_send c st 1 0 get jobl 0
+end
+fn api_run r ulong to ulong
+if eq r 2
+ret api_write
+end
+if eq r 3
+ret api_search
+end
+if eq r 4
+ret api_recall
+end
+if eq r 6
+ret api_traverse
+end
+ret api_delete
+end
+fn api_get_or_search c int r ulong to void
+st = qs_parse r
+if ne st 0
+http_send c st 2 0 get jobl 0
+ret
+end
+put jobl 0 0
+if eq r 5
+st = api_get
+else
+st = api_search
+end
+http_send c st 1 0 get jobl 0
+end
+
+note axum Json content-type check: mime type application and subtype json or suffix +json
+fn json_ctype to bool
+n = get hv H_CL
+if eq n NONE
+ret false
+end
+o = get hv H_CO
+e = add o n
+s = o
+while and lt s e ne get rq s 59 bound 999999
+s = add s 1
+end
+while and gt s o rq_isws get rq sub s 1 bound 999999
+s = sub s 1
+end
+sl = o
+while and lt sl s ne get rq sl 47 bound 999999
+sl = add sl 1
+end
+if ge sl s
+ret false
+end
+if not rq_ieq o sub sl o tappl
+ret false
+end
+st = add sl 1
+sn = sub s st
+if rq_ieq st sn tjson
+ret true
+end
+if lt sn len tjson2
+ret false
+end
+ret rq_ieq sub s len tjson2 len tjson2 tjson2
+end

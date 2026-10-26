@@ -1,0 +1,201 @@
+note ===== like.om : SQLite 3.45.0 LIKE (likeFunc + patternCompare), case_sensitive_like off =====
+note Owner FtsEngine. Globals q*, functions like_*.
+note `X LIKE P` with no ESCAPE: '%' any run, '_' one UTF-8 character (sqlite3Utf8Read rules,
+note including invalid sequences), ASCII-only case folding, both strings end at their first NUL.
+note API
+note   like_set -> bool    pattern bytes qlp[0..qlpl); false when SQLite raises
+note                       "LIKE or GLOB pattern too complex" (qlpl > 50000, the default
+note                       SQLITE_LIMIT_LIKE_PATTERN_LENGTH); cortex-rs then fails the request
+note   like_test -> bool   subject bytes qct[0..qctl) (the same buffer fts_put reads content
+note                       from); true when SQLite's like() returns 1
+global qlp uchar 1048576
+global qlpl ulong 1
+global qlpe ulong 1
+global qlok ulong 1
+global qlq ulong 1
+fn like_set to bool
+n = get qlpl 0
+if gt n 1048576
+put qlok 0 0
+ret false
+end
+e = n
+i = ulong 0
+for a ulong 2
+dn = false
+for j ulong 999999
+if ge i n
+dn = true
+break
+end
+if eq get qlp i 0
+e = i
+dn = true
+break
+end
+i = add i 1
+end
+if dn
+break
+end
+end
+put qlpe 0 e
+if gt n 50000
+put qlok 0 0
+ret false
+end
+put qlok 0 1
+ret true
+end
+fn like_test to bool
+if eq get qlok 0 0
+ret false
+end
+ret eq like_cmp 0 0 0
+end
+note byte i of the pattern (src 0) or the subject (src 1); 0 past the end
+fn like_b src ulong i ulong to ulong
+if eq src 0
+if lt i get qlpe 0
+ret ulong get qlp i
+end
+ret 0
+end
+if lt i get qctl 0
+ret ulong get qct i
+end
+ret 0
+end
+note sqlite3Utf8Read at i; returns the character, the next index in qlq
+fn like_rd src ulong i ulong to ulong
+c = like_b src i
+k = add i 1
+if ge c 192
+c = get qutab add QUTR sub c 192
+for a ulong 17
+dn = false
+for j ulong 999999
+b = like_b src k
+if ne and b 192 128
+dn = true
+break
+end
+c = and add shl c 6 and b 63 4294967295
+k = add k 1
+end
+if dn
+break
+end
+end
+if or lt c 128 or eq and c 4294965248 55296 eq and c 4294967294 65534
+c = ulong 65533
+end
+end
+put qlq 0 k
+ret c
+end
+fn like_up c ulong to ulong
+if and ge c 97 le c 122
+ret sub c 32
+end
+ret c
+end
+note patternCompare(zPattern + p, zString + s): 0 MATCH, 1 NOMATCH, 2 NOWILDCARDMATCH
+fn like_cmp p0 ulong s0 ulong to ulong
+p = p0
+s = s0
+for a ulong 17
+for j ulong 999999
+c = like_rd 0 p
+p = get qlq 0
+if eq c 0
+if eq like_b 1 s 0
+ret 0
+end
+ret 1
+end
+if eq c 37
+ret like_all p s
+end
+c2 = like_rd 1 s
+s = get qlq 0
+if ne c c2
+if not and and eq fts_lower c fts_lower c2 lt c 128 lt c2 128
+if not and eq c 95 ne c2 0
+ret 1
+end
+end
+end
+end
+end
+trap 9
+end
+note the '%' branch of patternCompare; p is just past the '%'
+fn like_all p0 ulong s0 ulong to ulong
+p = p0
+s = s0
+c = ulong 0
+for a ulong 17
+dn = false
+for j ulong 999999
+c = like_rd 0 p
+p = get qlq 0
+if eq c 95
+if eq like_rd 1 s 0
+ret 2
+end
+s = get qlq 0
+else
+if ne c 37
+dn = true
+break
+end
+end
+end
+if dn
+break
+end
+end
+if eq c 0
+ret 0
+end
+if lt c 128
+ret like_scan p s like_up c fts_lower c
+end
+for a ulong 17
+for j ulong 999999
+c2 = like_rd 1 s
+s = get qlq 0
+if eq c2 0
+ret 2
+end
+if eq c2 c
+r = like_cmp p s
+if ne r 1
+ret r
+end
+end
+end
+end
+trap 9
+end
+note strcspn-driven search for an ASCII stop character (either case)
+fn like_scan p ulong s0 ulong u ulong l ulong to ulong
+s = s0
+for a ulong 17
+for j ulong 999999
+b = like_b 1 s
+if eq b 0
+ret 2
+end
+s = add s 1
+if or eq b u eq b l
+r = like_cmp p s
+if ne r 1
+ret r
+end
+end
+end
+end
+trap 9
+end

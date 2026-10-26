@@ -1,0 +1,805 @@
+note log.om: the crash-safe append log (format: spec/BUILD-CONTRACT.md "Log file format").
+note Records are staged in klw (crc32c.om) and written with one pwrite + fdatasync before the
+note request is answered. Replay reads blocks into klr; a torn or crc-failing tail is cut off.
+note lgs: 0 fd, 1 file end, 2 staging fill, 3 source fd for disk refs, 4 replay cursor, 5 block file offset
+global lgs ulong 10
+global lpath uchar 4096
+global lpl ulong 1
+global ltmp uchar 4100
+text lmagic "CXLOG001"
+text ltsfx ".tmp"
+const OP_SPACE uchar 1
+const OP_ENT uchar 2
+const OP_ERET uchar 3
+const OP_CLAIM uchar 4
+const OP_CRET uchar 5
+const OP_EDEL uchar 6
+const OP_SDEL uchar 7
+const LBLK ulong 8388608
+note write the 8-byte file header through the staging buffer (pwrite needs a writable array)
+fn lg_hdr fd int to long
+for i ulong 8
+put klw i get lmagic i
+end
+ret pwrite fd klw 0 8 0
+end
+
+fn lg_byte c uchar to void
+n = get lgs 2
+put klw n c
+put lgs 2 add n 1
+end
+fn lg_u32 v ulong to void
+lg_byte uchar and v 255
+lg_byte uchar and shr v 8 255
+lg_byte uchar and shr v 16 255
+lg_byte uchar and shr v 24 255
+end
+fn lg_u64 v ulong to void
+lg_u32 and v 4294967295
+lg_u32 shr v 32
+end
+fn lg_begin op uchar to void
+put lgs 2 8
+lg_byte op
+end
+note a string field from any reference kind (hs, hc, or on disk in the source log)
+fn lg_str r ulong to bool
+if eq r NONE
+lg_u32 4294967295
+ret true
+end
+n = rf_len r
+if gt add add get lgs 2 n 4 len klw
+ret false
+end
+lg_u32 n
+o = rf_off r
+w = get lgs 2
+if rf_isdisk r
+k = pread int get lgs 3 klw w n long o
+if ne k long n
+ret false
+end
+else
+if ne and r RHC 0
+for i ulong n
+put klw add w i hc_get add o i
+end
+else
+for i ulong n
+put klw add w i get hs add o i
+end
+end
+end
+put lgs 2 add w n
+ret true
+end
+note finish the staged record and append it durably
+fn lg_end to bool
+n = get lgs 2
+pl = sub n 8
+put klw 0 uchar and pl 255
+put klw 1 uchar and shr pl 8 255
+put klw 2 uchar and shr pl 16 255
+put klw 3 uchar and shr pl 24 255
+c = ulong crc_klw 8 pl
+put klw 4 uchar and c 255
+put klw 5 uchar and shr c 8 255
+put klw 6 uchar and shr c 16 255
+put klw 7 uchar and shr c 24 255
+fd = int get lgs 0
+pos = get lgs 1
+w = pwrite fd klw 0 n long pos
+if ne w long n
+ret false
+end
+if eq get lgs 8 0
+s = fdsync fd
+if ne s 0
+ret false
+end
+end
+put lgs 1 add pos n
+ret true
+end
+
+note entity record (full row image) for slot e
+fn lg_entity e ulong to bool
+lg_begin OP_ENT
+lg_u64 get erow e
+lg_u64 get efts e
+ok = lg_str get eid e
+ok = and ok lg_str get esid e
+ok = and ok lg_str get dref get esl e
+ok = and ok lg_str get dref get ety e
+ok = and ok lg_str get enm e
+ok = and ok lg_str get ect e
+put lgs 6 sub get lgs 2 rf_len get ect e
+ok = and ok lg_str get eal e
+ok = and ok lg_str get emd e
+lg_u64 bitcast ulong get ecf e
+lg_u64 bitcast ulong get erev e
+lg_byte get eret e
+ok = and ok lg_str get evf e
+ok = and ok lg_str get evt e
+ok = and ok lg_str get eca e
+ok = and ok lg_str get eem e
+put lgs 7 sub get lgs 2 rf_len get eem e
+ret ok
+end
+fn lg_space s ulong to bool
+lg_begin OP_SPACE
+lg_u64 get srow s
+ok = lg_str get sid s
+ok = and ok lg_str get dref get sdi s
+ok = and ok lg_str get sca s
+ret ok
+end
+fn lg_claim c ulong to bool
+lg_begin OP_CLAIM
+lg_u64 get crow c
+ok = lg_str get cid c
+ok = and ok lg_str get csid c
+ok = and ok lg_str get dref get csl c
+ok = and ok lg_str get csub c
+ok = and ok lg_str get cprd c
+ok = and ok lg_str get cobj c
+ok = and ok lg_str get clit c
+lg_u64 bitcast ulong get ccf c
+ok = and ok lg_str get cmd c
+lg_byte get cret c
+ok = and ok lg_str get cca c
+ret ok
+end
+fn lg_idop op uchar r ulong to bool
+lg_begin op
+ret lg_str r
+end
+
+note ---- replay ----
+fn lr_byte to uchar
+p = get lgs 4
+put lgs 4 add p 1
+ret get klr p
+end
+fn lr_u32 to ulong
+a = ulong lr_byte
+b = ulong lr_byte
+c = ulong lr_byte
+d = ulong lr_byte
+ret or or a shl b 8 or shl c 16 shl d 24
+end
+fn lr_u64 to ulong
+a = lr_u32
+b = lr_u32
+ret or a shl b 32
+end
+note a small string: copied into hs and committed
+fn lr_hs to ulong
+n = lr_u32
+if eq n 4294967295
+ret NONE
+end
+p = get lgs 4
+o = get hsn 0
+if gt add o n HSCAP
+trap 9
+end
+for i ulong n
+put hs add o i get klr add p i
+end
+put hsn 0 add o n
+put lgs 4 add p n
+ret rf_hs o n
+end
+note a large string: left in the file, referenced by its file offset
+fn lr_disk to ulong
+n = lr_u32
+if eq n 4294967295
+ret NONE
+end
+p = get lgs 4
+put lgs 4 add p n
+ret rf_disk add get lgs 5 p n
+end
+note staged string for lookups: copy bytes into hs past hsn without committing
+fn lr_stage to ulong
+n = lr_u32
+if eq n 4294967295
+ret NONE
+end
+p = get lgs 4
+o = get hsn 0
+for i ulong n
+put hs add o i get klr add p i
+end
+put lgs 4 add p n
+ret rf_hs o n
+end
+
+note decoded record image: 0 rowid, 1 ftsrow, 2 id, 3 space id, 4 slug dict, 5 type dict, 6 name,
+note 7 content, 8 aliases, 9 metadata, 10 confidence bits, 11 revision, 12 retracted, 13 valid_from,
+note 14 valid_to, 15 created_at, 16 embedding. Claims reuse slots with their own meaning.
+global ri ulong 24
+fn lr_dict to ulong
+r = lr_stage
+if eq r NONE
+trap 9
+end
+ret dict_intern r
+end
+fn lr_entity to void
+put ri 0 lr_u64
+put ri 1 lr_u64
+put ri 2 lr_hs
+put ri 3 lr_hs
+put ri 4 lr_dict
+put ri 5 lr_dict
+put ri 6 lr_hs
+put ri 7 lr_disk
+put ri 8 lr_hs
+put ri 9 lr_hs
+put ri 10 lr_u64
+put ri 11 lr_u64
+put ri 12 ulong lr_byte
+put ri 13 lr_hs
+put ri 14 lr_hs
+put ri 15 lr_hs
+put ri 16 lr_disk
+st_put_image
+end
+note apply an entity row image from ri (replay and compaction share it)
+fn st_put_image to void
+e = mid_find get ri 2
+isnew = eq e NONE
+if isnew
+e = get nent 0
+if ge e EMAX
+trap 9
+end
+put nent 0 add e 1
+else
+ent_unlink e
+end
+put erow e get ri 0
+put efts e get ri 1
+put eid e get ri 2
+put esid e get ri 3
+put esl e get ri 4
+put ety e get ri 5
+put enm e get ri 6
+put ect e get ri 7
+st_put_image2 e
+ent_link e
+if isnew
+mid_add e
+end
+end
+fn st_put_image2 e ulong to void
+put eal e get ri 8
+put emd e get ri 9
+put ecf e bitcast f64 get ri 10
+put erev e bitcast long get ri 11
+put eret e uchar get ri 12
+put evf e get ri 13
+put evt e get ri 14
+put eca e get ri 15
+put eem e get ri 16
+end
+fn lr_claim to void
+put ri 0 lr_u64
+put ri 2 lr_hs
+put ri 3 lr_hs
+put ri 4 lr_dict
+put ri 5 lr_hs
+put ri 6 lr_hs
+put ri 7 lr_hs
+put ri 8 lr_hs
+put ri 10 lr_u64
+put ri 9 lr_hs
+put ri 12 ulong lr_byte
+put ri 15 lr_hs
+cl_put_image
+end
+fn cl_put_image to void
+c = mcl_find get ri 2
+isnew = eq c NONE
+if isnew
+c = get nc 0
+if ge c CMAX
+trap 9
+end
+put nc 0 add c 1
+end
+put crow c get ri 0
+put cid c get ri 2
+put csid c get ri 3
+put csl c get ri 4
+put csub c get ri 5
+put cprd c get ri 6
+put cobj c get ri 7
+put clit c get ri 8
+put cmd c get ri 9
+put ccf c bitcast f64 get ri 10
+put cret c uchar get ri 12
+put cca c get ri 15
+if isnew
+mcl_add c
+end
+if gt get crow c get stv 2
+put stv 2 get crow c
+end
+end
+fn lr_space to void
+row = lr_u64
+idr = lr_hs
+d = lr_dict
+car = lr_hs
+if eq get dsp d 0
+s = sp_add row idr d car
+if eq s NONE
+trap 9
+end
+end
+end
+note hard delete of one entity slot (keeps the slot number unused)
+fn st_kill e ulong to void
+if eq get eret e 2
+ret
+end
+st_fts_drop e
+ent_unlink e
+mid_del e
+put eret e 2
+if eq get erow e get stv 0
+st_rowmax
+end
+end
+fn cl_kill c ulong to void
+if eq get cret c 2
+ret
+end
+h = hs_hash get cid c
+m = sub MCLN 1
+i = and h m
+for k ulong MCLN
+v = get mcl i
+if eq v 0
+break
+end
+if eq v add c 1
+put mcl i NONE
+break
+end
+i = and add i 1 m
+end
+put cret c 2
+end
+note hard delete of a space: its entities, its claims and the space row
+fn st_kill_space d ulong to void
+for e ulong get nent 0
+if eq get esl e d
+st_kill e
+end
+end
+for c ulong get nc 0
+if eq get csl c d
+cl_kill c
+end
+end
+s = sp_of d
+if ne s NONE
+put srow s NONE
+put dsp d 0
+end
+end
+fn lr_op op uchar to void
+if eq op OP_ENT
+lr_entity
+ret
+end
+if eq op OP_SPACE
+lr_space
+ret
+end
+if eq op OP_CLAIM
+lr_claim
+ret
+end
+r = lr_stage
+if eq op OP_ERET
+e = mid_find r
+if ne e NONE
+put eret e 1
+put efts e 0
+end
+ret
+end
+if eq op OP_CRET
+c = mcl_find r
+if ne c NONE
+put cret c 1
+end
+ret
+end
+if eq op OP_EDEL
+e = mid_find r
+if ne e NONE
+st_kill e
+end
+ret
+end
+if eq op OP_SDEL
+d = dict_find r
+if ne d NONE
+st_kill_space d
+end
+ret
+end
+trap 9
+end
+
+note replay the whole file; returns the offset where valid records end
+fn lg_replay fd int size ulong to ulong
+pos = ulong 8
+while lt pos size bound 999999
+n = sub size pos
+if gt n LBLK
+n = LBLK
+end
+r = pread fd klr 0 n long pos
+if ne r long n
+trap 9
+end
+put lgs 5 pos
+used = lg_block n
+if eq used 0
+ret pos
+end
+pos = add pos used
+end
+ret pos
+end
+note apply every complete, valid record in klr[0..n); returns bytes consumed (0 = stop here)
+fn lg_block n ulong to ulong
+p = ulong 0
+while le add p 8 n bound 999999
+put lgs 4 p
+pl = lr_u32
+cr = lr_u32
+if or eq pl 0 gt add add p 8 pl n
+ret p
+end
+if ne cr ulong crc_klr add p 8 pl
+ret p
+end
+put lgs 4 add p 8
+lr_op lr_byte
+if ne get lgs 4 add add p 8 pl
+trap 9
+end
+p = add add p 8 pl
+end
+ret p
+end
+
+note ---- hc allocation and materialisation of on-disk strings ----
+fn hc_alloc n ulong to ulong
+o = get hcn 0
+if gt add o n HCCAP
+trap 9
+end
+put hcn 0 add o n
+ret o
+end
+note read a disk reference from the source log into hc; returns the hc reference
+fn hc_from_disk r ulong to ulong
+if not rf_isdisk r
+ret r
+end
+n = rf_len r
+k = pread int get lgs 3 klr 0 n long rf_off r
+if ne k long n
+trap 9
+end
+o = hc_alloc n
+for i ulong n
+hc_put add o i get klr i
+end
+ret rf_hc o n
+end
+fn st_materialize to void
+for e ulong get nent 0
+if eq get eret e 0
+put ect e hc_from_disk get ect e
+put eem e hc_from_disk get eem e
+end
+end
+end
+
+note ---- bottom-up stable merge sort of ss[0..n) by sk (ascending) ----
+global ss ulong 262144
+global sk ulong 262144
+global ss2 ulong 262144
+global sk2 ulong 262144
+fn ms_pass n ulong w ulong to void
+lo = ulong 0
+while lt lo n bound 999999
+mi = add lo w
+if gt mi n
+mi = n
+end
+hi = add mi w
+if gt hi n
+hi = n
+end
+ms_merge lo mi hi
+lo = hi
+end
+for i ulong n
+put ss i get ss2 i
+put sk i get sk2 i
+end
+end
+fn ms_merge lo ulong mi ulong hi ulong to void
+i = lo
+j = mi
+k = lo
+while lt k hi bound 999999
+tk = false
+if lt i mi
+tk = true
+if lt j hi
+tk = le get sk i get sk j
+end
+end
+if tk
+put ss2 k get ss i
+put sk2 k get sk i
+i = add i 1
+else
+put ss2 k get ss j
+put sk2 k get sk j
+j = add j 1
+end
+k = add k 1
+end
+end
+fn ms_sort n ulong to void
+w = ulong 1
+while lt w n bound 64
+ms_pass n w
+w = mul w 2
+end
+end
+
+note index every FTS row in rowid order (after replay)
+fn st_fts_build to void
+n = ulong 0
+for e ulong get nent 0
+if and eq get eret e 0 ne get efts e 0
+put ss n e
+put sk n get efts e
+n = add n 1
+end
+end
+ms_sort n
+fts_reset
+for i ulong n
+st_fts_put get ss i
+end
+end
+
+note ---- file handling ----
+note open path lpath[0..lpl) relative to the working directory; create with header if missing
+fn lg_open to int
+fd = fopen lpath 0 get lpl 0 524354 384
+if lt fd 0
+ret int fd
+end
+sz = fseek int fd 0 2
+if lt sz 0
+ret -1
+end
+if eq sz 0
+w = lg_hdr int fd
+if ne w 8
+ret -1
+end
+s = fdsync int fd
+if ne s 0
+ret -1
+end
+sz = long 8
+end
+if lt sz 8
+ret -2
+end
+r = pread int fd klr 0 8 0
+if ne r 8
+ret -1
+end
+for i ulong 8
+if ne get klr i get lmagic i
+ret -2
+end
+end
+put lgs 0 ulong fd
+put lgs 1 ulong sz
+put lgs 3 ulong fd
+ret 0
+end
+note full startup: replay, cut a torn tail, rebuild maxima, load live strings, compact, index
+fn st_start to int
+r = lg_open
+if ne r 0
+ret r
+end
+put stv 5 1
+fd = int get lgs 0
+end1 = lg_replay fd get lgs 1
+if lt end1 get lgs 1
+t = ftrunc fd long end1
+if ne t 0
+ret -3
+end
+put lgs 1 end1
+end
+st_rowmax
+st_ftsmax
+st_spmax
+st_materialize
+c = lg_compact
+if ne c 0
+ret c
+end
+st_fts_build
+put stv 5 0
+ret 0
+end
+fn st_spmax to void
+m = ulong 0
+for s ulong get ns 0
+if and ne get srow s NONE gt get srow s m
+m = get srow s
+end
+end
+put stv 3 m
+end
+
+note rewrite the log with the current state only (also removes hard-deleted data from disk)
+fn lg_compact to int
+n = get lpl 0
+for i ulong n
+put ltmp i get lpath i
+end
+for i ulong 4
+put ltmp add n i get ltsfx i
+end
+tl = add n 4
+u = unlink ltmp 0 tl
+fd = fopen ltmp 0 tl 524354 384
+if lt fd 0
+ret -4
+end
+if lt u -2
+ret -4
+end
+w = lg_hdr int fd
+if ne w 8
+ret -4
+end
+put lgs 0 ulong fd
+put lgs 1 8
+put lgs 8 1
+ok = lg_compact_rows
+put lgs 8 0
+if not ok
+ret -5
+end
+s = fdsync int fd
+if ne s 0
+ret -5
+end
+ret lg_swap n tl
+end
+fn lg_compact_rows to bool
+for s ulong get ns 0
+if ne get srow s NONE
+if not and lg_space s lg_end
+ret false
+end
+end
+end
+for e ulong get nent 0
+if lt get eret e 2
+if not lg_compact_ent e
+ret false
+end
+end
+end
+for c ulong get nc 0
+if lt get cret c 2
+if not and lg_claim c lg_end
+ret false
+end
+end
+end
+ret true
+end
+note write one entity and move its on-disk references to their place in the new file
+fn lg_compact_ent e ulong to bool
+if not lg_entity e
+ret false
+end
+pos = get lgs 1
+if not lg_end
+ret false
+end
+c = get ect e
+if rf_isdisk c
+put ect e rf_disk add pos get lgs 6 rf_len c
+end
+m = get eem e
+if rf_isdisk m
+put eem e rf_disk add pos get lgs 7 rf_len m
+end
+ret true
+end
+note rename tmp over the log, sync the directory, retire the old descriptor
+global lpk uchar 8300
+fn lg_swap n ulong tl ulong to int
+put lpk 0 2
+put lpk 1 0
+put lpk 2 uchar and tl 255
+put lpk 3 uchar shr tl 8
+for i ulong tl
+put lpk add 4 i get ltmp i
+end
+o = add 4 tl
+put lpk o uchar and n 255
+put lpk add o 1 uchar shr n 8
+for i ulong n
+put lpk add add o 2 i get lpath i
+end
+r = renames lpk 0 add add o 2 n 0
+if ne r 0
+ret -6
+end
+old = int get lgs 3
+x = fclose old
+if ne x 0
+ret -6
+end
+put lgs 3 get lgs 0
+lg_dirsync n
+ret 0
+end
+note fsync the directory that holds the log so the rename is durable
+fn lg_dirsync n ulong to void
+k = n
+while gt k 0 bound 999999
+if eq get lpath sub k 1 47
+break
+end
+k = sub k 1
+end
+if eq k 0
+put ltmp 0 46
+k = 1
+else
+for i ulong k
+put ltmp i get lpath i
+end
+end
+fd = fopen ltmp 0 k 524288 0
+if lt fd 0
+ret
+end
+s = fsync int fd
+x = fclose int fd
+if or ne s 0 ne x 0
+ret
+end
+end

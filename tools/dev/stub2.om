@@ -1,0 +1,8 @@
+global qnm uchar 65536
+global qnml ulong 1
+global qct uchar 16777216
+global qctl ulong 1
+fn fts_put e ulong r ulong to void
+end
+fn fts_del e ulong to void
+end

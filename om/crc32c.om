@@ -1,0 +1,101 @@
+note crc32c.om - CRC-32C (Castagnoli), table driven, owner SqliteImport.
+note Reflected polynomial 0x82F63B78 = 2197175160, init and xorout 0xFFFFFFFF = 4294967295.
+note Check value of the 9 bytes "123456789" is 0xE3069283 = 3808858755.
+note (decimal forms from WolframLanguageEvaluator FromDigits[...,16]; the table is built at run time
+note from the polynomial by crc_init, 8 shift steps per entry, so no generated data table is committed.)
+note
+note Shared buffers (declared here so the server unit and cortex-import use the same storage):
+note   klw uchar 8388608 : log record staging buffer (writer side). A record is staged as
+note                       u32 payload_len, u32 crc32c(payload), payload (little endian).
+note   klr uchar 8388608 : log replay read buffer (reader side).
+note API:
+note   crc_klw o n -> uint : CRC-32C of klw[o .. o+n). Trap 3 when the range is outside klw.
+note   crc_klr o n -> uint : CRC-32C of klr[o .. o+n). Trap 3 when the range is outside klr.
+note   streaming: crc_reset; crc_feed o n (klw range) / crc_feedr o n (klr range) / crc_byte b;
+note              crc_value -> uint. State lives in kcrcst[0] (the running register, pre-xorout).
+note   Globals read: kcrctab (256 uint table), kcrcok (table built flag), kcrcst, klw, klr.
+global klw uchar 8388608
+global klr uchar 8388608
+global kcrctab uint 256
+global kcrcok uchar 1
+global kcrcst uint 1
+fn crc_init to void
+for i uint 256
+c = i
+for k uint 8
+if eq and c 1 1
+c = xor shr c 1 2197175160
+else
+c = shr c 1
+end
+end
+put kcrctab ulong i c
+end
+put kcrcok 0 1
+end
+fn crc_reset to void
+if eq get kcrcok 0 0
+crc_init
+end
+put kcrcst 0 4294967295
+end
+fn crc_byte b uchar to void
+s = get kcrcst 0
+put kcrcst 0 xor get kcrctab ulong and xor s uint b 255 shr s 8
+end
+fn crc_value to uint
+ret xor get kcrcst 0 4294967295
+end
+note crc_feed: klw[o .. o+n). The range is checked first (trap 3), then fed in 65536-byte chunks:
+note n <= 8388608 gives at most 128 outer passes (bound 200), each inner pass consumes one byte.
+fn crc_feed o ulong n ulong to void
+if or gt n len klw gt o sub len klw n
+trap 3
+end
+s = get kcrcst 0
+p = o
+e = add o n
+while lt p e bound 200
+q = add p 65536
+if gt q e
+q = e
+end
+while lt p q bound 65536
+x = ulong and xor s uint get klw p 255
+s = xor get kcrctab x shr s 8
+p = add p 1
+end
+end
+put kcrcst 0 s
+end
+note crc_feedr: the same over klr.
+fn crc_feedr o ulong n ulong to void
+if or gt n len klr gt o sub len klr n
+trap 3
+end
+s = get kcrcst 0
+p = o
+e = add o n
+while lt p e bound 200
+q = add p 65536
+if gt q e
+q = e
+end
+while lt p q bound 65536
+x = ulong and xor s uint get klr p 255
+s = xor get kcrctab x shr s 8
+p = add p 1
+end
+end
+put kcrcst 0 s
+end
+fn crc_klw o ulong n ulong to uint
+crc_reset
+crc_feed o n
+ret crc_value
+end
+fn crc_klr o ulong n ulong to uint
+crc_reset
+crc_feedr o n
+ret crc_value
+end

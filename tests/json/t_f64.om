@@ -1,0 +1,62 @@
+note tests/json/t_f64.om - differential harness for f64.om: per 8-byte f64 bit pattern one record
+note "ryu zmij serde parse" (see the oracle's f64 mode). Needs t_io.om.
+fn t_u64 to ulong
+v = ulong 0
+p = get tibp 0
+for k ulong 8
+v = or v shl ulong get tib add p k mul k 8
+end
+put tibp 0 add p 8
+ret v
+end
+fn t_hex v ulong to void
+for k ulong 16
+js_byte get jthex and shr v mul sub 15 k 4 15
+end
+end
+fn main to int
+num_init
+for it ulong 100000000
+if not t_need 8
+t_flush
+ret 0
+end
+b = t_u64
+put jobl 0 0
+if eq and b 9218868437227405312 9218868437227405312
+js_byte 45
+else
+num_ryu b false
+num_jfb
+end
+js_byte 32
+s0 = get jobl 0
+js_f64z b
+s1 = get jobl 0
+js_byte 32
+js_f64 b
+js_byte 32
+for i ulong sub s1 s0
+x = get job add s0 i
+put jin i x
+end
+put jinl 0 sub s1 s0
+if js_parse
+k = js_kind get jroot 0
+if eq k 5
+js_byte 102
+t_hex js_num get jroot 0
+else
+js_byte 105
+js_canon get jroot 0
+end
+else
+js_byte 69
+for i ulong get jeml 0
+js_byte get jem i
+end
+end
+t_emitjob
+end
+ret 1
+end

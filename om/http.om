@@ -1,0 +1,761 @@
+note http.om: HTTP/1.1 server side for Cortex. One request per connection (connection: close).
+note Request bytes land in rq; parsed fields in hv (indices below); the response head is built in hb,
+note the response body is the JSON output buffer job/jobl (json.om).
+global rq uchar 4194304
+global hv ulong 32
+global hb uchar 8192
+global hbl ulong 1
+global hnn ulong 1
+const H_METH ulong 0
+const H_PO ulong 1
+const H_PL ulong 2
+const H_QO ulong 3
+const H_QL ulong 4
+const H_BO ulong 5
+const H_BL ulong 6
+const H_AO ulong 7
+const H_AL ulong 8
+const H_CO ulong 9
+const H_CL ulong 10
+const H_OO ulong 11
+const H_OL ulong 12
+const H_ACRM ulong 13
+const H_EXP ulong 14
+const H_CLEN ulong 15
+const H_CHNK ulong 16
+const H_END ulong 17
+const H_N ulong 18
+const H_TE ulong 19
+const NONE ulong 18446744073709551615
+const BODYMAX ulong 2097152
+text tget "GET"
+text thead "HEAD"
+text tpost "POST"
+text topt "OPTIONS"
+text tauth "authorization"
+text tctype "content-type"
+text torigin "origin"
+text tacrm "access-control-request-method"
+text texpect "expect"
+text tclen "content-length"
+text tte "transfer-encoding"
+text t100c "100-continue"
+text tchunk "chunked"
+text thttp "HTTP/1.1 "
+text tvary "vary: origin, access-control-request-method, access-control-request-headers"
+text tctj "content-type: application/json"
+text tctt "content-type: text/plain; charset=utf-8"
+text tacao "access-control-allow-origin: "
+text tallow "allow: "
+text tclh "content-length: "
+text tdate "date: "
+text tconn "connection: close"
+text tacam "access-control-allow-methods: *"
+text tacah "access-control-allow-headers: *"
+text tcont "HTTP/1.1 100 Continue"
+text s200 "200 OK"
+text s201 "201 Created"
+text s400 "400 Bad Request"
+text s401 "401 Unauthorized"
+text s403 "403 Forbidden"
+text s404 "404 Not Found"
+text s405 "405 Method Not Allowed"
+text s408 "408 Request Timeout"
+text s413 "413 Payload Too Large"
+text s415 "415 Unsupported Media Type"
+text s422 "422 Unprocessable Entity"
+text s431 "431 Request Header Fields Too Large"
+text s500 "500 Internal Server Error"
+text s503 "503 Service Unavailable"
+text tdays "ThuFriSatSunMonTueWed"
+text tmons "JanFebMarAprMayJunJulAugSepOctNovDec"
+text orig1 "http://127.0.0.1:18095"
+text orig2 "http://localhost:18095"
+
+text tgmt " GMT"
+text tagh "GET,HEAD"
+text tap "POST"
+text tagp "GET,HEAD,POST"
+fn hb_byte c uchar to void
+n = get hbl 0
+if lt n len hb
+put hb n c
+put hbl 0 add n 1
+end
+end
+fn hb_txt s view uchar * to void
+for i ulong len s
+hb_byte get s i
+end
+end
+fn hb_crlf to void
+hb_byte 13
+hb_byte 10
+end
+fn hb_line s view uchar * to void
+hb_txt s
+hb_crlf
+end
+fn hb_dec v ulong to void
+if ge v 10
+hb_dec div v 10
+end
+hb_byte uchar add rem v 10 48
+end
+fn hb_dec2 v ulong to void
+hb_byte uchar add div v 10 48
+hb_byte uchar add rem v 10 48
+end
+fn hb_part s view uchar * k ulong to void
+o = mul k 3
+hb_byte get s o
+hb_byte get s add o 1
+hb_byte get s add o 2
+end
+fn hb_rq o ulong n ulong to void
+for i ulong n
+hb_byte get rq add o i
+end
+end
+
+note lower-case ASCII compare of rq[o..o+n) against a lower-case text
+fn rq_ieq o ulong n ulong t view uchar * to bool
+if ne n len t
+ret false
+end
+for i ulong n
+c = get rq add o i
+if and ge c 65 le c 90
+c = add c 32
+end
+if ne c get t i
+ret false
+end
+end
+ret true
+end
+fn rq_eq o ulong n ulong t view uchar * to bool
+if ne n len t
+ret false
+end
+for i ulong n
+if ne get rq add o i get t i
+ret false
+end
+end
+ret true
+end
+fn rq_isws c uchar to bool
+ret or eq c 32 eq c 9
+end
+
+note IMF-fixdate from realtime nanoseconds (RFC 9110 5.6.7), civil-from-days (Hinnant).
+global hdt ulong 3
+fn hb_civil days ulong to void
+z = add days 719468
+era = div z 146097
+doe = sub z mul era 146097
+yoe = div sub sub add doe div doe 36524 div doe 1460 div doe 146096 365
+doy = sub doe sub add mul 365 yoe div yoe 4 div yoe 100
+mp = div add mul 5 doy 2 153
+put hdt 2 add sub doy div add mul 153 mp 2 5 1
+m = add mp 3
+y = add yoe mul era 400
+if ge m 13
+m = sub m 12
+end
+if le m 2
+y = add y 1
+end
+put hdt 0 y
+put hdt 1 m
+end
+fn hb_date to void
+ns = realns
+s = ulong div ns 1000000000
+days = div s 86400
+sod = rem s 86400
+hb_part tdays rem days 7
+hb_byte 44
+hb_byte 32
+hb_civil days
+hb_dec2 get hdt 2
+hb_byte 32
+hb_part tmons sub get hdt 1 1
+hb_byte 32
+hb_dec get hdt 0
+hb_byte 32
+hb_dec2 div sod 3600
+hb_byte 58
+hb_dec2 rem div sod 60 60
+hb_byte 58
+hb_dec2 rem sod 60
+hb_txt tgmt
+end
+
+note find a header by lower-case name; returns its trimmed value in hv slots (off, len) or leaves NONE
+fn http_hdrs to bool
+p = get hv H_END
+e = get hv H_N
+while lt p e bound 999999
+ls = p
+while and lt p e ne get rq p 10 bound 999999
+p = add p 1
+end
+lend = p
+if and gt lend ls eq get rq sub lend 1 13
+lend = sub lend 1
+end
+p = add p 1
+if eq lend ls
+ret true
+end
+c = ls
+while and lt c lend ne get rq c 58 bound 999999
+c = add c 1
+end
+if ge c lend
+ret false
+end
+if eq c ls
+ret false
+end
+v = add c 1
+while and lt v lend rq_isws get rq v bound 999999
+v = add v 1
+end
+ve = lend
+while and gt ve v rq_isws get rq sub ve 1 bound 999999
+ve = sub ve 1
+end
+http_hdr1 ls sub c ls v sub ve v
+end
+ret false
+end
+fn http_hdr1 no ulong nl ulong v ulong vl ulong to void
+if rq_ieq no nl tauth
+if eq get hv H_AL NONE
+put hv H_AO v
+put hv H_AL vl
+end
+ret
+end
+if rq_ieq no nl tctype
+if eq get hv H_CL NONE
+put hv H_CO v
+put hv H_CL vl
+end
+ret
+end
+if rq_ieq no nl torigin
+if eq get hv H_OL NONE
+put hv H_OO v
+put hv H_OL vl
+end
+ret
+end
+if rq_ieq no nl tacrm
+put hv H_ACRM 1
+ret
+end
+if rq_ieq no nl texpect
+if rq_ieq v vl t100c
+put hv H_EXP 1
+end
+ret
+end
+if rq_ieq no nl tte
+put hv H_TE 1
+if rq_ieq v vl tchunk
+put hv H_CHNK 1
+end
+ret
+end
+if rq_ieq no nl tclen
+n = ulong 0
+if eq vl 0
+put hv H_CLEN sub NONE 1
+ret
+end
+for i ulong vl
+c = get rq add v i
+if or lt c 48 gt c 57
+put hv H_CLEN sub NONE 1
+ret
+end
+if gt n 100000000000
+put hv H_CLEN sub NONE 1
+ret
+end
+n = add mul n 10 ulong sub c 48
+end
+if and ne get hv H_CLEN NONE ne get hv H_CLEN n
+put hv H_CLEN sub NONE 1
+ret
+end
+put hv H_CLEN n
+end
+end
+
+note request line: METHOD SP target SP HTTP/1.x ; method code 1 GET 2 HEAD 3 POST 4 OPTIONS 9 other
+fn http_rline to bool
+e = get hv H_N
+p = ulong 0
+while and lt p e ne get rq p 32 bound 999999
+p = add p 1
+end
+if or ge p e eq p 0
+ret false
+end
+m = ulong 9
+if rq_eq 0 p tget
+m = 1
+end
+if rq_eq 0 p thead
+m = 2
+end
+if rq_eq 0 p tpost
+m = 3
+end
+if rq_eq 0 p topt
+m = 4
+end
+put hv H_METH m
+p = add p 1
+t = p
+while and lt p e ne get rq p 32 bound 999999
+if or eq get rq p 10 eq get rq p 13
+ret false
+end
+p = add p 1
+end
+if or ge p e eq p t
+ret false
+end
+q = t
+while and lt q p ne get rq q 63 bound 999999
+q = add q 1
+end
+put hv H_PO t
+put hv H_PL sub q t
+if lt q p
+put hv H_QO add q 1
+put hv H_QL sub sub p q 1
+end
+while and lt p e ne get rq p 10 bound 999999
+p = add p 1
+end
+put hv H_END add p 1
+ret true
+end
+
+note reset hv for a new request
+fn http_clear to void
+for i ulong len hv
+put hv i NONE
+end
+put hv H_ACRM 0
+put hv H_EXP 0
+put hv H_CHNK 0
+put hv H_TE 0
+end
+
+note wait for data then recv into rq at offset n; returns bytes read, 0 on close, -1 on timeout/error
+fn http_recv c int n ulong dl long to long
+now = monons
+if ge now dl
+ret -1
+end
+w = waitio c 1 sub dl now
+if le w 0
+ret -1
+end
+cap = sub len rq n
+if eq cap 0
+ret -1
+end
+r = recv c rq n cap 0
+ret r
+end
+
+note find CRLFCRLF or LFLF end of head within rq[0..n); returns index after it or NONE
+fn http_headend n ulong to ulong
+i = ulong 0
+while lt i n bound 999999
+if eq get rq i 10
+j = add i 1
+if lt j n
+if eq get rq j 10
+ret add i 2
+end
+if lt add j 1 n
+if and eq get rq j 13 eq get rq add j 1 10
+ret add i 3
+end
+end
+end
+end
+i = add i 1
+end
+ret NONE
+end
+
+note read one request. returns 0 ok, 1 peer closed or timeout before any byte, else an HTTP status to answer
+fn http_read c int to ulong
+http_clear
+dl = add monons 10000000000
+n = ulong 0
+he = NONE
+while eq he NONE bound 4096
+r = http_recv c n dl
+if le r 0
+if eq n 0
+ret 1
+end
+ret 400
+end
+n = add n ulong r
+he = http_headend n
+if and eq he NONE gt n 65536
+ret 431
+end
+end
+put hv H_N he
+if not http_rline
+ret 400
+end
+if not http_hdrs
+ret 400
+end
+if eq get hv H_CLEN sub NONE 1
+ret 400
+end
+ret http_body c n dl
+end
+
+note body: content-length or chunked. Body bytes end up contiguous at hv H_BO
+fn http_body c int n0 ulong dl long to ulong
+n = n0
+he = get hv H_N
+put hv H_BO he
+if eq get hv H_CHNK 1
+ret http_chunked c n dl
+end
+cl = get hv H_CLEN
+if eq cl NONE
+if eq get hv H_TE 1
+ret 400
+end
+cl = 0
+end
+if gt cl BODYMAX
+put hv H_BL cl
+ret 413
+end
+if and eq get hv H_EXP 1 and gt cl 0 lt sub n he cl
+http_cont c
+end
+while lt sub n he cl bound 999999
+r = http_recv c n dl
+if le r 0
+ret 400
+end
+n = add n ulong r
+end
+put hv H_BL cl
+ret 0
+end
+fn http_cont c int to void
+put hbl 0 0
+hb_txt tcont
+hb_crlf
+hb_crlf
+s = send c hb 0 get hbl 0 0
+if lt s 0
+ret
+end
+end
+
+note chunked decode in place: data moves down to H_BO. hcs: 0 write pos, 1 read pos, 2 bytes held, 3 total
+global hcs ulong 4
+fn http_chunked c int n0 ulong dl long to ulong
+if eq get hv H_EXP 1
+http_cont c
+end
+put hcs 0 get hv H_N
+put hcs 1 get hv H_N
+put hcs 2 n0
+put hcs 3 0
+while true bound 999999
+st = http_chunk1 c dl
+if ne st 1
+ret st
+end
+end
+ret 400
+end
+note one chunk: returns 1 to continue, 0 done, else a status
+fn http_chunk1 c int dl long to ulong
+p = get hcs 1
+lnend = http_need_line c p get hcs 2 dl
+if eq lnend NONE
+ret 400
+end
+put hcs 2 get hnn 0
+sz = ulong 0
+dg = ulong 0
+while lt p lnend bound 999999
+v = http_hexv get rq p
+if eq v 99
+break
+end
+sz = add mul sz 16 v
+dg = add dg 1
+if gt sz BODYMAX
+ret 413
+end
+p = add p 1
+end
+if eq dg 0
+ret 400
+end
+p = add lnend 1
+if eq sz 0
+put hv H_BL get hcs 3
+ret 0
+end
+if gt add get hcs 3 sz BODYMAX
+ret 413
+end
+if not http_fill c add add p sz 2 dl
+ret 400
+end
+w = get hcs 0
+for i ulong sz
+put rq add w i get rq add p i
+end
+put hcs 0 add w sz
+put hcs 3 add get hcs 3 sz
+p = add p sz
+if eq get rq p 13
+p = add p 1
+end
+if ne get rq p 10
+ret 400
+end
+put hcs 1 add p 1
+ret 1
+end
+note receive until at least want bytes are held (hcs 2)
+fn http_fill c int want ulong dl long to bool
+while lt get hcs 2 want bound 999999
+n = get hcs 2
+if ge n len rq
+ret false
+end
+r = http_recv c n dl
+if le r 0
+ret false
+end
+put hcs 2 add n ulong r
+end
+ret true
+end
+fn http_hexv c uchar to ulong
+if and ge c 48 le c 57
+ret ulong sub c 48
+end
+if and ge c 97 le c 102
+ret ulong sub c 87
+end
+if and ge c 65 le c 70
+ret ulong sub c 55
+end
+ret 99
+end
+note make sure a full line starting at p is in rq; returns index of its LF (or NONE); stores n in hv H_TE
+fn http_need_line c int p ulong n0 ulong dl long to ulong
+n = n0
+while true bound 999999
+i = p
+while lt i n bound 999999
+if eq get rq i 10
+put hnn 0 n
+ret i
+end
+i = add i 1
+end
+if ge n len rq
+ret NONE
+end
+r = http_recv c n dl
+if le r 0
+ret NONE
+end
+n = add n ulong r
+end
+ret NONE
+end
+
+note status code to reason text
+fn hb_status st ulong to void
+hb_txt thttp
+if eq st 200
+hb_txt s200
+ret
+end
+if eq st 201
+hb_txt s201
+ret
+end
+if eq st 400
+hb_txt s400
+ret
+end
+if eq st 401
+hb_txt s401
+ret
+end
+if eq st 403
+hb_txt s403
+ret
+end
+if eq st 404
+hb_txt s404
+ret
+end
+if eq st 405
+hb_txt s405
+ret
+end
+if eq st 408
+hb_txt s408
+ret
+end
+if eq st 413
+hb_txt s413
+ret
+end
+if eq st 415
+hb_txt s415
+ret
+end
+if eq st 422
+hb_txt s422
+ret
+end
+if eq st 431
+hb_txt s431
+ret
+end
+if eq st 503
+hb_txt s503
+ret
+end
+hb_txt s500
+end
+
+note allowed CORS origin? 1 when the request Origin is one of the allow-list values
+fn http_origin_ok to bool
+o = get hv H_OO
+l = get hv H_OL
+if eq l NONE
+ret false
+end
+if rq_eq o l orig1
+ret true
+end
+ret rq_eq o l orig2
+end
+
+note send head + body. ctype 0 none, 1 json, 2 text. allow: 0 none, 1 "GET,HEAD", 2 "POST", 3 "GET,HEAD,POST"
+fn http_send c int st ulong ctype ulong allow ulong blen ulong to void
+put hbl 0 0
+hb_status st
+hb_crlf
+if eq ctype 1
+hb_line tctj
+end
+if eq ctype 2
+hb_line tctt
+end
+hb_line tvary
+if http_origin_ok
+hb_txt tacao
+hb_rq get hv H_OO get hv H_OL
+hb_crlf
+end
+http_allow allow
+hb_txt tclh
+hb_dec blen
+hb_crlf
+hb_txt tdate
+hb_date
+hb_crlf
+hb_line tconn
+hb_crlf
+s = send c hb 0 get hbl 0 0
+if or lt s 0 or eq blen 0 eq get hv H_METH 2
+ret
+end
+http_sendall c blen
+end
+fn http_allow allow ulong to void
+if eq allow 0
+ret
+end
+hb_txt tallow
+if eq allow 1
+hb_txt tagh
+end
+if eq allow 2
+hb_txt tap
+end
+if eq allow 3
+hb_txt tagp
+end
+hb_crlf
+end
+fn http_sendall c int blen ulong to void
+o = ulong 0
+dl = add monons 10000000000
+while lt o blen bound 999999
+w = waitio c 4 sub dl monons
+if le w 0
+ret
+end
+s = send c job o sub blen o 0
+if le s 0
+ret
+end
+o = add o ulong s
+end
+end
+
+note CORS preflight (tower-http CorsLayer): 200, allow-origin when listed, methods/headers *, allow per route
+fn http_preflight c int allow ulong to void
+put hbl 0 0
+hb_status 200
+hb_crlf
+if http_origin_ok
+hb_txt tacao
+hb_rq get hv H_OO get hv H_OL
+hb_crlf
+end
+hb_line tvary
+hb_line tacam
+hb_line tacah
+http_allow allow
+hb_txt tclh
+hb_dec 0
+hb_crlf
+hb_txt tdate
+hb_date
+hb_crlf
+hb_line tconn
+hb_crlf
+s = send c hb 0 get hbl 0 0
+if lt s 0
+ret
+end
+end

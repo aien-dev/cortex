@@ -1,0 +1,10 @@
+global klw uchar 8388608
+global klr uchar 8388608
+fn crc_klw o ulong n ulong to uint
+ret 0
+end
+fn crc_klr o ulong n ulong to uint
+ret 0
+end
+fn fts_reset to void
+end

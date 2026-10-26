@@ -1,0 +1,265 @@
+
+/home/drakestapleton/.local/bin/cortex-rs:     file format elf64-littleaarch64
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .text:
+
+00000000001870d0 <fts5Bm25Function>:
+  1870d0:	sub	sp, sp, #0xb0
+  1870d4:	stp	x29, x30, [sp, #64]
+  1870d8:	add	x29, sp, #0x40
+  1870dc:	stp	x19, x20, [sp, #80]
+  1870e0:	mov	x20, x0
+  1870e4:	mov	x19, x1
+  1870e8:	adrp	x0, 6ef000 <_RNvNtNtNtCskxtBwYRO61I_4core7unicode12unicode_data11conversions13LOWERCASE_LUT+0x810>
+  1870ec:	ldr	x0, [x0, #2480]
+  1870f0:	stp	x21, x22, [sp, #96]
+  1870f4:	ldr	x5, [x20, #120]
+  1870f8:	stp	x23, x24, [sp, #112]
+  1870fc:	stp	x25, x26, [sp, #128]
+  187100:	mov	w26, w3
+  187104:	stp	x27, x28, [sp, #144]
+  187108:	mov	x27, x4
+  18710c:	ldr	x1, [x0]
+  187110:	str	x1, [sp, #56]
+  187114:	mov	x1, #0x0                   	// #0
+  187118:	str	wzr, [sp, #28]
+  18711c:	mov	x0, x19
+  187120:	str	x2, [sp]
+  187124:	blr	x5
+  187128:	mov	x23, x0
+  18712c:	cbz	x0, 187310 <fts5Bm25Function+0x240>
+  187130:	ldr	x21, [x23, #24]
+  187134:	mov	w1, #0x0                   	// #0
+  187138:	ldrsw	x2, [x23]
+  18713c:	add	x22, sp, #0x30
+  187140:	mov	x0, x21
+  187144:	lsl	x2, x2, #3
+  187148:	bl	409a0 <memset@plt>
+  18714c:	ldr	x2, [x20, #64]
+  187150:	add	x1, sp, #0x1c
+  187154:	mov	x0, x19
+  187158:	blr	x2
+  18715c:	mov	w28, w0
+  187160:	cbnz	w0, 1874b0 <fts5Bm25Function+0x3e0>
+  187164:	ldr	w0, [sp, #28]
+  187168:	add	x25, sp, #0x28
+  18716c:	add	x24, sp, #0x20
+  187170:	cmp	w0, w28
+  187174:	b.le	187214 <fts5Bm25Function+0x144>
+  187178:	ldr	x5, [x20, #72]
+  18717c:	mov	x2, x24
+  187180:	mov	x4, x22
+  187184:	mov	x3, x25
+  187188:	mov	w1, w28
+  18718c:	mov	x0, x19
+  187190:	blr	x5
+  187194:	mov	w2, w0
+  187198:	cbz	w0, 1871e4 <fts5Bm25Function+0x114>
+  18719c:	ldr	x0, [sp]
+  1871a0:	mov	w1, w2
+  1871a4:	bl	13dda0 <sqlite3_result_error_code>
+  1871a8:	adrp	x0, 6ef000 <_RNvNtNtNtCskxtBwYRO61I_4core7unicode12unicode_data11conversions13LOWERCASE_LUT+0x810>
+  1871ac:	ldr	x0, [x0, #2480]
+  1871b0:	ldr	x2, [sp, #56]
+  1871b4:	ldr	x1, [x0]
+  1871b8:	subs	x2, x2, x1
+  1871bc:	mov	x1, #0x0                   	// #0
+  1871c0:	b.ne	1874b8 <fts5Bm25Function+0x3e8>  // b.any
+  1871c4:	ldp	x29, x30, [sp, #64]
+  1871c8:	ldp	x19, x20, [sp, #80]
+  1871cc:	ldp	x21, x22, [sp, #96]
+  1871d0:	ldp	x23, x24, [sp, #112]
+  1871d4:	ldp	x25, x26, [sp, #128]
+  1871d8:	ldp	x27, x28, [sp, #144]
+  1871dc:	add	sp, sp, #0xb0
+  1871e0:	ret
+  1871e4:	ldr	w0, [sp, #40]
+  1871e8:	fmov	d0, #1.000000000000000000e+00
+  1871ec:	cmp	w0, w26
+  1871f0:	b.lt	187304 <fts5Bm25Function+0x234>  // b.tstop
+  1871f4:	ldrsw	x0, [sp, #32]
+  1871f8:	add	w28, w28, #0x1
+  1871fc:	ldr	d1, [x21, x0, lsl #3]
+  187200:	fadd	d0, d1, d0
+  187204:	str	d0, [x21, x0, lsl #3]
+  187208:	ldr	w0, [sp, #28]
+  18720c:	cmp	w0, w28
+  187210:	b.gt	187178 <fts5Bm25Function+0xa8>
+  187214:	ldr	x3, [x20, #96]
+  187218:	mov	x2, x22
+  18721c:	mov	w1, #0xffffffff            	// #-1
+  187220:	mov	x0, x19
+  187224:	blr	x3
+  187228:	mov	w2, w0
+  18722c:	ldr	w1, [sp, #48]
+  187230:	cbnz	w0, 18719c <fts5Bm25Function+0xcc>
+  187234:	ldr	w3, [x23]
+  187238:	cmp	w3, #0x0
+  18723c:	b.le	18749c <fts5Bm25Function+0x3cc>
+  187240:	scvtf	d2, w1
+  187244:	fmov	d4, #7.500000000000000000e-01
+  187248:	ldr	d3, [x23, #8]
+  18724c:	fmov	d1, #2.500000000000000000e-01
+  187250:	mov	x0, #0x3333333333333333    	// #3689348814741910323
+  187254:	movk	x0, #0x3ff3, lsl #48
+  187258:	fmov	d0, x0
+  18725c:	fmul	d2, d2, d4
+  187260:	ldr	x1, [x23, #16]
+  187264:	fdiv	d2, d2, d3
+  187268:	fadd	d2, d2, d1
+  18726c:	fmul	d2, d2, d0
+  187270:	cmp	w3, #0x1
+  187274:	b.eq	1874a8 <fts5Bm25Function+0x3d8>  // b.none
+  187278:	adrp	x4, 528000 <anon.0547635cfdd41696acc1e35c4f7b758d.113.llvm.4709699262315398518+0x43>
+  18727c:	lsr	w2, w3, #1
+  187280:	movi	d0, #0x0
+  187284:	mov	x0, #0x0                   	// #0
+  187288:	dup	v6.2d, v2.d[0]
+  18728c:	lsl	x2, x2, #4
+  187290:	ldr	q5, [x4, #1648]
+  187294:	nop
+  187298:	ldr	q3, [x21, x0]
+  18729c:	ldr	q4, [x1, x0]
+  1872a0:	add	x0, x0, #0x10
+  1872a4:	fmul	v1.2d, v3.2d, v5.2d
+  1872a8:	fadd	v3.2d, v6.2d, v3.2d
+  1872ac:	fdiv	v1.2d, v1.2d, v3.2d
+  1872b0:	fmul	v1.2d, v1.2d, v4.2d
+  1872b4:	mov	d3, v1.d[1]
+  1872b8:	fadd	d0, d0, d1
+  1872bc:	fadd	d0, d3, d0
+  1872c0:	cmp	x0, x2
+  1872c4:	b.ne	187298 <fts5Bm25Function+0x1c8>  // b.any
+  1872c8:	and	w2, w3, #0xfffffffe
+  1872cc:	tbz	w3, #0, 1872f4 <fts5Bm25Function+0x224>
+  1872d0:	sxtw	x0, w2
+  1872d4:	adrp	x2, 528000 <anon.0547635cfdd41696acc1e35c4f7b758d.113.llvm.4709699262315398518+0x43>
+  1872d8:	ldr	d4, [x2, #1648]
+  1872dc:	ldr	d1, [x21, x0, lsl #3]
+  1872e0:	ldr	d3, [x1, x0, lsl #3]
+  1872e4:	fadd	d2, d2, d1
+  1872e8:	fmul	d1, d1, d4
+  1872ec:	fdiv	d1, d1, d2
+  1872f0:	fmadd	d0, d1, d3, d0
+  1872f4:	fneg	d0, d0
+  1872f8:	ldr	x0, [sp]
+  1872fc:	bl	11ef50 <sqlite3_result_double>
+  187300:	b	1871a8 <fts5Bm25Function+0xd8>
+  187304:	ldr	x0, [x27, w0, sxtw #3]
+  187308:	bl	114ef0 <sqlite3_value_double>
+  18730c:	b	1871f4 <fts5Bm25Function+0x124>
+  187310:	ldr	x1, [x20, #48]
+  187314:	stp	xzr, xzr, [sp, #32]
+  187318:	mov	x0, x19
+  18731c:	blr	x1
+  187320:	lsl	w22, w0, #1
+  187324:	mov	w21, w0
+  187328:	sxtw	x22, w22
+  18732c:	add	x22, x22, #0x4
+  187330:	lsl	x22, x22, #3
+  187334:	mov	x0, x22
+  187338:	bl	184970 <sqlite3_malloc64>
+  18733c:	mov	x23, x0
+  187340:	cbz	x0, 187414 <fts5Bm25Function+0x344>
+  187344:	mov	x2, x22
+  187348:	mov	w1, #0x0                   	// #0
+  18734c:	bl	409a0 <memset@plt>
+  187350:	sxtw	x25, w21
+  187354:	mov	x2, x23
+  187358:	add	x1, sp, #0x20
+  18735c:	ldr	x3, [x20, #24]
+  187360:	mov	x0, x19
+  187364:	str	w21, [x2], #32
+  187368:	add	x4, x2, w21, sxtw #3
+  18736c:	stp	x2, x4, [x23, #16]
+  187370:	blr	x3
+  187374:	mov	w2, w0
+  187378:	cbnz	w0, 187400 <fts5Bm25Function+0x330>
+  18737c:	ldr	x3, [x20, #32]
+  187380:	add	x2, sp, #0x28
+  187384:	mov	x0, x19
+  187388:	mov	w1, #0xffffffff            	// #-1
+  18738c:	blr	x3
+  187390:	mov	w2, w0
+  187394:	cbnz	w0, 187400 <fts5Bm25Function+0x330>
+  187398:	ldp	d1, d0, [sp, #32]
+  18739c:	scvtf	d1, d1
+  1873a0:	scvtf	d0, d0
+  1873a4:	fdiv	d0, d0, d1
+  1873a8:	str	d0, [x23, #8]
+  1873ac:	cmp	w21, #0x0
+  1873b0:	b.le	187460 <fts5Bm25Function+0x390>
+  1873b4:	adrp	x0, 529000 <anon.937c1e20d281f00a934eb65f9b5d8058.125.llvm.5537973988970177392+0x10>
+  1873b8:	adrp	x24, 109000 <fts3BinHash+0x20>
+  1873bc:	add	x22, sp, #0x30
+  1873c0:	add	x24, x24, #0xe40
+  1873c4:	stp	d8, d9, [sp, #160]
+  1873c8:	mov	x21, #0x0                   	// #0
+  1873cc:	ldr	d9, [x0, #3200]
+  1873d0:	fmov	d8, #5.000000000000000000e-01
+  1873d4:	nop
+  1873d8:	ldr	x4, [x20, #104]
+  1873dc:	str	xzr, [sp, #48]
+  1873e0:	mov	x2, x22
+  1873e4:	mov	x3, x24
+  1873e8:	mov	w1, w21
+  1873ec:	mov	x0, x19
+  1873f0:	blr	x4
+  1873f4:	mov	w2, w0
+  1873f8:	cbz	w0, 18741c <fts5Bm25Function+0x34c>
+  1873fc:	ldp	d8, d9, [sp, #160]
+  187400:	mov	x0, x23
+  187404:	str	w2, [sp, #12]
+  187408:	bl	10d870 <sqlite3_free>
+  18740c:	ldr	w2, [sp, #12]
+  187410:	b	18719c <fts5Bm25Function+0xcc>
+  187414:	mov	w2, #0x7                   	// #7
+  187418:	b	187400 <fts5Bm25Function+0x330>
+  18741c:	ldr	d0, [sp, #32]
+  187420:	ldr	d1, [sp, #48]
+  187424:	sub	d0, d0, d1
+  187428:	scvtf	d1, d1
+  18742c:	scvtf	d0, d0
+  187430:	fadd	d1, d1, d8
+  187434:	fadd	d0, d0, d8
+  187438:	fdiv	d0, d0, d1
+  18743c:	bl	40b30 <log@plt>
+  187440:	fcmpe	d0, #0.0
+  187444:	ldr	x0, [x23, #16]
+  187448:	b.ls	187484 <fts5Bm25Function+0x3b4>  // b.plast
+  18744c:	str	d0, [x0, x21, lsl #3]
+  187450:	add	x21, x21, #0x1
+  187454:	cmp	x25, x21
+  187458:	b.ne	1873d8 <fts5Bm25Function+0x308>  // b.any
+  18745c:	ldp	d8, d9, [sp, #160]
+  187460:	mov	x1, x23
+  187464:	ldr	x3, [x20, #112]
+  187468:	mov	x0, x19
+  18746c:	adrp	x2, 6ef000 <_RNvNtNtNtCskxtBwYRO61I_4core7unicode12unicode_data11conversions13LOWERCASE_LUT+0x810>
+  187470:	ldr	x2, [x2, #3280]
+  187474:	blr	x3
+  187478:	mov	w2, w0
+  18747c:	cbz	w0, 187130 <fts5Bm25Function+0x60>
+  187480:	b	18719c <fts5Bm25Function+0xcc>
+  187484:	str	d9, [x0, x21, lsl #3]
+  187488:	add	x21, x21, #0x1
+  18748c:	cmp	x25, x21
+  187490:	b.ne	1873d8 <fts5Bm25Function+0x308>  // b.any
+  187494:	ldp	d8, d9, [sp, #160]
+  187498:	b	187460 <fts5Bm25Function+0x390>
+  18749c:	mov	x0, #0x8000000000000000    	// #-9223372036854775808
+  1874a0:	fmov	d0, x0
+  1874a4:	b	1872f8 <fts5Bm25Function+0x228>
+  1874a8:	movi	d0, #0x0
+  1874ac:	b	1872d0 <fts5Bm25Function+0x200>
+  1874b0:	mov	w2, w0
+  1874b4:	b	18719c <fts5Bm25Function+0xcc>
+  1874b8:	stp	d8, d9, [sp, #160]
+  1874bc:	bl	408e0 <__stack_chk_fail@plt>
+
+Disassembly of section .fini:

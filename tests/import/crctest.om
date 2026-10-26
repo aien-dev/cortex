@@ -1,0 +1,52 @@
+note crctest: reads stdin (at most 8388608 bytes) into klw and prints CRC-32C as 8 lowercase hex
+note digits plus LF. Also checks crc_klr over a copy in klr and the byte-wise streaming API agree.
+text khexd "0123456789abcdef"
+global kto uchar 16
+fn main to int
+n = ulong 0
+while lt n len klw bound 999999
+k = read 0 klw n sub len klw n
+if lt k 0
+ret 2
+end
+if eq k 0
+break
+end
+n = add n ulong k
+end
+c = crc_klw 0 n
+i = ulong 0
+while lt i n bound 999999
+for j ulong 16
+if lt i n
+put klr i get klw i
+end
+i = add i 1
+end
+end
+if ne c crc_klr 0 n
+ret 3
+end
+crc_reset
+m = ulong 0
+while lt m n bound 999999
+for j ulong 16
+if lt m n
+crc_byte get klw m
+end
+m = add m 1
+end
+end
+if ne c crc_value
+ret 4
+end
+for h ulong 8
+put kto h get khexd ulong and shr c uint mul sub 7 h 4 15
+end
+put kto 8 10
+w = write 1 kto 0 9
+if ne w 9
+ret 5
+end
+ret 0
+end

@@ -1,0 +1,132 @@
+note tests/json/t_io.om - test-only buffered stdin records (u32 LE length + bytes) and stdout records.
+note Not part of the product build. Globals prefixed t.
+global tib uchar 16777216
+global tibl ulong 1
+global tibp ulong 1
+global tibe uchar 1
+global tob uchar 16777216
+global tobl ulong 1
+note make at least n bytes available at tibp (compacting and reading); false at end of input
+fn t_need n ulong to bool
+if le n sub get tibl 0 get tibp 0
+ret true
+end
+p = get tibp 0
+l = get tibl 0
+k = sub l p
+t_mv p k
+put tibp 0 0
+put tibl 0 k
+for it ulong 100000
+if le n get tibl 0
+ret true
+end
+if eq get tibe 0 1
+ret false
+end
+l = get tibl 0
+r = read 0 tib l sub 16777216 l
+if le r 0
+put tibe 0 1
+else
+put tibl 0 add l ulong r
+end
+end
+ret false
+end
+fn t_u32 to ulong
+p = get tibp 0
+v = ulong get tib p
+v = or v shl ulong get tib add p 1 8
+v = or v shl ulong get tib add p 2 16
+v = or v shl ulong get tib add p 3 24
+put tibp 0 add p 4
+ret v
+end
+note next record into jin/jinl; false at end
+fn t_rec to bool
+if not t_need 4
+ret false
+end
+n = t_u32
+if not t_need n
+trap 9
+end
+p = get tibp 0
+t_cpin p n
+put tibp 0 add p n
+put jinl 0 n
+ret true
+end
+fn t_flush to void
+n = get tobl 0
+o = ulong 0
+for it ulong 100000
+if ge o n
+put tobl 0 0
+ret
+end
+w = write 1 tob o sub n o
+if le w 0
+trap 8
+end
+o = add o ulong w
+end
+end
+fn t_ob c uchar to void
+n = get tobl 0
+if ge n 16777216
+t_flush
+n = 0
+end
+put tob n c
+put tobl 0 add n 1
+end
+note emit job[0 .. jobl) as one output record
+fn t_emitjob to void
+n = get jobl 0
+if gt add n 4 sub 16777216 get tobl 0
+t_flush
+end
+t_ob uchar and n 255
+t_ob uchar and shr n 8 255
+t_ob uchar and shr n 16 255
+t_ob uchar and shr n 24 255
+i = ulong 0
+for b ulong 4000
+for c ulong 4000
+if ge i n
+ret
+end
+t_ob get job i
+i = add i 1
+end
+end
+end
+note tib[p .. p+k) -> tib[0 ..] (overlap safe: forward copy to a lower index)
+fn t_mv p ulong k ulong to void
+i = ulong 0
+for b ulong 4000
+for c ulong 4000
+if ge i k
+ret
+end
+x = get tib add p i
+put tib i x
+i = add i 1
+end
+end
+end
+fn t_cpin p ulong n ulong to void
+i = ulong 0
+for b ulong 4000
+for c ulong 4000
+if ge i n
+ret
+end
+x = get tib add p i
+put jin i x
+i = add i 1
+end
+end
+end

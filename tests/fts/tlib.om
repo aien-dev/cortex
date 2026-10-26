@@ -1,0 +1,126 @@
+note ===== tests/fts/tlib.om : harness helpers (test only, not product) =====
+note buffered stdout, decimal/hex printing, whole-file reading in chunks
+global tob uchar 1048576
+global tobn ulong 1
+global tib uchar 16777216
+global tibn ulong 1
+global tibp ulong 1
+global targ uchar 4096
+fn t_flush to void
+n = get tobn 0
+o = ulong 0
+while lt o n bound 999999
+w = write 1 tob o sub n o
+if le w 0
+exit 90
+end
+o = add o ulong w
+end
+put tobn 0 0
+end
+fn t_ch c ulong to void
+if ge get tobn 0 1048576
+t_flush
+end
+n = get tobn 0
+put tob n uchar c
+put tobn 0 add n 1
+end
+fn t_dec v ulong to void
+d = new uchar 24 0
+k = ulong 0
+x = v
+while true bound 30
+put d k uchar add 48 rem x 10
+k = add k 1
+x = div x 10
+if eq x 0
+break
+end
+end
+while gt k 0 bound 30
+k = sub k 1
+t_ch ulong get d k
+end
+end
+fn t_sdec v long to void
+if lt v 0
+t_ch 45
+t_dec ulong neg v
+ret
+end
+t_dec ulong v
+end
+fn t_hex v ulong w ulong to void
+i = w
+while gt i 0 bound 20
+i = sub i 1
+h = and shr v mul i 4 15
+if lt h 10
+t_ch add h 48
+else
+t_ch add h 87
+end
+end
+end
+note open argv[k] as a file for reading; returns fd (exits 91 on failure)
+fn t_open k ulong to int
+n = argread k targ 0 4096
+if lt n 0
+exit 91
+end
+fd = fopen targ 0 ulong n 0 0
+if lt fd 0
+exit 92
+end
+ret int fd
+end
+note refill tib from fd keeping unread bytes; returns bytes available
+fn t_fill fd int to ulong
+p = get tibp 0
+n = get tibn 0
+r = sub n p
+for i ulong r
+put tib i get tib add p i
+end
+put tibp 0 0
+put tibn 0 r
+while lt get tibn 0 16777216 bound 999999
+m = get tibn 0
+k = read fd tib m sub 16777216 m
+if lt k 0
+exit 93
+end
+if eq k 0
+break
+end
+put tibn 0 add m ulong k
+end
+ret get tibn 0
+end
+note ensure at least need bytes are buffered (false at end of file)
+fn t_need fd int need ulong to bool
+if ge sub get tibn 0 get tibp 0 need
+ret true
+end
+z = t_fill fd
+ret ge sub get tibn 0 get tibp 0 need
+end
+fn t_u64 to ulong
+p = get tibp 0
+v = ulong 0
+for i ulong 8
+v = or v shl ulong get tib add p i mul i 8
+end
+put tibp 0 add p 8
+ret v
+end
+fn t_u32 to ulong
+p = get tibp 0
+v = ulong 0
+for i ulong 4
+v = or v shl ulong get tib add p i mul i 8
+end
+put tibp 0 add p 4
+ret v
+end

@@ -1,0 +1,766 @@
+note sqlite.om - read-only SQLite 3 database file reader (owner SqliteImport).
+note Format authority: SQLite file format (sqlite.org/fileformat2.html) and SQLite 3.45.0 sqlite3.c
+note (walChecksumBytes, walDecodeFrame, walIndexRecover, lockBtree). Read only: files are opened
+note O_RDONLY|O_CLOEXEC (524288) and read with pread.
+note
+note Supported: page sizes 512..65536 (header value 1 = 65536), reserved bytes (usable >= 480),
+note UTF-8 only (text encoding 1, else refused), table b-trees (interior 0x05, leaf 0x0D) walked in
+note rowid order, overflow chains, record headers with every serial type 0..9 and >= 12.
+note WAL: if PATH-wal exists it is recovered exactly as walIndexRecover does: magic 0x377f0682/3,
+note page size power of two 512..65536 and header checksum valid, else the WAL is ignored (as
+note SQLite does); version must be 3007000 (else refused); frames are read in order and the first
+note frame with a salt mismatch, page number 0 or checksum mismatch ends the scan; only frames up
+note to the last commit frame are used, the latest frame of a page wins, and the database size is
+note the last commit frame's size field. Anything else unsupported or corrupt ends the program with
+note a message on stderr and exit status 2..41 (sq_die).
+note
+note API (caller puts/gets globals):
+note   sq_argpath idx      : argument idx -> kpath[0..kpathn)
+note   sq_open             : open kpath (+ "-wal"), validate header, recover WAL; sets kpgsz,
+note                         kusab (usable size), kdbpg (page count), kwmx (last commit frame).
+note   sq_first root       : start a cursor on the table b-tree rooted at page root.
+note   sq_next -> bool     : next row in rowid order; true when a row was loaded:
+note                         krowid (rowid, >= 0), kpay[0..kplen) (whole record payload),
+note                         kncol, kcty/kcof/kcln[i] (serial type, offset in kpay, byte length).
+note   sq_ckind i -> ulong : 0 NULL, 1 integer, 2 real, 3 text, 4 blob (column i of the row).
+note   sq_cint i -> long   : integer column (serial 1..6, 8, 9), else refused.
+note   sq_creal i -> f64   : real column, or integer converted to f64 (SCVTF, as SQLite does).
+note   sq_die k            : print message k and exit k.
+note   line builder: sq_lmsg k, sq_lbyte c, sq_ldec v, sq_lout fd (kln/klnn).
+text ksqmsg "cortex-import: \nsqlite: cannot open database file\nsqlite: read error or short read\nsqlite: cannot stat file\nsqlite: not an SQLite 3 database (bad header string)\nsqlite: unsupported page size\nsqlite: unsupported file format (read version above 2)\nsqlite: unsupported payload fractions (not 64/32/32)\nsqlite: text encoding is not UTF-8; refusing\nsqlite: usable page size below 480\nsqlite: database is empty\nsqlite: in-header page count exceeds file size\nsqlite: cannot open WAL file\nsqlite: unsupported WAL format version\nsqlite: WAL page size differs from database page size\nsqlite: WAL has more than 1000000 frames\nsqlite: page number out of range\nsqlite: not a table b-tree page\nsqlite: b-tree deeper than 24 levels\nsqlite: cell pointer out of range\nsqlite: cell overflows its page\nsqlite: malformed varint\nsqlite: payload larger than 16777216 bytes\nsqlite: broken overflow chain\nsqlite: malformed record header\nsqlite: record has more than 64 columns\nsqlite: reserved serial type 10 or 11\nsqlite: record body does not match payload size\nsqlite: rowids not strictly increasing\nsqlite: column is not an integer\nsqlite: column is not numeric\nsqlite: path argument missing or longer than 4090 bytes\nsqlite: negative rowid unsupported\nsqlite: WAL page index hash full\nwal: none\nwal: header invalid (magic, page size or checksum); WAL ignored as SQLite does\nwal: frames=\n valid=\n committed=\ndb: pages=\nsqlite: column index past record end\n"
+text ksqmag "SQLite format 3"
+note kpg: b-tree levels 0..23 at d*65536; overflow-page scratch at kovfb; WAL frame scratch at kwfrb
+note (24-byte frame header + up to 65536 page bytes; also used for the 32-byte WAL header and the
+note 100-byte file header probe).
+const kovfb ulong 1572864
+const kwfrb ulong 1638400
+global kpg uchar 1703960
+global kpay uchar 16777216
+global kpath uchar 4100
+global kpathn ulong 1
+global kfd int 2
+global kstb uchar 128
+global kpgsz ulong 1
+global kusab ulong 1
+global kdbpg ulong 1
+global kwmx ulong 1
+global kwnv ulong 1
+global kwndb ulong 1
+global kwbe uchar 1
+global ks uint 2
+global ksalt ulong 2
+global kwhk uint 2097152
+global kwhv uint 2097152
+global kcpg ulong 24
+global kcix ulong 24
+global kcdep ulong 1
+global kpfirst uchar 1
+global kprev ulong 1
+global krowid ulong 1
+global kplen ulong 1
+global kncol ulong 1
+global kcty ulong 64
+global kcof ulong 64
+global kcln ulong 64
+global kvn ulong 1
+global kln uchar 512
+global klnn ulong 1
+note kunl[0..kunln): a partial output file the program created; sq_die unlinks it before exit.
+global kunl uchar 4100
+global kunln ulong 1
+fn sq_lbyte c uchar to void
+p = get klnn 0
+if lt p len kln
+put kln p c
+put klnn 0 add p 1
+end
+end
+fn sq_lmsg k ulong to void
+ln = ulong 1
+i = ulong 0
+n = len ksqmsg
+while lt i n bound 999999
+c = get ksqmsg i
+if eq c 10
+ln = add ln 1
+else
+if eq ln k
+sq_lbyte c
+end
+end
+i = add i 1
+end
+end
+fn sq_ldec v ulong to void
+d = new uchar 20 0
+n = ulong 0
+x = v
+while lt n 20 bound 20
+put d n uchar add 48 rem x 10
+x = div x 10
+n = add n 1
+if eq x 0
+break
+end
+end
+while gt n 0 bound 20
+n = sub n 1
+sq_lbyte get d n
+end
+end
+fn sq_lout fd int to void
+w = write fd kln 0 get klnn 0
+put klnn 0 0
+if lt w 0
+ret
+end
+end
+fn sq_unl to void
+n = get kunln 0
+put kunln 0 0
+if gt n 0
+r = unlink kunl 0 n
+if lt r 0
+ret
+end
+end
+end
+fn sq_die k ulong to void
+sq_unl
+put klnn 0 0
+sq_lmsg 1
+sq_lmsg k
+sq_lbyte 10
+sq_lout 2
+exit int k
+end
+fn sq_b16 o ulong to ulong
+ret or shl ulong get kpg o 8 ulong get kpg add o 1
+end
+fn sq_b32 o ulong to ulong
+a = or shl ulong get kpg o 24 shl ulong get kpg add o 1 16
+ret or a or shl ulong get kpg add o 2 8 ulong get kpg add o 3
+end
+note sq_w32: one 32-bit checksum word at kpg[o]; big endian when be = 1 (magic 0x377f0683),
+note little endian (the native order of this host) when be = 0.
+fn sq_w32 o ulong be uchar to uint
+if eq be 1
+ret uint sq_b32 o
+end
+a = or uint get kpg o shl uint get kpg add o 1 8
+ret or a or shl uint get kpg add o 2 16 shl uint get kpg add o 3 24
+end
+note sq_wsum: walChecksumBytes over kpg[o..o+n), n a multiple of 8 and <= 65536 (8192 passes),
+note state in ks[0], ks[1] (unsigned 32-bit wrap).
+fn sq_wsum o ulong n ulong to void
+s1 = get ks 0
+s2 = get ks 1
+be = get kwbe 0
+p = o
+e = add o n
+while lt p e bound 8200
+a = sq_w32 p be
+b = sq_w32 add p 4 be
+s1 = add add s1 a s2
+s2 = add add s2 b s1
+p = add p 8
+end
+put ks 0 s1
+put ks 1 s2
+end
+note sq_pread: exactly n bytes of fd at pos into kpg[o..o+n); each pass moves >= 1 byte and
+note n <= 65560, so the bound holds.
+fn sq_pread fd int o ulong n ulong pos ulong to void
+d = ulong 0
+while lt d n bound 65560
+k = pread fd kpg add o d sub n d long add pos d
+if le k 0
+sq_die 3
+end
+d = add d ulong k
+end
+end
+fn sq_fsize fd int to ulong
+r = fstat fd kstb 0 128
+if lt r 0
+sq_die 4
+end
+v = ulong 0
+for i ulong 8
+v = or v shl ulong get kstb add 48 i mul i 8
+end
+ret v
+end
+fn sq_argpath idx ulong to void
+n = argread idx kpath 0 4090
+if lt n 1
+sq_die 32
+end
+put kpathn 0 ulong n
+end
+note varints (SQLite: 1..9 bytes, big endian 7-bit groups, 9th byte all 8 bits). kvn = length.
+fn sq_var o ulong lim ulong to ulong
+v = ulong 0
+for i ulong 9
+p = add o i
+if ge p lim
+sq_die 22
+end
+c = ulong get kpg p
+if eq i 8
+put kvn 0 9
+ret or shl v 8 c
+end
+v = or shl v 7 and c 127
+if lt c 128
+put kvn 0 add i 1
+ret v
+end
+end
+sq_die 22
+ret 0
+end
+fn sq_rvar o ulong lim ulong to ulong
+v = ulong 0
+for i ulong 9
+p = add o i
+if ge p lim
+sq_die 25
+end
+c = ulong get kpay p
+if eq i 8
+put kvn 0 9
+ret or shl v 8 c
+end
+v = or shl v 7 and c 127
+if lt c 128
+put kvn 0 add i 1
+ret v
+end
+end
+sq_die 25
+ret 0
+end
+note WAL page index: open addressing, 2097152 slots, key pgno (never 0), value frame number.
+note At most 1000000 frames are indexed, so the table is at most half full.
+fn sq_whslot pg ulong to ulong
+h = and mul pg 2654435761 2097151
+for i ulong 2097152
+k = ulong get kwhk h
+if or eq k 0 eq k pg
+ret h
+end
+h = and add h 1 2097151
+end
+sq_die 34
+ret 0
+end
+fn sq_pgszok ps ulong to void
+if or or lt ps 512 gt ps 65536 ne and ps sub ps 1 0
+sq_die 6
+end
+end
+fn sq_wdiag to void
+put klnn 0 0
+sq_lmsg 1
+sq_lmsg 37
+sq_ldec 0
+sq_lmsg 38
+sq_ldec get kwnv 0
+sq_lmsg 39
+sq_ldec get kwmx 0
+sq_lbyte 10
+sq_lout 2
+end
+note sq_walscan: frames 1..nfr at 32 + (i-1)*(ps+24); stops at the first invalid frame.
+fn sq_walscan fd int ps ulong nfr ulong to void
+mx = ulong 0
+ndb = ulong 0
+for i ulong nfr
+sq_pread fd kwfrb add ps 24 add 32 mul i add ps 24
+if or ne sq_b32 add kwfrb 8 get ksalt 0 ne sq_b32 add kwfrb 12 get ksalt 1
+break
+end
+if eq sq_b32 kwfrb 0
+break
+end
+sq_wsum kwfrb 8
+sq_wsum add kwfrb 24 ps
+if or ne ulong get ks 0 sq_b32 add kwfrb 16 ne ulong get ks 1 sq_b32 add kwfrb 20
+break
+end
+put kwnv 0 add i 1
+c = sq_b32 add kwfrb 4
+if ne c 0
+mx = add i 1
+ndb = c
+end
+end
+put kwmx 0 mx
+put kwndb 0 ndb
+end
+fn sq_walidx fd int ps ulong to void
+for i ulong get kwmx 0
+sq_pread fd kwfrb 4 add 32 mul i add ps 24
+s = sq_whslot sq_b32 kwfrb
+put kwhk s uint sq_b32 kwfrb
+put kwhv s uint add i 1
+end
+end
+fn sq_walopen to void
+n = get kpathn 0
+put kpath n 45
+put kpath add n 1 119
+put kpath add n 2 97
+put kpath add n 3 108
+put kfd 1 -1
+put kwmx 0 0
+put kwnv 0 0
+fd = fopen kpath 0 add n 4 524288 0
+if eq fd -2
+put klnn 0 0
+sq_lmsg 1
+sq_lmsg 35
+sq_lbyte 10
+sq_lout 2
+ret
+end
+if lt fd 0
+sq_die 13
+end
+put kfd 1 int fd
+sz = sq_fsize int fd
+if le sz 32
+sq_wdiag
+ret
+end
+sq_pread int fd kwfrb 32 0
+magic = sq_b32 kwfrb
+ps = sq_b32 add kwfrb 8
+bad = ne and magic 4294967294 931071618
+if or or lt ps 512 gt ps 65536 ne and ps sub ps 1 0
+bad = true
+end
+if not bad
+put kwbe 0 uchar and magic 1
+put ks 0 0
+put ks 1 0
+sq_wsum kwfrb 24
+c1 = sq_b32 add kwfrb 24
+c2 = sq_b32 add kwfrb 28
+bad = or ne ulong get ks 0 c1 ne ulong get ks 1 c2
+end
+if bad
+put klnn 0 0
+sq_lmsg 1
+sq_lmsg 36
+sq_lbyte 10
+sq_lout 2
+ret
+end
+if ne sq_b32 add kwfrb 4 3007000
+sq_die 14
+end
+if eq get kpgsz 0 0
+put kpgsz 0 ps
+end
+if ne get kpgsz 0 ps
+sq_die 15
+end
+put ksalt 0 sq_b32 add kwfrb 16
+put ksalt 1 sq_b32 add kwfrb 20
+nfr = div sub sz 32 add ps 24
+if gt nfr 1000000
+sq_die 16
+end
+sq_walscan int fd ps nfr
+sq_walidx int fd ps
+put klnn 0 0
+sq_lmsg 1
+sq_lmsg 37
+sq_ldec nfr
+sq_lmsg 38
+sq_ldec get kwnv 0
+sq_lmsg 39
+sq_ldec get kwmx 0
+sq_lbyte 10
+sq_lout 2
+end
+note sq_ldpg: page pg into kpg[base..base+pgsz) through the WAL overlay.
+fn sq_ldpg pg ulong base ulong to void
+if or eq pg 0 gt pg get kdbpg 0
+sq_die 17
+end
+ps = get kpgsz 0
+fr = ulong 0
+if gt get kwmx 0 0
+s = sq_whslot pg
+fr = ulong get kwhv s
+end
+if gt fr 0
+sq_pread get kfd 1 base ps add 56 mul sub fr 1 add ps 24
+ret
+end
+sq_pread get kfd 0 base ps mul sub pg 1 ps
+end
+fn sq_hb pg ulong to ulong
+if eq pg 1
+ret 100
+end
+ret 0
+end
+fn sq_chkpg base ulong pg ulong to void
+hb = sq_hb pg
+t = get kpg add base hb
+if and ne t 5 ne t 13
+sq_die 18
+end
+hs = ulong 8
+if eq t 5
+hs = 12
+end
+if gt add add hb hs mul 2 sq_b16 add add base hb 3 get kusab 0
+sq_die 20
+end
+end
+fn sq_magic base ulong to void
+for i ulong 15
+if ne get kpg add base i get ksqmag i
+sq_die 5
+end
+end
+if ne get kpg add base 15 0
+sq_die 5
+end
+end
+note sq_hdr: the 100-byte header of page 1 (kpg level 0); npf = pages in file (or WAL size).
+fn sq_hdr npf ulong to void
+sq_magic 0
+ps = sq_b16 16
+if eq ps 1
+ps = 65536
+end
+if ne ps get kpgsz 0
+sq_die 6
+end
+if gt get kpg 19 2
+sq_die 7
+end
+u = sub ps ulong get kpg 20
+if lt u 480
+sq_die 10
+end
+put kusab 0 u
+if or or ne get kpg 21 64 ne get kpg 22 32 ne get kpg 23 32
+sq_die 8
+end
+if ne sq_b32 56 1
+sq_die 9
+end
+np = sq_b32 28
+if or eq np 0 ne sq_b32 24 sq_b32 92
+np = npf
+end
+if gt np npf
+sq_die 12
+end
+put kdbpg 0 np
+end
+fn sq_open to void
+n = get kpathn 0
+fd = fopen kpath 0 n 524288 0
+if lt fd 0
+sq_die 2
+end
+put kfd 0 int fd
+sz = sq_fsize int fd
+put kpgsz 0 0
+if ge sz 100
+sq_pread int fd kwfrb 100 0
+sq_magic kwfrb
+ps = sq_b16 add kwfrb 16
+if eq ps 1
+ps = 65536
+end
+sq_pgszok ps
+put kpgsz 0 ps
+end
+sq_walopen
+ps = get kpgsz 0
+if eq ps 0
+sq_die 11
+end
+npf = div sz ps
+if gt get kwmx 0 0
+npf = get kwndb 0
+end
+if eq npf 0
+sq_die 11
+end
+put kdbpg 0 npf
+put kusab 0 ps
+sq_ldpg 1 0
+sq_hdr npf
+put klnn 0 0
+sq_lmsg 1
+sq_lmsg 40
+sq_ldec get kdbpg 0
+sq_lbyte 10
+sq_lout 2
+end
+fn sq_first root ulong to void
+put kcdep 0 1
+put kcpg 0 root
+put kcix 0 0
+put kpfirst 0 1
+sq_ldpg root 0
+sq_chkpg 0 root
+end
+note sq_child: child page number for slot i of interior page at level base (i = n: right pointer).
+fn sq_child base ulong hb ulong i ulong n ulong to ulong
+if eq i n
+ret sq_b32 add add base hb 8
+end
+u = get kusab 0
+cp = sq_b16 add add add base hb 12 mul i 2
+if or lt cp add add hb 12 mul n 2 gt add cp 4 u
+sq_die 20
+end
+ret sq_b32 add base cp
+end
+note sq_next: each pass pushes or pops one level; between two rows of a well-formed tree there
+note are at most 2*24+1 passes. A tree of very many empty pages ends by trap 4, never by looping.
+fn sq_next to bool
+while gt get kcdep 0 0 bound 999999
+d = sub get kcdep 0 1
+base = mul d 65536
+hb = sq_hb get kcpg d
+t = get kpg add base hb
+n = sq_b16 add add base hb 3
+i = get kcix d
+if eq t 13
+if lt i n
+put kcix d add i 1
+sq_cell d i
+ret true
+end
+put kcdep 0 d
+continue
+end
+if gt i n
+put kcdep 0 d
+continue
+end
+put kcix d add i 1
+c = sq_child base hb i n
+nd = add d 1
+if ge nd 24
+sq_die 19
+end
+sq_ldpg c mul nd 65536
+sq_chkpg mul nd 65536 c
+put kcpg nd c
+put kcix nd 0
+put kcdep 0 add nd 1
+end
+ret false
+end
+fn sq_setrow r ulong to void
+if ge r 9223372036854775808
+sq_die 33
+end
+if and eq get kpfirst 0 0 le r get kprev 0
+sq_die 29
+end
+put kpfirst 0 0
+put kprev 0 r
+put krowid 0 r
+end
+fn sq_cell d ulong i ulong to void
+base = mul d 65536
+hb = sq_hb get kcpg d
+n = sq_b16 add add base hb 3
+u = get kusab 0
+cp = sq_b16 add add add base hb 8 mul i 2
+if or lt cp add add hb 8 mul n 2 ge cp u
+sq_die 20
+end
+lim = add base u
+o = add base cp
+p = sq_var o lim
+o = add o get kvn 0
+r = sq_var o lim
+o = add o get kvn 0
+sq_setrow r
+sq_payload o lim p
+end
+note sq_payload: local part size per the file format (table leaf: X = U-35, M = (U-12)*32/255-23,
+note K = M+(P-M)%(U-4)), then the overflow chain (each overflow page: next pgno, U-4 bytes).
+fn sq_payload o ulong lim ulong p ulong to void
+u = get kusab 0
+x = sub u 35
+loc = p
+if gt p x
+m = sub div mul sub u 12 32 255 23
+k = add m rem sub p m sub u 4
+loc = m
+if le k x
+loc = k
+end
+end
+if gt p len kpay
+sq_die 23
+end
+need = loc
+if lt loc p
+need = add loc 4
+end
+if gt add o need lim
+sq_die 21
+end
+for j ulong loc
+put kpay j get kpg add o j
+end
+if lt loc p
+sq_ovfl sq_b32 add o loc loc p
+end
+put kplen 0 p
+sq_record
+end
+note sq_ovfl: each pass adds >= U-4 >= 476 bytes and P <= 16777216, so <= 35247 passes.
+fn sq_ovfl first ulong pos ulong p ulong to void
+pg = first
+d = pos
+u = sub get kusab 0 4
+while lt d p bound 40000
+if eq pg 0
+sq_die 24
+end
+sq_ldpg pg kovfb
+m = sub p d
+if gt m u
+m = u
+end
+sq_ovcp d m
+d = add d m
+pg = sq_b32 kovfb
+end
+end
+fn sq_ovcp d ulong m ulong to void
+s = add kovfb 4
+for j ulong m
+put kpay add d j get kpg add s j
+end
+end
+fn sq_stsz st ulong to ulong
+if or or eq st 0 eq st 8 eq st 9
+ret 0
+end
+if le st 4
+ret st
+end
+if eq st 5
+ret 6
+end
+if or eq st 6 eq st 7
+ret 8
+end
+if lt st 12
+sq_die 27
+end
+ret div sub st 12 2
+end
+note sq_record: header varint H, serial types up to H, body from H; the body must end exactly at
+note the payload end. At most 64 columns (the loop ends by sq_die 26 at the 65th).
+fn sq_record to void
+pl = get kplen 0
+if eq pl 0
+sq_die 25
+end
+h = sq_rvar 0 pl
+p = get kvn 0
+if or lt h p gt h pl
+sq_die 25
+end
+b = h
+nc = ulong 0
+while lt p h bound 70
+st = sq_rvar p h
+p = add p get kvn 0
+if ge nc 64
+sq_die 26
+end
+sz = sq_stsz st
+if gt sz sub pl b
+sq_die 28
+end
+put kcty nc st
+put kcof nc b
+put kcln nc sz
+b = add b sz
+nc = add nc 1
+end
+if ne b pl
+sq_die 28
+end
+put kncol 0 nc
+end
+fn sq_ckind i ulong to ulong
+if ge i get kncol 0
+sq_die 41
+end
+st = get kcty i
+if eq st 0
+ret 0
+end
+if eq st 7
+ret 2
+end
+if lt st 12
+ret 1
+end
+if eq rem st 2 0
+ret 4
+end
+ret 3
+end
+fn sq_cint i ulong to long
+if ne sq_ckind i 1
+sq_die 30
+end
+st = get kcty i
+if eq st 8
+ret 0
+end
+if eq st 9
+ret 1
+end
+o = get kcof i
+n = get kcln i
+v = ulong 0
+for j ulong n
+v = or shl v 8 ulong get kpay add o j
+end
+if lt n 8
+sh = mul n 8
+if ne and v shl ulong 1 sub sh 1 0
+v = or v not sub shl ulong 1 sh 1
+end
+end
+ret bitcast long v
+end
+fn sq_creal i ulong to f64
+k = sq_ckind i
+if eq k 1
+ret f64 sq_cint i
+end
+if ne k 2
+sq_die 31
+end
+o = get kcof i
+v = ulong 0
+for j ulong 8
+v = or shl v 8 ulong get kpay add o j
+end
+ret bitcast f64 v
+end

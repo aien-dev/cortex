@@ -1,0 +1,208 @@
+note ===== tests/fts/t_query.om : search differential harness =====
+note usage: t_query DUMP QUERIES > out   (QUERIES: records u32 length + MATCH bytes)
+note prints, for every query x space x limit, the line format of `oracle query`:
+note   q<i> s<space> l<limit> ok|err n=<rows>( <fts rowid>:<bm25 bits hex>)*
+note timing (monotonic ns over all fts_search calls) goes to stderr
+global tspc uchar 4194304
+text tsp0 "aien-lessons"
+text tsp1 "aien-sources"
+text tsp2 "atlas-memory"
+text tsp3 "survey-test-mask"
+text tsp4 "nope"
+text tok1 " ok n="
+text terr " err n="
+text ttm1 "searches="
+text ttm2 " total_ns="
+text ttm3 " max_ns="
+text ttm4 " load_ns="
+fn t_speq k ulong to bool
+n = get tsbn 0
+if eq k 0
+if ne n len tsp0
+ret false
+end
+for i ulong n
+if ne get tsb i get tsp0 i
+ret false
+end
+end
+ret true
+end
+if eq k 1
+if ne n len tsp1
+ret false
+end
+for i ulong n
+if ne get tsb i get tsp1 i
+ret false
+end
+end
+ret true
+end
+if eq k 2
+if ne n len tsp2
+ret false
+end
+for i ulong n
+if ne get tsb i get tsp2 i
+ret false
+end
+end
+ret true
+end
+if ne n len tsp3
+ret false
+end
+for i ulong n
+if ne get tsb i get tsp3 i
+ret false
+end
+end
+ret true
+end
+global tstat long 4
+fn main to int
+t0 = monons
+nf = t_load
+put tstat 3 sub monons t0
+fq = t_open 2
+put tibn 0 0
+put tibp 0 0
+qi = ulong 0
+while t_need fq 4 bound 999999
+t_rdq fq
+for s ulong 5
+t_setok s nf
+for l ulong 4
+t_one qi s l
+end
+end
+qi = add qi 1
+end
+t_flush
+t_stats
+ret 0
+end
+fn t_load to ulong
+fd = t_open 1
+z = t_need fd 12
+put tibp 0 8
+nf = t_u32
+for r ulong nf
+z = t_need fd 8
+row = t_u64
+b = t_rdsb fd
+t_rdnm fd
+t_rdct fd
+b = t_rdsb fd
+b = t_rdsb fd
+z = t_need fd 1
+rt = get tib get tibp 0
+put tibp 0 add get tibp 0 1
+t_space r b rt
+if not fts_put r row
+exit 80
+end
+end
+ret nf
+end
+fn t_space r ulong b bool rt uchar to void
+sp = uchar 255
+if and b eq rt 0
+for k ulong 4
+if t_speq k
+sp = uchar k
+end
+end
+end
+put tspc r sp
+end
+fn t_rdq fq int to void
+n = t_u32
+z = t_need fq n
+p = get tibp 0
+for i ulong n
+put qq i get tib add p i
+end
+put tibp 0 add p n
+put qql 0 n
+end
+fn t_setok s ulong nf ulong to void
+for k ulong nf
+put qok k 0
+if eq ulong get tspc k s
+put qok k 1
+end
+end
+end
+fn t_one qi ulong s ulong l ulong to void
+lm = ulong 1
+if eq l 1
+lm = ulong 5
+end
+if eq l 2
+lm = ulong 12
+end
+if eq l 3
+lm = ulong 50
+end
+put qlim 0 lm
+a = monons
+c = fts_search
+dt = sub monons a
+put tstat 0 add get tstat 0 dt
+if gt dt get tstat 1
+put tstat 1 dt
+end
+put tstat 2 add get tstat 2 1
+t_line qi s lm c
+end
+fn t_stats to void
+for i ulong len ttm1
+t_ch ulong get ttm1 i
+end
+t_sdec get tstat 2
+for i ulong len ttm2
+t_ch ulong get ttm2 i
+end
+t_sdec get tstat 0
+for i ulong len ttm3
+t_ch ulong get ttm3 i
+end
+t_sdec get tstat 1
+for i ulong len ttm4
+t_ch ulong get ttm4 i
+end
+t_sdec get tstat 3
+t_ch 10
+n = get tobn 0
+w = write 2 tob 0 n
+put tobn 0 0
+end
+fn t_line qi ulong s ulong lm ulong c ulong to void
+t_ch 113
+t_dec qi
+t_ch 32
+t_ch 115
+t_dec s
+t_ch 32
+t_ch 108
+t_dec lm
+if not fts_bad
+for i ulong len tok1
+t_ch ulong get tok1 i
+end
+else
+for i ulong len terr
+t_ch ulong get terr i
+end
+end
+t_dec c
+for i ulong c
+t_ch 32
+t_dec get qdrow get qrd i
+t_ch 58
+t_hex bitcast ulong get qrb i 16
+end
+t_ch 10
+end

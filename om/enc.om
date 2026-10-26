@@ -1,0 +1,482 @@
+note enc.om: client for the embedding encoder (embeddings.rs fetch_embedding).
+note POST <encoder-url>/embed with a 1.5 s budget; 768 numbers become the f32 vector qem.
+note The encoder itself (ONNX bge-base-en-v1.5) is a recorded host dependency (DEPENDENCIES.md).
+note ens: 0 configured (1 yes), 1 port, 2 path len; enh = IPv4 bytes; enp = path prefix
+global ens ulong 4
+global enh uchar 4
+global enp uchar 1024
+global enb uchar 1048576
+global enq uchar 4194304
+global enql ulong 1
+global ena uchar 16
+text en_k1 "{\"modelId\":\"BAAI/bge-base-en-v1.5\",\"modelRevision\":\"cortex-bge-base-en-v1.5-768-v1\",\"priority\":\"recall\",\"text\":"
+text en_post "POST "
+text en_embed "/embed HTTP/1.1"
+text en_host "host: "
+text en_ct "content-type: application/json"
+text en_acc "accept: */*"
+text en_cl "content-length: "
+text en_conn "connection: close"
+text en_http "http://"
+text en_lh "localhost"
+text en_key "embedding"
+text t_sep ": "
+
+note parse --encoder-url bytes in jrs[0..n): http://IPv4|localhost[:port][/path]
+fn enc_config n ulong to void
+put ens 0 0
+if lt n len en_http
+ret
+end
+for i ulong len en_http
+if ne get jrs i get en_http i
+ret
+end
+end
+p = ulong len en_http
+h = p
+while and lt p n and ne get jrs p 58 ne get jrs p 47 bound 999999
+p = add p 1
+end
+if not enc_host h sub p h
+ret
+end
+port = ulong 80
+if and lt p n eq get jrs p 58
+p = add p 1
+port = 0
+while and lt p n ne get jrs p 47 bound 999999
+c = get jrs p
+if or lt c 48 gt c 57
+ret
+end
+port = add mul port 10 ulong sub c 48
+if gt port 65535
+ret
+end
+p = add p 1
+end
+end
+note path without trailing slashes (trim_end_matches("/"))
+e = n
+while and gt e p eq get jrs sub e 1 47 bound 999999
+e = sub e 1
+end
+for i ulong sub e p
+put enp i get jrs add p i
+end
+put ens 2 sub e p
+put ens 1 port
+put ens 0 1
+end
+fn enc_host h ulong n ulong to bool
+if eq n len en_lh
+same = true
+for i ulong n
+if ne get jrs add h i get en_lh i
+same = false
+end
+end
+if same
+put enh 0 127
+put enh 1 0
+put enh 2 0
+put enh 3 1
+ret true
+end
+end
+k = ulong 0
+v = ulong 0
+dg = ulong 0
+for i ulong n
+c = get jrs add h i
+if eq c 46
+if or eq dg 0 ge k 3
+ret false
+end
+put enh k uchar v
+k = add k 1
+v = 0
+dg = 0
+else
+if or lt c 48 gt c 57
+ret false
+end
+v = add mul v 10 ulong sub c 48
+dg = add dg 1
+if gt v 255
+ret false
+end
+end
+end
+if or ne k 3 eq dg 0
+ret false
+end
+put enh 3 uchar v
+ret true
+end
+
+note request body: the JSON payload with text = enq[0..enql)
+fn enc_body to ulong
+put jobl 0 0
+js_raw en_k1
+for i ulong get enql 0
+put jes i get enq i
+end
+js_esc_buf 0 get enql 0
+js_byte 125
+ret get jobl 0
+end
+fn eb_txt o ulong t view uchar * to ulong
+for i ulong len t
+put enb add o i get t i
+end
+ret add o len t
+end
+fn eb_crlf o ulong to ulong
+put enb o 13
+put enb add o 1 10
+ret add o 2
+end
+fn eb_dec o ulong v ulong to ulong
+k = o
+if ge v 10
+k = eb_dec o div v 10
+end
+put enb k uchar add rem v 10 48
+ret add k 1
+end
+note request head for a body of bl bytes; returns head length
+fn enc_head bl ulong to ulong
+o = eb_txt 0 en_post
+for i ulong get ens 2
+put enb add o i get enp i
+end
+o = add o get ens 2
+o = eb_crlf eb_txt o en_embed
+o = eb_txt o en_host
+for k ulong 4
+o = eb_dec o ulong get enh k
+if lt k 3
+put enb o 46
+o = add o 1
+end
+end
+put enb o 58
+o = eb_crlf eb_dec add o 1 get ens 1
+o = eb_crlf eb_txt o en_ct
+o = eb_crlf eb_txt o en_acc
+o = eb_crlf eb_dec eb_txt o en_cl bl
+o = eb_crlf eb_txt o en_conn
+ret eb_crlf o
+end
+
+note fetch the vector for enq; true and qem/qemf set when the encoder answered with 768 numbers
+fn enc_fetch to bool
+put qemf 0 0
+if eq get ens 0 0
+ret false
+end
+dl = add monons 1500000000
+fd = socknew 2 524289 0
+if lt fd 0
+ret false
+end
+ok = enc_talk int fd dl
+x = fclose int fd
+if or not ok ne x 0
+ret false
+end
+ret enc_parse
+end
+note connect (nonblocking, bounded by dl), send head + body, read the whole answer into enb
+fn enc_talk fd int dl long to bool
+put ena 0 2
+put ena 1 0
+p = get ens 1
+put ena 2 uchar shr p 8
+put ena 3 uchar and p 255
+for i ulong 4
+put ena add 4 i get enh i
+end
+r = connect fd ena 0 16
+if and ne r 0 ne r -115
+ret false
+end
+w = waitio fd 4 sub dl monons
+if le w 0
+ret false
+end
+bl = enc_body
+hl = enc_head bl
+if not enc_send fd 0 hl dl
+ret false
+end
+if not enc_sendj fd bl dl
+ret false
+end
+ret enc_recv fd dl
+end
+fn enc_send fd int o ulong n ulong dl long to bool
+k = o
+e = add o n
+while lt k e bound 999999
+w = waitio fd 4 sub dl monons
+if le w 0
+ret false
+end
+s = send fd enb k sub e k 0
+if le s 0
+ret false
+end
+k = add k ulong s
+end
+ret true
+end
+fn enc_sendj fd int n ulong dl long to bool
+k = ulong 0
+while lt k n bound 999999
+w = waitio fd 4 sub dl monons
+if le w 0
+ret false
+end
+s = send fd job k sub n k 0
+if le s 0
+ret false
+end
+k = add k ulong s
+end
+ret true
+end
+note read until the peer closes (we sent connection: close); ens 3 = bytes held
+fn enc_recv fd int dl long to bool
+n = ulong 0
+while true bound 999999
+now = monons
+if ge now dl
+ret false
+end
+w = waitio fd 1 sub dl now
+if le w 0
+ret false
+end
+if ge n len enb
+ret false
+end
+r = recv fd enb n sub len enb n 0
+if lt r 0
+ret false
+end
+if eq r 0
+put ens 3 n
+ret true
+end
+n = add n ulong r
+end
+ret false
+end
+
+fn enc_crlf2 i ulong to bool
+if or ne get enb i 13 ne get enb add i 1 10
+ret false
+end
+ret and eq get enb add i 2 13 eq get enb add i 3 10
+end
+note status 2xx, then the body (content-length or chunked or to EOF) parsed as JSON
+fn enc_parse to bool
+n = get ens 3
+if lt n 12
+ret false
+end
+c = get enb 9
+if ne c 50
+ret false
+end
+he = ulong 0
+i = ulong 0
+while lt add i 3 n bound 999999
+if enc_crlf2 i
+he = add i 4
+break
+end
+i = add i 1
+end
+if eq he 0
+ret false
+end
+bl = enc_body_copy he n
+if eq bl NONE
+ret false
+end
+put jinl 0 bl
+if not js_parse
+ret false
+end
+ret enc_vec
+end
+note copy the body to jin; chunked bodies are de-chunked; returns its length or NONE
+fn enc_body_copy he ulong n ulong to ulong
+if enc_is_chunked he
+ret enc_dechunk he n
+end
+k = sub n he
+if gt k len jin
+ret NONE
+end
+for i ulong k
+put jin i get enb add he i
+end
+ret k
+end
+text en_te "transfer-encoding: chunked"
+fn enc_is_chunked he ulong to bool
+m = len en_te
+i = ulong 0
+while lt add i m he bound 999999
+k = ulong 0
+while lt k m bound 64
+c = get enb add i k
+if and ge c 65 le c 90
+c = add c 32
+end
+if ne c get en_te k
+break
+end
+k = add k 1
+end
+if eq k m
+ret true
+end
+i = add i 1
+end
+ret false
+end
+fn enc_dechunk he ulong n ulong to ulong
+p = he
+o = ulong 0
+while lt p n bound 999999
+sz = ulong 0
+dg = ulong 0
+while lt p n bound 999999
+v = http_hexv get enb p
+if eq v 99
+break
+end
+sz = add mul sz 16 v
+dg = add dg 1
+p = add p 1
+end
+if or eq dg 0 gt sz len jin
+ret NONE
+end
+while and lt p n ne get enb p 10 bound 999999
+p = add p 1
+end
+p = add p 1
+if eq sz 0
+ret o
+end
+if or gt add p sz n gt add o sz len jin
+ret NONE
+end
+for i ulong sz
+put jin add o i get enb add p i
+end
+o = add o sz
+p = add add p sz 2
+end
+ret NONE
+end
+note val.get("embedding") as array; numbers (as_f64) kept, others skipped; exactly 768 needed
+fn enc_vec to bool
+r = get jroot 0
+if ne js_kind r 8
+ret false
+end
+a = js_find r en_key
+if or eq a JNONE ne js_kind a 7
+ret false
+end
+k = ulong 0
+for i ulong js_len a
+x = js_child a i
+t = js_kind x
+if and ge t 3 le t 5
+if ge k 768
+ret false
+end
+put qem k f32 enc_num x t
+k = add k 1
+end
+end
+if ne k 768
+ret false
+end
+put qemf 0 1
+ret true
+end
+fn enc_num x ulong t uchar to f64
+v = js_num x
+if eq t 3
+ret f64 v
+end
+if eq t 4
+ret f64 bitcast long v
+end
+ret bitcast f64 v
+end
+
+note recall: the query text; write: "name: content" when content.trim() is not empty, else the name
+fn enc_fetch_q to void
+q = get ap A_Q
+o = rf_off q
+n = rf_len q
+for i ulong n
+put enq i get hs add o i
+end
+put enql 0 n
+ok = enc_fetch
+end
+fn enc_fetch_w to void
+c = get ap A_CONT
+o = rf_off c
+n = rf_len c
+for i ulong n
+put jrs i hc_get add o i
+end
+ru_trim 0 n
+nm = get ap A_NAME
+a = rf_off nm
+m = rf_len nm
+for i ulong m
+put enq i get hs add a i
+end
+k = m
+if gt get jtrl 0 0
+for i ulong len t_sep
+put enq add k i get t_sep i
+end
+k = add k len t_sep
+for i ulong n
+put enq add k i hc_get add o i
+end
+k = add k n
+end
+put enql 0 k
+put ap A_EMB NONE
+if enc_fetch
+put ap A_EMB enc_stage
+end
+end
+note stage qem as 3072 little-endian bytes in hc
+fn enc_stage to ulong
+o = get hct 0
+for i ulong 768
+v = ulong bitcast uint get qem i
+for b ulong 4
+hc_put add add o mul i 4 b uchar and shr v mul b 8 255
+end
+end
+put hct 0 add o 3072
+ret rf_hc o 3072
+end
