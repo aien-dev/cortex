@@ -602,9 +602,9 @@ ret get hs2 j
 end
 ret get hs3 j
 end
-note no elif/else chain here: under omc 189ada82 the chain form stored into the wrong pool inside
-note this program (staged byte read back as a different byte; isolated test programs were fine),
-note so each branch returns on its own. tests/big covers it.
+note Omega has no elif: `elif eq k 1` parses as an assignment to a local named elif, so an
+note if/elif chain runs every later body unconditionally (stored each byte into all later pools).
+note Each branch returns on its own instead. tests/big covers it.
 fn hsp i ulong v uchar to void
 k = shr i 24
 j = and i 16777215

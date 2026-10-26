@@ -142,8 +142,8 @@ end
 fn tc_put i ulong v uchar to void
 k = div i 16777216
 j = rem i 16777216
-note no elif/else chain around put: under omc 189ada82 such a chain stored into the wrong pool in
-note the server build (om/store.om hsp), so each branch returns on its own
+note Omega has no elif (it parses as an assignment to a local named elif), so each branch
+note returns on its own
 if eq k 0
 put tcb j v
 ret
