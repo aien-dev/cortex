@@ -32,7 +32,9 @@ oracle_dump() { # oracle_dump NAME DBPATH -> NAME.oracle (on a scratch copy)
 nobad() { ! grep -q 'BAD:' "$1"; }
 
 echo "== toolchain"
-echo "omc $(sha256sum /tmp/cxo/omega/seed/out/omc | cut -d' ' -f1) (omega-mv $(git -C /tmp/cxo/omega rev-parse HEAD))"
+OMC=$(sh "$R/tools/omc.sh") || exit 1
+export OMC
+echo "omc $(sha256sum "$OMC" | cut -d' ' -f1) (omega-mv 91b3c932, tools/omc.sh)"
 echo "sqlite3 $(/usr/bin/sqlite3 --version | cut -d' ' -f1-2)"
 echo "python $(python3 --version 2>&1)"
 for f in om/crc32c.om om/sqlite.om om/import_main.om tests/import/logdump.om tests/import/crctest.om; do

@@ -552,7 +552,9 @@ for i ulong n
 put qct i hc_get add o i
 end
 put qctl 0 n
-fts_put e get efts e
+if not fts_put e get efts e
+trap 9
+end
 end
 note remove the FTS row of e (if any) and keep the max fts rowid
 fn st_fts_drop e ulong to void

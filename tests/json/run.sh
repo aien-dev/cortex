@@ -7,8 +7,7 @@
 set -u
 R=$(cd "$(dirname "$0")/../.." && pwd)
 T=$R/tests/json
-OMC=${OMC:-/tmp/cxo/omega/seed/out/omc}
-OMC_SHA=befb8199db8c4bca188a494dfaac2a6f0ee5c36fcea11188c75666c55fce8a1d
+OMC=$(sh "$R/tools/omc.sh") || exit 2
 W=${W:-/tmp/jn/run}
 RYU_TABLE=${RYU_TABLE:-$HOME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ryu-1.0.23/src/d2s_full_table.rs}
 N="nice -n 19 ionice -c3"
@@ -19,7 +18,7 @@ step() { say "== $*"; }
 
 step "toolchain"
 say "omc $OMC sha256 $(sha256sum "$OMC" | cut -d' ' -f1)"
-[ "$(sha256sum "$OMC" | cut -d' ' -f1)" = "$OMC_SHA" ] || { say "FAIL omc pin mismatch"; exit 2; }
+say "omc pinned by tools/omc.sh (omega-mv 91b3c932)"
 say "rustc $(rustc +1.98.1 --version)"
 for f in f64 uni_rust json; do say "om/$f.om sha256 $(sha256sum "$R/om/$f.om" | cut -d' ' -f1) functions $(grep -c '^fn ' "$R/om/$f.om")"; done
 

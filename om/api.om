@@ -109,9 +109,13 @@ end
 fn st_begin to void
 put hst 0 get hsn 0
 put hct 0 get hcn 0
+sp = get ap A_SPSET
+r = get ap A_ROUTE
 for i ulong len ap
 put ap i NONE
 end
+put ap A_SPSET sp
+put ap A_ROUTE r
 end
 fn st_commit to void
 put hsn 0 get hst 0
@@ -428,6 +432,7 @@ http_send c 405 0 1 0
 end
 ret
 end
+put ap A_SPSET NONE
 au = auth_check
 al = ulong 0
 if and ne r 0 not route_method_ok r m

@@ -312,6 +312,10 @@ end
 v = add mul v 10 d
 i = add i 1
 end
+note clamp here: u64::MAX would otherwise collide with the NONE sentinel (absent = 12)
+if gt v 50
+v = 50
+end
 put ap A_LIMIT v
 ret 0
 end

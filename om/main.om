@@ -340,6 +340,7 @@ if ne r 0
 ret r
 end
 auth_init
+fts_init
 s = st_start
 if ne s 0
 say m_logf

@@ -15,7 +15,7 @@ text r_del "{\"deleted\":"
 
 note now as an RFC 3339 string (chrono to_rfc3339, AutoSi), staged in hs
 fn stage_now to ulong
-ok = num_rfc realns false
+num_rfc realns false
 ret stage_jtx
 end
 fn stage_uuid to ulong

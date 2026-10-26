@@ -10,7 +10,7 @@ set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../.." && pwd)
 DB=${1:-/tmp/cxo/data/cortex-copy.db}
-OMC=${OMC:-/tmp/cxo/omega/seed/out/omc}
+OMC=$(sh "$ROOT/tools/omc.sh") || exit 2
 SQLITE_SRC=${SQLITE_SRC:-$HOME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libsqlite3-sys-0.28.0/sqlite3}
 WORK=${WORK:-/tmp/cxo/fts-work/run}
 EV="$ROOT/evidence/fts"

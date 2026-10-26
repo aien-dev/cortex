@@ -21,6 +21,8 @@ text r_sem ",\"semantic\":"
 text r_cr ",\"confidenceRecency\":0.95,\"graph\":0.0}}"
 text r_claims "{\"claims\":["
 text r_cend "]}"
+text e_lkcx "{\"error\":\"LIKE or GLOB pattern too complex\"}"
+global lkerr uchar 1
 
 note ---- small byte helpers over qtr (the trimmed query) ----
 note Rust char::is_whitespace for the UTF-8 sequence at qtr[i]: its byte length, or 0
@@ -63,19 +65,6 @@ ret 3
 end
 ret 0
 end
-fn qtr_has t view uchar * to bool
-n = get qtrl 0
-m = len t
-if gt m n
-ret false
-end
-for i ulong add sub n m 1
-if qtr_at i t
-ret true
-end
-end
-ret false
-end
 fn qtr_at i ulong t view uchar * to bool
 for k ulong len t
 if ne get qtr add i k get t k
@@ -106,21 +95,21 @@ put nres 0 add n 1
 end
 
 note ---- FTS phase: run the MATCH text in qq for space d; fills the result list ----
-fn fts_run d ulong lim ulong to void
+note (fts_search: qerr <> 0 means SQLite raised an error; cortex-rs run_fts then yields None = 0 rows)
+fn cx_fts_run d ulong lim ulong to void
 for e ulong get nent 0
 v = uchar 0
-if and eq get esl e d eq get eret e 0
+if eq get esl e d
+if eq get eret e 0
 v = 1
+end
 end
 put qok e v
 end
 put qlim 0 lim
 n = fts_search
 put nres 0 0
-if le n 0
-ret
-end
-for i ulong ulong n
+for i ulong n
 res_add get qrd i 0 get qrb i
 end
 end
@@ -185,6 +174,10 @@ sp = get ap A_SPACE
 if eq sp NONE
 sp = stage_txt tdefsp
 end
+if not scope_ok sp
+js_raw e403
+ret 403
+end
 lim = get ap A_LIMIT
 if eq lim NONE
 lim = 12
@@ -193,9 +186,14 @@ if gt lim 50
 lim = 50
 end
 put nres 0 0
+put lkerr 0 0
 d = dict_find sp
 if ne d NONE
 search_in d lim
+end
+if eq get lkerr 0 1
+js_raw e_lkcx
+ret 500
 end
 js_raw r_res
 for i ulong get nres 0
@@ -230,17 +228,17 @@ if eq tl 0
 search_list d lim
 ret
 end
-if or or qtr_has tand qtr_has tor or qtr_has tnot qtr_star
 qq_clean false
-fts_run d lim
+if qq_ops
+cx_fts_run d lim
 end
 if eq get nres 0 0
 qq_clean true
-fts_run d lim
+cx_fts_run d lim
 end
 if eq get nres 0 0
 if gt qq_and 1
-fts_run d lim
+cx_fts_run d lim
 end
 end
 if lt get nres 0 lim
@@ -250,15 +248,37 @@ if gt get nres 0 lim
 put nres 0 lim
 end
 end
-fn qtr_star to bool
-for i ulong get qtrl 0
-if eq get qtr i 42
+note has_fts_ops on clean_q (qq after qq_clean false): " AND ", " OR ", " NOT " or '*'
+fn qq_ops to bool
+n = get qql 0
+for i ulong n
+put qtr add n i get qq i
+end
+if or or qq_has n tand qq_has n tor qq_has n tnot
+ret true
+end
+for i ulong n
+if eq get qq i 42
+ret true
+end
+end
+ret false
+end
+note does qq (copied to qtr[n..2n)) contain t
+fn qq_has n ulong t view uchar * to bool
+m = len t
+if gt m n
+ret false
+end
+for i ulong add sub n m 1
+if qtr_at add n i t
 ret true
 end
 end
 ret false
 end
 note substring fallback: LIKE '%q%' on name or content, scan order, LIMIT lim rows, new ones appended
+note likeFunc raises "LIKE or GLOB pattern too complex" on the first row it tests (lkerr = 1)
 fn search_like d ulong lim ulong to void
 n = get qtrl 0
 put qlp 0 37
@@ -267,7 +287,7 @@ put qlp add i 1 get qtr i
 end
 put qlp add n 1 37
 put qlpl 0 add n 2
-like_set
+lok = like_set
 eo_range d
 a = get eor 0
 b = get eor 1
@@ -276,6 +296,10 @@ k = a
 while and lt k b lt got lim bound 999999
 e = get eord k
 if eq get eret e 0
+if not lok
+put lkerr 0 1
+ret
+end
 if like_ent e
 got = add got 1
 if not res_has e
@@ -291,9 +315,9 @@ r = get enm e
 o = rf_off r
 n = rf_len r
 for i ulong n
-put qls i get hs add o i
+put qct i get hs add o i
 end
-put qlsl 0 n
+put qctl 0 n
 if like_test
 ret true
 end
@@ -301,9 +325,9 @@ c = get ect e
 o = rf_off c
 n = rf_len c
 for i ulong n
-put qls i hc_get add o i
+put qct i hc_get add o i
 end
-put qlsl 0 n
+put qctl 0 n
 ret like_test
 end
 note empty query: newest first by created_at (stable on scan order), LIMIT lim
@@ -376,6 +400,10 @@ fn api_recall to ulong
 sp = get ap A_SPACE
 if eq sp NONE
 sp = stage_txt tdefsp
+end
+if not scope_ok sp
+js_raw e403
+ret 403
 end
 lim = get ap A_LIMIT
 if eq lim NONE
@@ -510,8 +538,7 @@ na = f32 0.0
 nb = f32 0.0
 for i ulong 768
 a = get qem i
-bu = em_at add o mul i 4
-b = bitcast f32 bu
+b = em_at add o mul i 4
 dot = add dot mul a b
 na = add na mul a a
 nb = add nb mul b b
@@ -522,10 +549,10 @@ ret f64 div dot den
 end
 ret 0.0
 end
-note omc at 3364a1df compiles `to f32` as `to void`; the bits travel as uint (reported to OmegaNext)
-fn em_at o ulong to uint
+note little-endian f32 at hc byte offset o
+fn em_at o ulong to f32
 v = or or ulong hc_get o shl ulong hc_get add o 1 8 or shl ulong hc_get add o 2 16 shl ulong hc_get add o 3 24
-ret uint v
+ret bitcast f32 uint v
 end
 
 note ---- get ----
@@ -541,6 +568,10 @@ end
 sp = get ap A_SPACE
 if eq sp NONE
 sp = stage_txt tdefsp
+end
+if not scope_ok sp
+js_raw e403
+ret 403
 end
 d = dict_find sp
 if eq d NONE
@@ -569,11 +600,17 @@ text k_csub ",\"subjectEntityId\":"
 text k_cprd ",\"predicate\":"
 text k_cobj ",\"objectEntityId\":"
 text k_clit ",\"literalValue\":"
+text k_cf0 "{\"confidence\":"
+text k_cid ",\"id\":"
 fn api_traverse to ulong
 s = get ap A_SUBJ
 sp = get ap A_SPACE
 if eq sp NONE
 sp = stage_txt tdefsp
+end
+if not scope_ok sp
+js_raw e403
+ret 403
 end
 d = dict_find sp
 js_raw r_claims
@@ -607,19 +644,14 @@ end
 o_claim c
 ret add k 1
 end
+note json!({"claims": claims}) turns each Claim into a Value: keys come out sorted (BTreeMap)
 fn o_claim c ulong to void
-js_raw k_id
+js_raw k_cf0
+js_f64 bitcast ulong get ccf c
+js_raw k_ca
+o_hs get cca c
+js_raw k_cid
 o_hs get cid c
-js_raw k_spid
-o_hs get csid c
-js_raw k_spsl
-o_hs get dref get csl c
-js_raw k_csub
-o_hs get csub c
-js_raw k_cprd
-o_hs get cprd c
-js_raw k_cobj
-o_hs get cobj c
 js_raw k_clit
 l = get clit c
 if eq l NONE
@@ -627,17 +659,23 @@ js_raw tnull
 else
 o_canon l tnull
 end
-js_raw k_cf
-js_f64 bitcast ulong get ccf c
 js_raw k_md
 o_canon get cmd c tobj0
+js_raw k_cobj
+o_hs get cobj c
+js_raw k_cprd
+o_hs get cprd c
 js_raw k_ret
 if eq get cret c 0
 js_raw tfalse
 else
 js_raw ttrue
 end
-js_raw k_ca
-o_hs get cca c
+js_raw k_spid
+o_hs get csid c
+js_raw k_spsl
+o_hs get dref get csl c
+js_raw k_csub
+o_hs get csub c
 js_byte 125
 end

@@ -394,7 +394,7 @@ if ne js_kind r 8
 ret false
 end
 a = js_find r en_key
-if or eq a JNONE ne js_kind a 7
+if or eq a jnone ne js_kind a 7
 ret false
 end
 k = ulong 0
