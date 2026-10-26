@@ -1,0 +1,17 @@
+load statistics, computed by the Wolfram Language evaluator (Wolfram MCP) from the raw files in this directory.
+Query per file F (the full integer list of F substituted for <F>, values in ns, results in ms):
+  With[{d=N[{<F>}/10^6]},{Length[d],Quantile[d,1/2],Quantile[d,99/100],Mean[d],Max[d]}]
+Quantile uses Wolfram's default definition (no interpolation: the sample element at rank ceil(q n)).
+Clients: pdrive, one HTTP/1.1 connection per request; c4 = four clients started together on round-robin quarters of the mix.
+Read mix: the 4277 search/recall/get/traverse requests of build/parity/corpus.tsv, both servers on copies of the same data, no encoder (closed port).
+
+Conditions: one run per arm, oracle then Omega, under nice -n 19 / ionice idle on a shared 20-core host (load average about 11 at the end). One unpaired run: indicative, not an A/B speed claim.
+
+file                 sha256(first 16)   Wolfram output {n, p50, p99, mean, max} (ms)
+lat-oracle-seq.ns    ef46631b90859e81   Out[1]= {4277, 1.73211, 25.139186, 4.591630356558336, 106.171239}
+lat-oracle-c4.ns     c9e8d4dc670a89ad   Out[1]= {4277, 17.156063, 64.195786, 20.442660009819967, 925.191587}
+lat-omega-seq.ns     d1b453c443aefc1e   Out[1]= {4277, 1.530397, 21.284291, 4.270380842412907, 46.931099}
+lat-omega-c4.ns      87ead4ee6cf6dc8c   Out[1]= {4277, 13.988598, 54.263161, 16.312513278232405, 165.170734}
+
+oracle sequential requests=4277 wall_ns=19783320016; 4 clients requests=4277 wall_ns=22016920901; transport errors=0
+omega sequential requests=4277 wall_ns=18352021675; 4 clients requests=4277 wall_ns=17473489634; transport errors=0

@@ -1,26 +1,29 @@
 # Omega Cortex — shared build contract (owner: CortexOmega)
 
 Goal: re-implement the Cortex memory server (Rust `cortex-rs` 0.1.0, live binary
-`~/.local/bin/cortex-rs` sha256 91ccba94…afe, SQLite 3.45.0 bundled, serde_json 1.0.x, ryu 1.0.x,
+`$HOME/.local/bin/cortex-rs` sha256 91ccba94…afe, SQLite 3.45.0 bundled, serde_json 1.0.x, ryu 1.0.x,
 axum 0.7, rustc 1.98.1) in seeded Omega, byte-for-byte compatible on the wire.
-Reference source: /tmp/cxo/cortex-rs/src (db.rs, handlers.rs, models.rs, embeddings.rs, auth.rs).
-Repo being built: /tmp/cxo/cortex (becomes github.com/aien-dev/cortex, Apache-2.0 WITH LLVM-exception).
+Reference source: the archived cortex-rs `src/` (db.rs, handlers.rs, models.rs, embeddings.rs, auth.rs);
+where the live binary and the source disagree, the binary wins (spec/ORACLE-OBSERVED.md).
+Repo: github.com/aien-dev/cortex, Apache-2.0 WITH LLVM-exception.
 
 ## Toolchain (pinned)
-- Compiler: omega-mv origin/main 3364a1dfd, `/tmp/cxo/omega/seed/out/omc`,
-  sha256 befb8199db8c4bca188a494dfaac2a6f0ee5c36fcea11188c75666c55fce8a1d. Do not rebuild it in place.
-- Language authority: /tmp/cxo/omega/docs/one_layer/OMEGESE.md sections 3, 9 (9.4 arrays, 9.9 floats,
-  9.12 const, 9.13 OM-2), 10 (host words). Fixtures: /tmp/cxo/omega/seed/host/tests/*.om,
-  /tmp/cxo/omega/seed/omc/tests. Never guess syntax; compile small probes.
+- Compiler: aien-dev/omega-mv 91b3c932, `seed/out/omc`,
+  sha256 189ada82e00bb440cb41351bd252cc68c54a1b1050051cc42a1df700081c3b54. `tools/omc.sh` extracts it
+  from an omega-mv clone (`$OMEGA_REPO`) into build/omc and refuses any other hash.
+- Language authority: omega-mv `docs/one_layer/OMEGESE.md` sections 3, 9 (9.4 arrays, 9.9 floats,
+  9.12 const, 9.13 OM-2), 10 (host words). Fixtures: omega-mv `seed/host/tests/*.om`,
+  `seed/omc/tests`. Never guess syntax; compile small probes.
 - Compile: `"$OMC" < prog.om > prog 2> prog.err` (rc 0 + empty stderr = accepted; never run output
   of a failed compile). Trap = exit 100+code.
 - Facts that bite: local names <= 8 chars (function names <= 63); <= 6 params; 16 registers per
   function (error 12 => split the function); a `global` can NOT be passed to a user function
   (error 19) but host words (read/write/send/recv/pread/...) accept globals; `new` arrays only in a
   function's outermost block; every `while` has an implicit 1,000,000-pass cap unless `bound N`
-  (N <= 999999) — for long loops use nested loops or `for i ulong n` over a computed count;
-  global pool max 16,777,216 elements, 1 GiB total; at most 512 functions per compiled unit
-  (keep your module lean: report your function count); omc input <= 8 MiB.
+  (N <= 999999), and a `for i ulong n` over a computed count traps (exit 104) after 1,000,000 passes
+  too — for longer loops nest them (e.g. 65,536-element chunks);
+  global pool max 16,777,216 elements, 1 GiB total; at most 4096 functions and 8192 names per
+  compiled unit (`build.sh` reports the function count); omc input <= 8 MiB.
 
 ## Program structure
 All server sources are concatenated in a fixed order into ONE unit (`build.sh`), so every global

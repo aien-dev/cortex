@@ -1,0 +1,4 @@
+crash test 2026-10-26T18:11:10Z: 4000 sequential writes, kill -9 after 2 s
+acknowledged (201) before kill: 623; refused after kill (ERR): 3376; cut off mid-request (empty answer): 1
+read back after restart: 623 answered 200, 623 carry their payload
+cut-off writes present after restart: 1 of 1 (allowed either way: never acknowledged)
