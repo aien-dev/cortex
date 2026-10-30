@@ -1,0 +1,123 @@
+
+/lib/aarch64-linux-gnu/libm.so.6:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+0000000000034cd0 <__log_finite@GLIBC_2.17>:
+   34cd0:	fmov	x2, d0
+   34cd4:	stp	x29, x30, [sp, #-16]!
+   34cd8:	mov	x0, #0xc012000000000000    	// #-4606619468846596096
+   34cdc:	mov	x29, sp
+   34ce0:	mov	x3, #0xffff08ffffffffff    	// #-271579372060673
+   34ce4:	movk	x3, #0x3, lsl #48
+   34ce8:	add	x0, x2, x0
+   34cec:	cmp	x0, x3
+   34cf0:	b.ls	34d98 <__log_finite@GLIBC_2.17+0xc8>  // b.plast
+   34cf4:	lsr	x1, x2, #48
+   34cf8:	mov	w0, #0x7fdf                	// #32735
+   34cfc:	sub	w3, w1, #0x10
+   34d00:	cmp	w3, w0
+   34d04:	b.hi	34e38 <__log_finite@GLIBC_2.17+0x168>  // b.pmore
+   34d08:	mov	x1, #0xc01a000000000000    	// #-4604367669032910848
+   34d0c:	add	x1, x2, x1
+   34d10:	adrp	x4, 78000 <f64xsubf128@@GLIBC_2.28+0x273f0>
+   34d14:	add	x0, x4, #0x880
+   34d18:	ubfx	x3, x1, #45, #7
+   34d1c:	asr	x5, x1, #52
+   34d20:	add	x3, x3, #0x9
+   34d24:	and	x1, x1, #0xfff0000000000000
+   34d28:	sub	x2, x2, x1
+   34d2c:	scvtf	d7, w5
+   34d30:	lsl	x1, x3, #4
+   34d34:	ldr	d3, [x4, #2176]
+   34d38:	add	x3, x0, x1
+   34d3c:	fmov	d2, #-1.000000000000000000e+00
+   34d40:	ldp	d5, d4, [x0, #40]
+   34d44:	ldr	d0, [x0, x1]
+   34d48:	ldr	d1, [x3, #8]
+   34d4c:	fmadd	d1, d3, d7, d1
+   34d50:	fmov	d3, x2
+   34d54:	ldp	d18, d17, [x0, #8]
+   34d58:	fmadd	d2, d0, d3, d2
+   34d5c:	ldp	d3, d0, [x0, #24]
+   34d60:	fadd	d6, d2, d1
+   34d64:	fmadd	d5, d4, d2, d5
+   34d68:	fmadd	d3, d0, d2, d3
+   34d6c:	fmul	d4, d2, d2
+   34d70:	fsub	d0, d1, d6
+   34d74:	fmul	d16, d2, d4
+   34d78:	fadd	d0, d0, d2
+   34d7c:	fmadd	d1, d5, d4, d3
+   34d80:	fmadd	d0, d18, d7, d0
+   34d84:	fmadd	d0, d17, d4, d0
+   34d88:	fmadd	d0, d16, d1, d0
+   34d8c:	fadd	d0, d0, d6
+   34d90:	ldp	x29, x30, [sp], #16
+   34d94:	ret
+   34d98:	mov	x0, #0x3ff0000000000000    	// #4607182418800017408
+   34d9c:	cmp	x2, x0
+   34da0:	b.eq	34e94 <__log_finite@GLIBC_2.17+0x1c4>  // b.none
+   34da4:	adrp	x0, 78000 <f64xsubf128@@GLIBC_2.28+0x273f0>
+   34da8:	add	x0, x0, #0x880
+   34dac:	fmov	d1, #1.000000000000000000e+00
+   34db0:	mov	x1, #0x41a0000000000000    	// #4728779608739020800
+   34db4:	fmov	d2, x1
+   34db8:	ldp	d4, d3, [x0, #112]
+   34dbc:	fsub	d0, d0, d1
+   34dc0:	fmadd	d1, d0, d2, d0
+   34dc4:	ldr	d19, [x0, #80]
+   34dc8:	ldp	d7, d17, [x0, #128]
+   34dcc:	fmul	d6, d0, d0
+   34dd0:	fmadd	d4, d3, d0, d4
+   34dd4:	fmsub	d1, d0, d2, d1
+   34dd8:	ldr	d3, [x0, #88]
+   34ddc:	ldp	d16, d2, [x0, #96]
+   34de0:	fmul	d5, d0, d6
+   34de4:	fmadd	d4, d7, d6, d4
+   34de8:	ldr	d7, [x0, #72]
+   34dec:	fmadd	d3, d16, d0, d3
+   34df0:	fmadd	d4, d17, d5, d4
+   34df4:	fmul	d18, d1, d1
+   34df8:	fmadd	d3, d2, d6, d3
+   34dfc:	ldp	d16, d2, [x0, #56]
+   34e00:	fmadd	d17, d18, d16, d0
+   34e04:	fmadd	d2, d7, d0, d2
+   34e08:	fmadd	d3, d4, d5, d3
+   34e0c:	fsub	d7, d0, d1
+   34e10:	fadd	d1, d0, d1
+   34e14:	fmadd	d2, d19, d6, d2
+   34e18:	fmul	d6, d16, d7
+   34e1c:	fsub	d0, d0, d17
+   34e20:	fmadd	d0, d18, d16, d0
+   34e24:	fmadd	d2, d3, d5, d2
+   34e28:	fmadd	d0, d6, d1, d0
+   34e2c:	fmadd	d0, d2, d5, d0
+   34e30:	fadd	d0, d17, d0
+   34e34:	b	34d90 <__log_finite@GLIBC_2.17+0xc0>
+   34e38:	cmp	xzr, x2, lsl #1
+   34e3c:	b.eq	34e88 <__log_finite@GLIBC_2.17+0x1b8>  // b.none
+   34e40:	mov	x0, #0x7ff0000000000000    	// #9218868437227405312
+   34e44:	cmp	x2, x0
+   34e48:	b.eq	34d90 <__log_finite@GLIBC_2.17+0xc0>  // b.none
+   34e4c:	tst	x1, #0x8000
+   34e50:	b.ne	34e80 <__log_finite@GLIBC_2.17+0x1b0>  // b.any
+   34e54:	and	w1, w1, #0x7ff0
+   34e58:	mov	w0, #0x7ff0                	// #32752
+   34e5c:	cmp	w1, w0
+   34e60:	b.eq	34e80 <__log_finite@GLIBC_2.17+0x1b0>  // b.none
+   34e64:	mov	x0, #0x4330000000000000    	// #4841369599423283200
+   34e68:	fmov	d1, x0
+   34e6c:	mov	x2, #0xfcc0000000000000    	// #-234187180623265792
+   34e70:	fmul	d0, d0, d1
+   34e74:	fmov	x0, d0
+   34e78:	add	x2, x0, x2
+   34e7c:	b	34d08 <__log_finite@GLIBC_2.17+0x38>
+   34e80:	ldp	x29, x30, [sp], #16
+   34e84:	b	4e1e0 <fminimum_mag_numf@@GLIBC_2.35+0x1cb0>
+   34e88:	ldp	x29, x30, [sp], #16
+   34e8c:	mov	w0, #0x1                   	// #1
+   34e90:	b	4e1b0 <fminimum_mag_numf@@GLIBC_2.35+0x1c80>
+   34e94:	movi	d0, #0x0
+   34e98:	b	34d90 <__log_finite@GLIBC_2.17+0xc0>
+   34e9c:	nop

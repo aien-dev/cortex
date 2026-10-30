@@ -1,0 +1,76 @@
+note tests/json/t_uni.om - differential harness for uni_rust.om (+ js_dbg_str): input records come in
+note (haystack, needle) pairs; output per pair: [lower][trim "start len"][Debug][contains 0/1], each
+note u32-framed inside one record. Needs t_io.om.
+global thay uchar 1048576
+fn t_beg to ulong
+p = get jobl 0
+for k ulong 4
+js_byte 0
+end
+ret p
+end
+fn t_end p ulong to void
+n = sub sub get jobl 0 p 4
+put job p uchar and n 255
+put job add p 1 uchar and shr n 8 255
+put job add p 2 uchar and shr n 16 255
+put job add p 3 uchar and shr n 24 255
+end
+fn main to int
+num_init
+for it ulong 100000000
+if not t_rec
+t_flush
+ret 0
+end
+n = get jinl 0
+for i ulong n
+x = get jin i
+put thay i x
+end
+if not t_rec
+trap 9
+end
+m = get jinl 0
+for i ulong m
+x = get jin i
+put jrq i x
+end
+put jrql 0 m
+ru_prep
+for i ulong n
+x = get thay i
+put jrs i x
+put jsp i x
+end
+put jrsl 0 n
+c = ru_contains
+put jobl 0 0
+p = t_beg
+for i ulong get jrll 0
+js_byte get jrl i
+end
+t_end p
+p = t_beg
+ru_trim 0 n
+js_u64 get jtro 0
+js_byte 32
+js_u64 get jtrl 0
+t_end p
+p = t_beg
+put jnv 0 0
+put jnl 0 uint n
+put jnk 0 6
+js_dbg_str 0
+t_end p
+p = t_beg
+if c
+js_byte 49
+else
+js_byte 48
+end
+t_end p
+t_emitjob
+end
+ret 1
+end

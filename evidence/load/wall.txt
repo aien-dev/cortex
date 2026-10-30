@@ -1,0 +1,2 @@
+oracle sequential requests=4277 wall_ns=19783320016; 4 clients requests=4277 wall_ns=22016920901; transport errors=0
+omega sequential requests=4277 wall_ns=18352021675; 4 clients requests=4277 wall_ns=17473489634; transport errors=0

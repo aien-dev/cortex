@@ -1,0 +1,72 @@
+note ===== tests/fts/t_tok.om : tokenizer differential harness =====
+note usage: t_tok DUMP > out ; prints "<rowid> c<col>( <start>:<end>:<hex token>)*" per column,
+note the same format as `oracle tok` (which calls SQLite's own unicode61 xTokenize)
+global tmd uchar 8
+fn main to int
+uf_init
+fd = t_open 1
+if gt argcnt 2
+ret t_recs fd
+end
+z = t_need fd 12
+put tibp 0 8
+nf = t_u32
+for r ulong nf
+z = t_need fd 8
+row = t_u64
+b = t_rdsb fd
+t_rdnm fd
+t_rdct fd
+b = t_rdsb fd
+b = t_rdsb fd
+z = t_need fd 1
+put tibp 0 add get tibp 0 1
+t_tline row 1 1 get qnml 0
+t_tline row 2 0 get qctl 0
+end
+t_flush
+ret 0
+end
+fn t_tline row ulong col ulong src ulong n ulong to void
+t_dec row
+t_ch 32
+t_ch 99
+t_dec col
+uf_start src n
+for k ulong 17
+dn = false
+for j ulong 999999
+if not uf_next
+dn = true
+break
+end
+t_ch 32
+t_dec get qtis 0
+t_ch 58
+t_dec get qtie 0
+t_ch 58
+m = get qtfn 0
+if gt m 32768
+m = ulong 32768
+end
+for i ulong m
+t_hex ulong get qtf i 2
+end
+end
+if dn
+break
+end
+end
+t_ch 10
+end
+note records mode: u32 length + bytes, tokenized from qct
+fn t_recs fd int to int
+r = ulong 0
+while t_need fd 4 bound 999999
+t_rdct fd
+t_tline r 2 0 get qctl 0
+r = add r 1
+end
+t_flush
+ret 0
+end

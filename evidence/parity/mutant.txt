@@ -1,0 +1,22 @@
+parity mutant 2026-10-26T18:06:40Z
+mutation   o_search_row LIKE score s = 0.7 -> s = 0.71 (one line of build/cortex.unit.om)
+mutant     sha256 0f750c06b159963177a3ccc17de47fb4c6be844e4b35c1745d01265e387c0192
+gate rc    1 (expected 1)
+TOTAL records=4642 pass=4470 fail=172 masked-values=3555 renamed-uuids=48
+failing classes (records):
+      3 error.query
+      1 route
+     36 search.get.malformed
+      4 search.get.ops
+     44 search.get.term
+     33 search.post.malformed
+      4 search.post.ops
+     46 search.post.term
+      1 write.search
+first FAIL lines:
+FAIL 54 search.get.term body@5710
+FAIL 55 search.post.term body@5710
+FAIL 66 search.get.term body@45455
+FAIL 67 search.post.term body@45455
+FAIL 78 search.get.term body@25035
+MUTANT CAUGHT

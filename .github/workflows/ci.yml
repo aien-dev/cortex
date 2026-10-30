@@ -1,0 +1,40 @@
+# CI for cortex: fetch the pinned omega-mv commit (tools/omc.sh: 91b3c932, omc sha256 189ada82...),
+# verify the compiler digest and compile both units through build.sh on a GitHub-hosted arm64
+# runner (omc is an AArch64 ELF). The differential suites under tests/ need a cortex-rs database
+# copy and the SQLite oracle sources that are not in this repository, so they stay NOT_RUN here;
+# their receipts live under evidence/. A second job writes an SPDX SBOM of the tree for auditors.
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main, wip/omega-cortex]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    env:
+      OMEGA_REV: 91b3c9326919faf1491e29ae9276929e8349b8c7
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Pinned omega-mv
+        run: |
+          git clone --filter=blob:none https://github.com/aien-dev/omega-mv.git "$RUNNER_TEMP/omega"
+          git -C "$RUNNER_TEMP/omega" checkout --quiet "$OMEGA_REV"
+      - name: Compile both units with the pinned omc (digest checked by tools/omc.sh)
+        run: OMEGA_REPO="$RUNNER_TEMP/omega" CXO_NICED=1 sh build.sh
+  sbom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: spdx-json
+          artifact-name: sbom-${{ github.sha }}.spdx.json

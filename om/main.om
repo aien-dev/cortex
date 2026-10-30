@@ -1,0 +1,377 @@
+note main.om: cortex [--host 127.0.0.1] [--port 18080] --log PATH [--encoder-url URL] [--tokens FILE] [--sock PATH]
+global argb uchar 4096
+global mport ulong 1
+global mhost uchar 4
+global maddr uchar 16
+global mopt uchar 4
+global tfb uchar 1048576
+text a_port "--port"
+text a_host "--host"
+text a_log "--log"
+text a_enc "--encoder-url"
+text a_tok "--tokens"
+text a_db "--db-path"
+text d_enc "http://127.0.0.1:18081"
+text m_use "usage: cortex [--host 127.0.0.1] [--port 18080] --log PATH [--encoder-url URL] [--tokens FILE] [--sock PATH]\n"
+text m_db "cortex: --db-path is the SQLite store of cortex-rs; import it once with cortex-import, then pass --log\n"
+text m_bind "cortex: cannot bind the listening socket\n"
+text m_logf "cortex: cannot open or replay the log\n"
+text m_tokf "cortex: cannot read the tokens file\n"
+text m_up "cortex: listening on http://"
+text m_nl "\n"
+
+fn say t view uchar * to void
+w = write 2 t 0 len t
+if lt w 0
+ret
+end
+end
+fn arg_is i ulong t view uchar * to bool
+n = argread i argb 0 len argb
+if ne n long len t
+ret false
+end
+for k ulong len t
+if ne get argb k get t k
+ret false
+end
+end
+ret true
+end
+note copy argument i into jrs; returns its length
+fn arg_jrs i ulong to ulong
+n = argread i argb 0 len argb
+if lt n 0
+ret 0
+end
+for k ulong ulong n
+put jrs k get argb k
+end
+ret ulong n
+end
+fn arg_num i ulong to ulong
+n = arg_jrs i
+v = ulong 0
+if eq n 0
+ret NONE
+end
+for k ulong n
+c = get jrs k
+if or lt c 48 gt c 57
+ret NONE
+end
+v = add mul v 10 ulong sub c 48
+if gt v 65535
+ret NONE
+end
+end
+ret v
+end
+fn host_set n ulong to bool
+put jrs n 0
+if enc_host 0 n
+for k ulong 4
+put mhost k get enh k
+end
+ret true
+end
+ret false
+end
+
+note parse the command line; 0 ok, else exit status
+fn main_args to int
+put mport 0 18080
+put mhost 0 127
+put mhost 3 1
+put lpl 0 0
+c = ulong argcnt
+i = ulong 1
+for k ulong len d_enc
+put jrs k get d_enc k
+end
+enc_config len d_enc
+while lt i c bound 64
+if ge add i 1 c
+say m_use
+ret 2
+end
+v = add i 1
+if arg_is i a_port
+put mport 0 arg_num v
+if eq get mport 0 NONE
+say m_use
+ret 2
+end
+else
+r = main_arg2 i v
+if ne r 0
+ret r
+end
+end
+i = add i 2
+end
+if eq get lpl 0 0
+say m_use
+ret 2
+end
+ret 0
+end
+fn main_arg2 i ulong v ulong to int
+if arg_is i a_host
+if not host_set arg_jrs v
+say m_use
+ret 2
+end
+ret 0
+end
+if arg_is i a_log
+n = arg_jrs v
+for k ulong n
+put lpath k get jrs k
+end
+put lpl 0 n
+ret 0
+end
+if arg_is i a_enc
+enc_config arg_jrs v
+ret 0
+end
+if arg_is i a_tok
+if not tok_load arg_jrs v
+say m_tokf
+ret 2
+end
+ret 0
+end
+if arg_is i a_sock
+if not sv_setpath arg_jrs v
+say m_sockp
+ret 2
+end
+ret 0
+end
+if arg_is i a_db
+say m_db
+ret 2
+end
+say m_use
+ret 2
+end
+
+note tokens file: one "TOKEN SPACE[,SPACE...]" per line; blank lines and lines starting with # skipped
+fn tok_load n ulong to bool
+for k ulong n
+put tfile k get jrs k
+end
+fd = fopen tfile 0 n 524288 0
+if lt fd 0
+ret false
+end
+r = read int fd tfb 0 len tfb
+x = fclose int fd
+if or lt r 0 ne x 0
+ret false
+end
+if ge ulong r len tfb
+ret false
+end
+put hst 0 get hsn 0
+p = ulong 0
+e = ulong r
+while lt p e bound 999999
+q = p
+while and lt q e ne get tfb q 10 bound 999999
+q = add q 1
+end
+if not tok_line p q
+ret false
+end
+p = add q 1
+end
+put hsn 0 get hst 0
+ret true
+end
+fn tok_line p ulong q ulong to bool
+if or eq p q eq get tfb p 35
+ret true
+end
+s = p
+while and lt s q ne get tfb s 32 bound 999999
+s = add s 1
+end
+if or ge s q eq s p
+ret false
+end
+t = get tks 0
+if ge t len tko
+ret false
+end
+b = get tspn 0
+put tko t tok_put p sub s p
+put tkl t sub s p
+put tsa t b
+put tks 0 add t 1
+a = add s 1
+while le a q bound 999999
+z = a
+while and lt z q ne get tfb z 44 bound 999999
+z = add z 1
+end
+if gt z a
+k = get tspn 0
+put tsp k tok_space a z
+put tspn 0 add k 1
+end
+a = add z 1
+end
+put tsn t sub get tspn 0 b
+ret gt get tsn t 0
+end
+global tkbn ulong 1
+fn tok_put p ulong n ulong to ulong
+o = get tkbn 0
+for i ulong n
+put tkb add o i get tfb add p i
+end
+put tkbn 0 add o n
+ret o
+end
+fn tok_space a ulong z ulong to ulong
+o = get hst 0
+for i ulong sub z a
+hsp add o i get tfb add a i
+end
+put hst 0 add o sub z a
+ret rf_hs o sub z a
+end
+
+note aliases_json that is not a JSON array of strings is served as [] (serde from_str unwrap_or_default)
+fn st_eav to void
+for e ulong get nent 0
+v = uchar 0
+if eav_ok get eal e
+v = 1
+end
+put eav e v
+end
+end
+fn eav_ok r ulong to bool
+if eq r NONE
+ret false
+end
+o = rf_off r
+n = rf_len r
+for i ulong n
+put jin i hsg add o i
+end
+put jinl 0 n
+if not js_parse
+ret false
+end
+a = get jroot 0
+if ne js_kind a 7
+ret false
+end
+for i ulong js_len a
+if ne js_kind js_child a i 6
+ret false
+end
+end
+ret true
+end
+
+note TCP listener; retries for 5 s while the address is still held (a previous acceptor exiting)
+fn main_listen to int
+for t ulong 50
+fd = main_listen1
+if ne fd -98
+ret fd
+end
+x = sleepns 100000000
+end
+ret -1
+end
+fn main_listen1 to int
+fd = socknew 2 524289 0
+if lt fd 0
+ret -1
+end
+put mopt 0 1
+r = sockopt int fd 1 2 mopt 0 4
+if ne r 0
+x = fclose int fd
+ret -1
+end
+put maddr 0 2
+p = get mport 0
+put maddr 2 uchar shr p 8
+put maddr 3 uchar and p 255
+for k ulong 4
+put maddr add 4 k get mhost k
+end
+r = bind int fd maddr 0 16
+if ne r 0
+x = fclose int fd
+if eq r -98
+ret -98
+end
+ret -1
+end
+note backlog 1024 (as tokio, which cortex-rs uses): with 128, a burst of 200 connections overflowed
+note the accept queue once (TcpExtListenOverflows 1) and that client's SYN was retried 1 s later
+r = listen int fd 1024
+if ne r 0
+x = fclose int fd
+ret -1
+end
+ret int fd
+end
+fn main_banner to void
+say m_up
+put jobl 0 0
+for k ulong 4
+js_u64 ulong get mhost k
+if lt k 3
+js_byte 46
+end
+end
+js_byte 58
+js_u64 get mport 0
+js_raw m_nl
+w = write 2 job 0 get jobl 0
+if lt w 0
+ret
+end
+end
+fn main to int
+r = main_args
+if ne r 0
+ret r
+end
+if not sv_defpath
+say m_sockp
+ret 2
+end
+u = sv_ulisten
+if lt u 0
+ret 4
+end
+if ne sv_start u 0
+ret int get sfp 3
+end
+auth_init
+fts_init
+s = st_start
+if ne s 0
+say m_logf
+ret 3
+end
+st_eav
+if not sv_go
+say m_bind
+ret 4
+end
+main_banner
+sv_serve u
+ret 5
+end

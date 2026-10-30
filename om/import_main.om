@@ -1,0 +1,533 @@
+note import_main.om - program cortex-import SRC.db OUT.log (owner SqliteImport).
+note Unit: crc32c.om + sqlite.om + import_main.om. Reads the cortex-rs tables spaces, entities,
+note claims and entities_fts_content through sqlite.om (WAL overlay included) and writes the log
+note defined in spec/BUILD-CONTRACT.md: CXLOG001, SPACE records (spaces rowid order), ENTITY
+note records (entities rowid order; ftsrow = rowid of the entities_fts_content row whose c0 equals
+note the entity id, 0 when absent), CLAIM records (claims rowid order).
+note Records are staged in klw (crc32c.om) and sealed with crc_klw. A row whose record would not
+note fit in klw (8388608 bytes) is refused. OUT must not exist; the log is written to OUT.tmp
+note (created O_EXCL), fdatasync'd, closed, renamed to OUT with RENAME_NOREPLACE, and the parent
+note directory is fsync'd. stdout: IMPORT OK spaces=N entities=N claims=N fts=N
+note (fts = entities that have an FTS row). stderr: wal/dbpages diagnostics and refusals.
+note Exit: 0 ok, 2 usage, 2..41 sqlite.om refusals (sq_die), 53..79 import refusals (imp_die).
+text kimsg "cortex-import: \nusage: cortex-import SRC.db OUT.log\nimport: output file already exists; refusing to overwrite\nimport: cannot create OUT.tmp (it exists or the directory is not writable)\nimport: write error\nimport: fdatasync failed\nimport: close failed\nimport: rename OUT.tmp to OUT failed\nimport: a cortex table is missing from sqlite_master\nimport: table schema differs from the cortex-rs schema\nimport: wrong column count in a row\nimport: TEXT column holds a non-text value\nimport: BLOB column holds a non-blob value\nimport: integer out of range for its field\nimport: row too large for the 8388608-byte log buffer\nimport: duplicate c0 in entities_fts_content\nimport: FTS map capacity exceeded\nimport: directory fsync failed\nimport: OUT path missing or longer than 2000 bytes\nIMPORT OK spaces=\n entities=\n claims=\n fts=\nimport: cannot check whether OUT exists\nimport: entities_fts_content c0 is not text\nimport: rootpage is not an integer\nimport: fts rows without entity=\n"
+note ksch: whitespace-free schema segments, LF separated: 0 "table", then per table k (0 spaces,
+note 1 entities, 2 claims, 3 entities_fts_content) name at 1+2k and stripped CREATE sql at 2+2k
+note (taken from cortex-rs src/db.rs init_schema as stored by SQLite 3.45 in sqlite_master).
+text ksch "table\nspaces\nCREATETABLEspaces(idTEXTPRIMARYKEY,slugTEXTUNIQUENOTNULL,created_atTEXTNOTNULL)\nentities\nCREATETABLEentities(idTEXTPRIMARYKEY,space_idTEXTNOTNULL,space_slugTEXTNOTNULL,entity_typeTEXTNOTNULL,canonical_nameTEXTNOTNULL,contentTEXTNOTNULL,aliases_jsonTEXTNOTNULLDEFAULT'[]',metadata_jsonTEXTNOTNULLDEFAULT'{}',confidenceREALNOTNULLDEFAULT1.0,revisionINTEGERNOTNULLDEFAULT1,retractedINTEGERNOTNULLDEFAULT0,valid_fromTEXT,valid_toTEXT,created_atTEXTNOTNULL,embeddingBLOB)\nclaims\nCREATETABLEclaims(idTEXTPRIMARYKEY,space_idTEXTNOTNULL,space_slugTEXTNOTNULL,subject_entity_idTEXTNOTNULL,predicateTEXTNOTNULL,object_entity_idTEXT,literal_value_jsonTEXT,confidenceREALNOTNULLDEFAULT1.0,metadata_jsonTEXTNOTNULLDEFAULT'{}',retractedINTEGERNOTNULLDEFAULT0,created_atTEXTNOTNULL)\nentities_fts_content\nCREATETABLE'entities_fts_content'(idINTEGERPRIMARYKEY,c0,c1,c2,c3)\n"
+text klogmag "CXLOG001"
+text kdot "."
+global kopath uchar 4100
+global kopn ulong 1
+global kofd int 1
+global kpl uchar 4096
+global kroot ulong 4
+global kwp ulong 1
+global kcnt ulong 4
+global kseg ulong 2
+note FTS map: c0 bytes in arena kfa, entries kfo (offset) kfl (length) kfr (rowid) kfm (matched),
+note open addressing kfh (entry index + 1) with 2097152 slots for at most 1048576 entries.
+global kfa uchar 8388608
+global kfan ulong 1
+global kfo ulong 1048576
+global kfl uint 1048576
+global kfr ulong 1048576
+global kfm uchar 1048576
+global kfn ulong 1
+global kfh uint 2097152
+fn imp_lmsg k ulong to void
+ln = ulong 1
+i = ulong 0
+n = len kimsg
+while lt i n bound 999999
+c = get kimsg i
+if eq c 10
+ln = add ln 1
+else
+if eq ln k
+sq_lbyte c
+end
+end
+i = add i 1
+end
+end
+fn imp_die k ulong to void
+sq_unl
+put klnn 0 0
+sq_lmsg 1
+imp_lmsg k
+sq_lbyte 10
+sq_lout 2
+if eq k 2
+exit 2
+end
+exit int add k 50
+end
+fn imp_seg s ulong to void
+sg = ulong 0
+st = ulong 0
+for i ulong len ksch
+if eq get ksch i 10
+if eq sg s
+put kseg 0 st
+put kseg 1 sub i st
+ret
+end
+sg = add sg 1
+st = add i 1
+end
+end
+put kseg 0 0
+put kseg 1 0
+end
+fn imp_ws b uchar to bool
+ret or or eq b 32 eq b 10 or eq b 9 eq b 13
+end
+note imp_eqcol: text column c equals segment s (whitespace in the column skipped when strip).
+fn imp_eqcol c ulong s ulong strip bool to bool
+if ne sq_ckind c 3
+ret false
+end
+imp_seg s
+j = get kseg 0
+e = add j get kseg 1
+o = get kcof c
+oe = add o get kcln c
+while lt o oe bound 999999
+b = get kpay o
+o = add o 1
+if and strip imp_ws b
+continue
+end
+if ge j e
+ret false
+end
+if ne b get ksch j
+ret false
+end
+j = add j 1
+end
+ret eq j e
+end
+fn imp_master to void
+for k ulong 4
+put kroot k 0
+end
+sq_first 1
+while sq_next bound 999999
+if ne get kncol 0 5
+imp_die 11
+end
+if imp_eqcol 0 0 false
+for k ulong 4
+if imp_eqcol 1 add 1 mul 2 k false
+if ne sq_ckind 3 1
+imp_die 26
+end
+if not imp_eqcol 4 add 2 mul 2 k true
+imp_die 10
+end
+put kroot k ulong sq_cint 3
+end
+end
+end
+end
+for k ulong 4
+if eq get kroot k 0
+imp_die 9
+end
+end
+end
+fn imp_u8 v uchar to void
+w = get kwp 0
+put klw w v
+put kwp 0 add w 1
+end
+fn imp_put32 o ulong v uint to void
+put klw o uchar and v 255
+put klw add o 1 uchar and shr v 8 255
+put klw add o 2 uchar and shr v 16 255
+put klw add o 3 uchar shr v 24
+end
+fn imp_u32 v uint to void
+w = get kwp 0
+imp_put32 w v
+put kwp 0 add w 4
+end
+fn imp_u64 v ulong to void
+w = get kwp 0
+imp_put32 w uint and v 4294967295
+imp_put32 add w 4 uint shr v 32
+put kwp 0 add w 8
+end
+note imp_bytes: kpay[o..o+n) -> klw[kwp..); n <= 8388608 gives <= 128 chunks of 65536.
+fn imp_bytes o ulong n ulong to void
+w = get kwp 0
+if gt n sub len klw w
+imp_die 15
+end
+i = ulong 0
+while lt i n bound 200
+m = sub n i
+if gt m 65536
+m = 65536
+end
+imp_cp add w i add o i m
+i = add i m
+end
+put kwp 0 add w n
+end
+fn imp_cp t ulong s ulong m ulong to void
+for j ulong m
+put klw add t j get kpay add s j
+end
+end
+fn imp_str c ulong to void
+k = sq_ckind c
+if eq k 0
+imp_u32 4294967295
+ret
+end
+if ne k 3
+imp_die 12
+end
+n = get kcln c
+imp_u32 uint n
+imp_bytes get kcof c n
+end
+fn imp_blob c ulong to void
+k = sq_ckind c
+if eq k 0
+imp_u32 4294967295
+ret
+end
+if ne k 4
+imp_die 13
+end
+n = get kcln c
+imp_u32 uint n
+imp_bytes get kcof c n
+end
+fn imp_flush to void
+n = get kwp 0
+d = ulong 0
+while lt d n bound 999999
+k = write get kofd 0 klw d sub n d
+if le k 0
+imp_die 5
+end
+d = add d ulong k
+end
+put kwp 0 0
+end
+note imp_begin: room for the whole row (payload bytes + 512 bytes of field overhead; the largest
+note record, ENTITY, adds 89 bytes of fixed fields to the payload's column bytes).
+fn imp_begin to ulong
+need = add get kplen 0 512
+if gt need len klw
+imp_die 15
+end
+if gt add get kwp 0 need len klw
+imp_flush
+end
+r = get kwp 0
+put kwp 0 add r 8
+ret r
+end
+fn imp_end r ulong to void
+pl = sub sub get kwp 0 r 8
+c = crc_klw add r 8 pl
+imp_put32 r uint pl
+imp_put32 add r 4 c
+end
+fn imp_fhash c ulong to ulong
+h = uint 2166136261
+o = get kcof c
+for i ulong get kcln c
+h = mul xor h uint get kpay add o i 16777619
+end
+ret and ulong h 2097151
+end
+fn imp_feq e ulong c ulong to bool
+n = get kcln c
+if ne ulong get kfl e n
+ret false
+end
+a = get kfo e
+o = get kcof c
+for i ulong n
+if ne get kfa add a i get kpay add o i
+ret false
+end
+end
+ret true
+end
+note imp_fslot: slot holding column c's bytes, or the empty slot where they belong.
+fn imp_fslot c ulong to ulong
+h = imp_fhash c
+for i ulong 2097152
+e = ulong get kfh h
+if eq e 0
+ret h
+end
+if imp_feq sub e 1 c
+ret h
+end
+h = and add h 1 2097151
+end
+imp_die 17
+ret 0
+end
+fn imp_fadd to void
+k = sq_ckind 1
+if eq k 0
+ret
+end
+if ne k 3
+imp_die 25
+end
+s = imp_fslot 1
+if ne get kfh s 0
+imp_die 16
+end
+e = get kfn 0
+n = get kcln 1
+a = get kfan 0
+if or ge e len kfo gt n sub len kfa a
+imp_die 17
+end
+o = get kcof 1
+for i ulong n
+put kfa add a i get kpay add o i
+end
+put kfo e a
+put kfl e uint n
+put kfr e get krowid 0
+put kfh s uint add e 1
+put kfn 0 add e 1
+put kfan 0 add a n
+end
+fn imp_fget to ulong
+if ne sq_ckind 0 3
+ret 0
+end
+e = ulong get kfh imp_fslot 0
+if eq e 0
+ret 0
+end
+put kfm sub e 1 1
+put kcnt 3 add get kcnt 3 1
+ret get kfr sub e 1
+end
+fn imp_ncol n ulong to void
+if ne get kncol 0 n
+imp_die 11
+end
+end
+fn imp_byte8 c ulong to void
+v = sq_cint c
+if or lt v 0 gt v 255
+imp_die 14
+end
+imp_u8 uchar v
+end
+fn imp_space to void
+imp_ncol 3
+r = imp_begin
+imp_u8 1
+imp_u64 get krowid 0
+imp_str 0
+imp_str 1
+imp_str 2
+imp_end r
+end
+fn imp_entity to void
+imp_ncol 15
+r = imp_begin
+imp_u8 2
+imp_u64 get krowid 0
+imp_u64 imp_fget
+for c ulong 8
+imp_str c
+end
+imp_u64 bitcast ulong sq_creal 8
+imp_u64 bitcast ulong sq_cint 9
+imp_byte8 10
+imp_str 11
+imp_str 12
+imp_str 13
+imp_blob 14
+imp_end r
+end
+fn imp_claim to void
+imp_ncol 11
+r = imp_begin
+imp_u8 4
+imp_u64 get krowid 0
+for c ulong 7
+imp_str c
+end
+imp_u64 bitcast ulong sq_creal 7
+imp_str 8
+imp_byte8 9
+imp_str 10
+imp_end r
+end
+note imp_walk: every row of table kroot[t] in rowid order; mode t: 0 spaces, 1 entities,
+note 2 claims, 3 fts content (map). Outer passes of 1000 rows: up to 999999000 rows.
+fn imp_walk t ulong to ulong
+sq_first get kroot t
+n = ulong 0
+more = true
+while more bound 999999
+for q ulong 1000
+if not sq_next
+more = false
+break
+end
+if eq t 0
+imp_space
+end
+if eq t 1
+imp_entity
+end
+if eq t 2
+imp_claim
+end
+if eq t 3
+imp_fadd
+end
+n = add n 1
+end
+end
+ret n
+end
+fn imp_outpath to void
+n = argread 2 kopath 0 2000
+if lt n 1
+imp_die 19
+end
+m = ulong n
+put kopn 0 m
+put kopath m 46
+put kopath add m 1 116
+put kopath add m 2 109
+put kopath add m 3 112
+end
+note imp_rename: packed list (u16 count 2, u16 len + OUT.tmp, u16 len + OUT), RENAME_NOREPLACE.
+fn imp_rename to void
+n = get kopn 0
+t = add n 4
+put kpl 0 2
+put kpl 1 0
+put kpl 2 uchar and t 255
+put kpl 3 uchar shr t 8
+for i ulong t
+put kpl add 4 i get kopath i
+end
+o = add 4 t
+put kpl o uchar and n 255
+put kpl add o 1 uchar shr n 8
+for i ulong n
+put kpl add add o 2 i get kopath i
+end
+r = renames kpl 0 add add o 2 n 1
+if ne r 0
+imp_die 8
+end
+end
+fn imp_dirsync to void
+n = get kopn 0
+p = n
+for i ulong n
+if eq get kopath i 47
+p = i
+end
+end
+fd = long -1
+if eq p n
+fd = fopen kdot 0 1 540672 0
+else
+d = p
+if eq d 0
+d = 1
+end
+fd = fopen kopath 0 d 540672 0
+end
+if lt fd 0
+imp_die 18
+end
+if ne fsync int fd 0
+imp_die 18
+end
+r = fclose int fd
+if ne r 0
+imp_die 18
+end
+end
+fn imp_summary to void
+put klnn 0 0
+imp_lmsg 20
+sq_ldec get kcnt 0
+imp_lmsg 21
+sq_ldec get kcnt 1
+imp_lmsg 22
+sq_ldec get kcnt 2
+imp_lmsg 23
+sq_ldec get kcnt 3
+sq_lbyte 10
+sq_lout 1
+put klnn 0 0
+sq_lmsg 1
+imp_lmsg 27
+sq_ldec sub get kfn 0 get kcnt 3
+sq_lbyte 10
+sq_lout 2
+end
+fn main to int
+if ne argcnt 3
+imp_die 2
+end
+sq_argpath 1
+imp_outpath
+r = faccess kopath 0 get kopn 0 0
+if eq r 0
+imp_die 3
+end
+if ne r -2
+imp_die 24
+end
+sq_open
+imp_master
+fd = fopen kopath 0 add get kopn 0 4 524481 420
+if lt fd 0
+imp_die 4
+end
+put kofd 0 int fd
+for i ulong add get kopn 0 4
+put kunl i get kopath i
+end
+put kunln 0 add get kopn 0 4
+for i ulong 8
+put klw i get klogmag i
+end
+put kwp 0 8
+put kcnt 3 0
+nfts = imp_walk 3
+put kcnt 3 0
+put kcnt 0 imp_walk 0
+put kcnt 1 imp_walk 1
+put kcnt 2 imp_walk 2
+imp_flush
+if ne fdsync int fd 0
+imp_die 6
+end
+if ne fclose int fd 0
+imp_die 7
+end
+imp_rename
+put kunln 0 0
+imp_dirsync
+imp_summary
+ret 0
+end

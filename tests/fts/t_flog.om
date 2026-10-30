@@ -1,0 +1,101 @@
+note ===== tests/fts/t_flog.om : flog / flog_fma differential harness =====
+note usage: t_flog l FILE   (records f64 x, f64 glibc log(x))
+note        t_flog f FILE   (records f64 a, b, c, hardware fma(a,b,c))
+note prints counts; exit 0 when every result is bit-identical, 1 otherwise
+global tmode uchar 8
+text tl1 "cases="
+text tl2 " mismatches="
+text tl3 "MISMATCH "
+fn main to int
+flog_init
+n = argread 1 tmode 0 8
+if lt n 1
+exit 94
+end
+md = get tmode 0
+fd = t_open 2
+rs = ulong 16
+if eq md 102
+rs = ulong 32
+end
+tot = ulong 0
+bad = ulong 0
+for blk ulong 64
+dn = false
+for j ulong 999999
+if not t_need fd rs
+dn = true
+break
+end
+tot = add tot 1
+ok = t_one md
+if not ok
+bad = add bad 1
+end
+end
+if dn
+break
+end
+end
+for i ulong len tl1
+t_ch ulong get tl1 i
+end
+t_dec tot
+for i ulong len tl2
+t_ch ulong get tl2 i
+end
+t_dec bad
+t_ch 10
+t_flush
+if eq bad 0
+ret 0
+end
+ret 1
+end
+fn t_one md uchar to bool
+if eq md 108
+x = t_u64
+want = t_u64
+got = bitcast ulong flog bitcast f64 x
+if eq got want
+ret true
+end
+x2 = bitcast f64 x
+if and ne x2 x2 ne bitcast f64 got bitcast f64 got
+ret true
+end
+t_bad x 0 0 want got
+ret false
+end
+a = t_u64
+b = t_u64
+c = t_u64
+want = t_u64
+got = bitcast ulong flog_fma bitcast f64 a bitcast f64 b bitcast f64 c
+if eq got want
+ret true
+end
+t_bad a b c want got
+ret false
+end
+global tnb ulong 1
+fn t_bad a ulong b ulong c ulong want ulong got ulong to void
+k = get tnb 0
+put tnb 0 add k 1
+if ge k 20
+ret
+end
+for i ulong len tl3
+t_ch ulong get tl3 i
+end
+t_hex a 16
+t_ch 32
+t_hex b 16
+t_ch 32
+t_hex c 16
+t_ch 32
+t_hex want 16
+t_ch 32
+t_hex got 16
+t_ch 10
+end

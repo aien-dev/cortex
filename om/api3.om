@@ -1,0 +1,401 @@
+note api3.om: writes (entity upsert, claim upsert, retract, hard delete) and receipts.
+text r_rec1 "{\"recorded\":true,\"receipt\":{\"id\":"
+text r_rec2 ",\"operation\":"
+text r_rec3 ",\"targetType\":"
+text r_rec4 ",\"targetId\":"
+text r_rec5 ",\"committedAt\":"
+text t_eup "entity.upsert"
+text t_cup "claim.upsert"
+text t_entity "entity"
+text t_claim "claim"
+text t_retr ".retract"
+text t_colsp ": "
+text tobj0e "}}"
+text r_del "{\"deleted\":"
+
+note now as an RFC 3339 string (chrono to_rfc3339, AutoSi), staged in hs
+fn stage_now to ulong
+num_rfc realns false
+ret stage_jtx
+end
+fn stage_uuid to ulong
+ok = num_uuid false
+ret stage_jtx
+end
+fn stage_jtx to ulong
+n = get jtxl 0
+o = get hst 0
+for i ulong n
+hsp add o i get jtx i
+end
+put hst 0 add o n
+ret rf_hs o n
+end
+
+note ensure_space: the space slot for slug r (staged), creating it (uuid, now, next rowid) when missing
+fn ensure_space r ulong to ulong
+d = dict_intern r
+s = sp_of d
+if ne s NONE
+ret s
+end
+idr = stage_uuid
+ca = stage_now
+st_commit
+row = add get stv 3 1
+s = sp_add row idr d ca
+if not and lg_space s lg_end
+trap 9
+end
+ret s
+end
+
+note receipt JSON for an operation text pair (op1 + op2), target type text and target id ref
+fn o_receipt op1 view uchar * tt view uchar * tid ulong now ulong to void
+idr = stage_uuid
+js_raw r_rec1
+o_hs idr
+js_raw r_rec2
+js_byte 34
+js_raw op1
+js_byte 34
+js_raw r_rec3
+js_esc_txt tt
+js_raw r_rec4
+o_hs tid
+js_raw r_rec5
+o_hs now
+js_raw tobj0e
+end
+
+note ---- entity upsert (db.rs upsert_entity) ----
+fn api_write to ulong
+k = get ap A_KIND
+if eq k 1
+ret api_upsert
+end
+if eq k 2
+ret api_claim
+end
+ret api_retract
+end
+fn api_upsert to ulong
+sp = get ap A_SPACE
+if eq sp NONE
+sp = stage_txt tdefsp
+end
+if not scope_ok sp
+js_raw e403
+ret 403
+end
+enc_fetch_w
+s = ensure_space sp
+d = sdi_of s
+now = stage_now
+e = mnm_find d get ap A_NAME
+rev = long 1
+if ne e NONE
+rev = add get erev e 1
+else
+e = upsert_slot s d now
+end
+st_commit
+upsert_apply e rev
+if not and lg_entity e lg_end
+trap 9
+end
+o_receipt t_eup t_entity get eid e now
+ret 201
+end
+fn sdi_of s ulong to ulong
+ret get sdi s
+end
+note no row with this name: the id (given or new) decides; ON CONFLICT(id) updates that row
+fn upsert_slot s ulong d ulong now ulong to ulong
+idr = get ap A_ID
+if eq idr NONE
+idr = stage_uuid
+end
+e = mid_find idr
+if ne e NONE
+ret e
+end
+e = get nent 0
+if ge e EMAX
+trap 9
+end
+put nent 0 add e 1
+put erow e add get stv 0 1
+put stv 0 get erow e
+put eid e idr
+put esid e get sid s
+put esl e d
+put eca e now
+put eret e 2
+put efts e 0
+put eem e NONE
+mid_add e
+ret e
+end
+note write the input fields into slot e (keys change, so unlink first), then FTS delete + insert
+fn upsert_apply e ulong rev long to void
+if lt get eret e 2
+ent_unlink e
+end
+put ety e dict_intern get ap A_TYPE
+put enm e get ap A_NAME
+put ect e get ap A_CONT
+put eal e get ap A_ALIAS
+put eav e 1
+put emd e get ap A_META
+put ecf e bitcast f64 get ap A_CONF
+put erev e rev
+put evf e get ap A_VF
+put evt e get ap A_VT
+m = get ap A_EMB
+if ne m NONE
+put eem e m
+else
+put eem e hc_from_disk get eem e
+st_commit_hc
+end
+put eret e 0
+ent_link e
+st_fts_drop e
+st_fts_new e
+end
+fn st_commit_hc to void
+if gt get hcn 0 get hct 0
+put hct 0 get hcn 0
+end
+end
+
+note ---- claim upsert (db.rs upsert_claim) ----
+fn api_claim to ulong
+sp = get ap A_SPACE
+if eq sp NONE
+sp = stage_txt tdefsp
+end
+if not scope_ok sp
+js_raw e403
+ret 403
+end
+s = ensure_space sp
+idr = get ap A_ID
+if eq idr NONE
+idr = stage_uuid
+end
+now = stage_now
+c = mcl_find idr
+if eq c NONE
+c = claim_new s idr now
+end
+st_commit
+put cprd c get ap A_PRED
+put cobj c get ap A_OBJ
+put clit c get ap A_LIT
+put ccf c bitcast f64 get ap A_CONF
+put cmd c get ap A_META
+put cret c 0
+if not and lg_claim c lg_end
+trap 9
+end
+o_receipt t_cup t_claim get cid c now
+ret 201
+end
+fn claim_new s ulong idr ulong now ulong to ulong
+c = get nc 0
+if ge c CMAX
+trap 9
+end
+put nc 0 add c 1
+put crow c add get stv 2 1
+put stv 2 get crow c
+put cid c idr
+put csid c get sid s
+put csl c get sdi s
+put csub c get ap A_SUBJ
+put cca c now
+mcl_add c
+ret c
+end
+
+note ---- retract (db.rs retract_target) ----
+fn api_retract to ulong
+tt = get ap A_TT
+tid = get ap A_TID
+now = stage_now
+if hs_eqtxt tt t_entity
+e = mid_find tid
+if ne e NONE
+if not scope_ok get dref get esl e
+js_raw e403
+ret 403
+end
+put eret e 1
+st_fts_drop e
+st_commit
+if not and lg_idop OP_ERET tid lg_end
+trap 9
+end
+else
+if not scope_ok NONE
+js_raw e403
+ret 403
+end
+end
+end
+if hs_eqtxt tt t_claim
+c = mcl_find tid
+if ne c NONE
+if not scope_ok get dref get csl c
+js_raw e403
+ret 403
+end
+put cret c 1
+st_commit
+if not and lg_idop OP_CRET tid lg_end
+trap 9
+end
+else
+if not scope_ok NONE
+js_raw e403
+ret 403
+end
+end
+end
+st_commit
+o_receipt_rt tt tid now
+ret 201
+end
+note receipt whose operation is "<targetType>.retract" for any target type text
+fn o_receipt_rt tt ulong tid ulong now ulong to void
+idr = stage_uuid
+js_raw r_rec1
+o_hs idr
+js_raw r_rec2
+n = rf_len tt
+o = rf_off tt
+for i ulong n
+put jes i hsg add o i
+end
+for i ulong len t_retr
+put jes add n i get t_retr i
+end
+js_esc_buf 0 add n len t_retr
+js_raw r_rec3
+o_hs tt
+js_raw r_rec4
+o_hs tid
+js_raw r_rec5
+o_hs now
+js_raw tobj0e
+end
+
+note ---- hard delete (extension, not in cortex-rs): POST /api/cortex/delete ----
+note {"targetType":"entity","targetId":ID} or {"space":SLUG}; data leaves the disk by compaction
+fn api_delete to ulong
+sp = get ap A_SPACE
+n = ulong 0
+if ne sp NONE
+if not scope_ok sp
+js_raw e403
+ret 403
+end
+d = dict_find sp
+if ne d NONE
+n = del_count_space d
+st_kill_space d
+if not and lg_idop OP_SDEL sp lg_end
+trap 9
+end
+end
+else
+e = mid_find get ap A_TID
+if ne e NONE
+if not scope_ok get dref get esl e
+js_raw e403
+ret 403
+end
+st_kill e
+n = 1
+if not and lg_idop OP_EDEL get ap A_TID lg_end
+trap 9
+end
+end
+end
+st_commit
+if gt n 0
+c = lg_compact
+if ne c 0
+trap 9
+end
+end
+js_raw r_del
+js_u64 n
+js_byte 125
+ret 200
+end
+fn del_count_space d ulong to ulong
+n = ulong 0
+for e ulong get nent 0
+if and eq get esl e d lt get eret e 2
+n = add n 1
+end
+end
+ret n
+end
+
+note ---- scoped tokens (extension): --tokens FILE, lines "TOKEN SPACE[,SPACE...]" ----
+note tks: token count; tko/tkl token bytes in tkb; tsa/tsn the token's first space and count in tsp
+global tkb uchar 1048576
+global tks ulong 1
+global tko ulong 4096
+global tkl ulong 4096
+global tsa ulong 4096
+global tsn ulong 4096
+global tsp ulong 65536
+global tspn ulong 1
+fn scope_check o ulong n ulong to ulong
+for t ulong get tks 0
+if auth_eq2 o n t
+put ap A_SPSET t
+ret 0
+end
+end
+ret 401
+end
+fn auth_eq2 o ulong n ulong t ulong to bool
+l = get tkl t
+b = get tko t
+d = ulong 0
+if ne n l
+d = 1
+end
+k = n
+if gt k l
+k = l
+end
+for i ulong k
+x = ulong get jrs add o i
+d = or d xor x ulong get tkb add b i
+end
+ret eq d 0
+end
+note true when the request may touch space slug r (NONE = not named: refused for scoped tokens)
+fn scope_ok r ulong to bool
+t = get ap A_SPSET
+if eq t NONE
+ret true
+end
+if eq r NONE
+ret false
+end
+a = get tsa t
+for i ulong get tsn t
+if hs_eq get tsp add a i r
+ret true
+end
+end
+ret false
+end

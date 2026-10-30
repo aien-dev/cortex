@@ -1,0 +1,112 @@
+note tests/json/t_perf.om - throughput probe (host only). Prints "name total_ns bytes_or_ops" lines.
+note (1) ru_contains, 6,000,000-byte haystack, needle absent (full scan incl. lowering), 5 calls:
+note     Greek-heavy (two final-sigma contexts per 90 bytes) and Latin text with one 2-byte char
+note (2) js_parse of a generated JSON array of objects (~4 MB), (3) js_canon of that tree,
+note (4) js_f64 (zmij) of 1,000,000 doubles.
+text tpat "Hello World, Grosse GRÖSSE ΣΑΣ café TODO memory-entity 12345 the quick brown fox. "
+text tnd "zzq needle absent"
+text tpat2 "Memory entity: café owner Drake, TODO verify GPU receipt 12345; the quick brown fox jumps. "
+text tob1 "{\"id\":\"8b0c2a8e-1f0a-4c55-9a7e-2b1d7a6e9f01\",\"name\":\"Entity n\\u00e9 \\\"quoted\\\"\",\"conf\":0.875,\"rev\":12,\"tags\":[\"a\",\"b\",true,null],\"meta\":{\"z\":1,\"a\":-2.5e-7}}"
+global tln uchar 64
+fn t_line nm view uchar * ns ulong v ulong to void
+put jobl 0 0
+js_raw nm
+js_byte 32
+js_u64 ns
+js_byte 32
+js_u64 v
+js_byte 10
+w = write 1 job 0 get jobl 0
+end
+text n1 "ru_contains_5x6MB_ns"
+text n1b "ru_contains_5x6MB_latin_ns"
+text n2 "js_parse_ns_bytes"
+text n3 "js_canon_ns_bytes"
+text n4 "js_f64_1M_ns"
+fn main to int
+num_init
+note the needle is prepared first: ru_prep uses jrs as scratch
+for k ulong len tnd
+put jrq k get tnd k
+end
+put jrql 0 len tnd
+ru_prep
+n = ulong 0
+for it ulong 1000000
+if ge n 6000000
+break
+end
+for k ulong len tpat
+if lt n 6000000
+put jrs n get tpat k
+n = add n 1
+end
+end
+end
+put jrsl 0 6000000
+t0 = monons
+for r ulong 5
+if ru_contains
+ret 2
+end
+end
+t1 = monons
+t_line n1 ulong sub t1 t0 30000000
+n = 0
+for it ulong 1000000
+if ge n 6000000
+break
+end
+for k ulong len tpat2
+if lt n 6000000
+put jrs n get tpat2 k
+n = add n 1
+end
+end
+end
+t0 = monons
+for r ulong 5
+if ru_contains
+ret 4
+end
+end
+t1 = monons
+t_line n1b ulong sub t1 t0 30000000
+p = ulong 0
+put jin p 91
+p = 1
+for i ulong 30000
+if ne i 0
+put jin p 44
+p = add p 1
+end
+for k ulong len tob1
+put jin p get tob1 k
+p = add p 1
+end
+end
+put jin p 93
+p = add p 1
+put jinl 0 p
+t0 = monons
+if not js_parse
+ret 3
+end
+t1 = monons
+t_line n2 ulong sub t1 t0 p
+put jobl 0 0
+t0 = monons
+js_canon get jroot 0
+t1 = monons
+t_line n3 ulong sub t1 t0 get jobl 0
+v = ulong 4607182418800017408
+t0 = monons
+for i ulong 1000000
+put jobl 0 0
+js_f64 v
+v = add v 1234567890123
+end
+t1 = monons
+t_line n4 ulong sub t1 t0 1000000
+ret 0
+end

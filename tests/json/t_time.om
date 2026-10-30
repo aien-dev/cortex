@@ -1,0 +1,38 @@
+note tests/json/t_time.om - differential harness for num_rfc (chrono to_rfc3339) and num_uuidf (uuid v4
+note text from 16 bytes). Input: u32 n, n x i64 LE nanoseconds, n x 16 bytes. Needs t_io.om.
+fn main to int
+num_init
+if not t_need 4
+ret 2
+end
+n = t_u32
+for i ulong n
+if not t_need 8
+ret 3
+end
+v = ulong 0
+p = get tibp 0
+for k ulong 8
+v = or v shl ulong get tib add p k mul k 8
+end
+put tibp 0 add p 8
+put jobl 0 0
+num_rfc bitcast long v true
+t_emitjob
+end
+for i ulong n
+if not t_need 16
+ret 4
+end
+p = get tibp 0
+for k ulong 16
+put jur k get tib add p k
+end
+put tibp 0 add p 16
+put jobl 0 0
+num_uuidf true
+t_emitjob
+end
+t_flush
+ret 0
+end

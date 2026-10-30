@@ -1,0 +1,329 @@
+note qs.om: query strings as axum Query<T> reads them (form_urlencoded + serde_urlencoded).
+global qsb uchar 65536
+global qsbl ulong 1
+global qsu uchar 196608
+global qsul ulong 1
+text k_q "q"
+text k_query "query"
+text k_space "space"
+text k_limit "limit"
+text k_incl "include_retracted"
+text k_idk "id"
+text k_name "name"
+text e_dup1 "duplicate field `"
+text e_dup2 "`"
+text e_empty "cannot parse integer from empty string"
+text e_digit "invalid digit found in string"
+text e_big "number too large to fit in target type"
+text e_bool "provided string was not `true` or `false`"
+
+fn hexv c uchar to ulong
+ret http_hexv c
+end
+note percent-decode rq[o..o+n) with '+' as space into qsb
+fn qs_pct o ulong n ulong to void
+k = ulong 0
+i = ulong 0
+while lt i n bound 999999
+c = get rq add o i
+if eq c 43
+c = 32
+end
+if and eq c 37 lt add i 2 n
+a = hexv get rq add add o i 1
+b = hexv get rq add add o i 2
+if and ne a 99 ne b 99
+c = uchar add mul a 16 b
+i = add i 2
+end
+end
+put qsb k c
+k = add k 1
+i = add i 1
+end
+put qsbl 0 k
+end
+note String::from_utf8_lossy of qsb into qsu (maximal-subpart replacement)
+fn qs_lossy to void
+n = get qsbl 0
+i = ulong 0
+k = ulong 0
+while lt i n bound 999999
+v = utf8_valid i n
+if eq v 0
+put qsu k 239
+put qsu add k 1 191
+put qsu add k 2 189
+k = add k 3
+i = add i utf8_bad i n
+else
+for j ulong v
+put qsu add k j get qsb add i j
+end
+k = add k v
+i = add i v
+end
+end
+put qsul 0 k
+end
+note length of a valid UTF-8 sequence at qsb[i], or 0
+fn utf8_valid i ulong n ulong to ulong
+c = get qsb i
+if lt c 128
+ret 1
+end
+m = ulong 0
+if and ge c 194 le c 223
+m = 2
+end
+if and ge c 224 le c 239
+m = 3
+end
+if and ge c 240 le c 244
+m = 4
+end
+if or eq m 0 gt add i m n
+ret 0
+end
+for j ulong sub m 1
+if not utf8_cont c add j 1 get qsb add add i j 1
+ret 0
+end
+end
+ret m
+end
+note is byte d acceptable as continuation number k of lead c (Unicode table 3-7)
+fn utf8_cont c uchar k ulong d uchar to bool
+lo = uchar 128
+hi = uchar 191
+if eq k 1
+if eq c 224
+lo = 160
+end
+if eq c 237
+hi = 159
+end
+if eq c 240
+lo = 144
+end
+if eq c 244
+hi = 143
+end
+end
+ret and ge d lo le d hi
+end
+note bytes covered by one replacement: the lead plus its valid continuation prefix (at least 1)
+fn utf8_bad i ulong n ulong to ulong
+c = get qsb i
+m = ulong 1
+if and ge c 194 le c 223
+m = 2
+end
+if and ge c 224 le c 239
+m = 3
+end
+if and ge c 240 le c 244
+m = 4
+end
+k = ulong 1
+while and lt k m lt add i k n bound 8
+if not utf8_cont c k get qsb add i k
+ret k
+end
+k = add k 1
+end
+ret k
+end
+fn qsu_is t view uchar * to bool
+if ne get qsul 0 len t
+ret false
+end
+for i ulong len t
+if ne get qsu i get t i
+ret false
+end
+end
+ret true
+end
+fn qsu_stage to ulong
+n = get qsul 0
+o = get hst 0
+for i ulong n
+hsp add o i get qsu i
+end
+put hst 0 add o n
+ret rf_hs o n
+end
+
+note parse the query string for route r into ap; 0 ok, else 400 with the message in job
+fn qs_parse r ulong to ulong
+put jobl 0 0
+put ap A_LIMIT 12
+put ap A_ESET 0
+ql = get hv H_QL
+if eq ql NONE
+ret 0
+end
+qo = get hv H_QO
+e = add qo ql
+p = qo
+while le p e bound 999999
+s = p
+while and lt p e ne get rq p 38 bound 999999
+p = add p 1
+end
+if gt p s
+st = qs_pair r s p
+if ne st 0
+ret st
+end
+end
+p = add p 1
+end
+ret 0
+end
+note one name=value pair rq[s..t)
+fn qs_pair r ulong s ulong t ulong to ulong
+m = s
+while and lt m t ne get rq m 61 bound 999999
+m = add m 1
+end
+qs_pct s sub m s
+qs_lossy
+k = qs_key r
+if eq k 99
+ret 0
+end
+bit = shl ulong 1 k
+if ne and get ap A_ESET bit 0
+ret qs_err_dup
+end
+put ap A_ESET or get ap A_ESET bit
+v = m
+if lt m t
+v = add m 1
+end
+qs_pct v sub t v
+qs_lossy
+ret qs_val k
+end
+note field index for the key in qsu: 0 q, 1 query, 2 space, 3 limit, 4 include_retracted,
+note 5 id, 6 name; 99 unknown (ignored)
+fn qs_key r ulong to ulong
+if eq r 3
+if qsu_is k_q
+ret 0
+end
+if qsu_is k_query
+ret 1
+end
+if qsu_is k_limit
+ret 3
+end
+if qsu_is k_incl
+ret 4
+end
+else
+if qsu_is k_idk
+ret 5
+end
+if qsu_is k_name
+ret 6
+end
+end
+if qsu_is k_space
+ret 2
+end
+ret 99
+end
+global qkey uchar 32
+fn qs_err_dup to ulong
+eqs_prefix
+js_raw e_dup1
+for i ulong get qsul 0
+js_byte get qsu i
+end
+js_raw e_dup2
+ret 400
+end
+fn eqs_prefix to void
+put jobl 0 0
+js_raw eqs
+end
+note q wins over query (params.q.or(params.query)); id over name likewise
+fn qs_val k ulong to ulong
+if eq k 0
+put ap A_Q qsu_stage
+ret 0
+end
+if eq k 1
+if eq and get ap A_ESET 1 0
+put ap A_Q qsu_stage
+end
+ret 0
+end
+if eq k 2
+put ap A_SPACE qsu_stage
+ret 0
+end
+if eq k 3
+ret qs_usize
+end
+if eq k 4
+ret qs_bool
+end
+if eq k 5
+put ap A_ID qsu_stage
+ret 0
+end
+put ap A_NAME qsu_stage
+ret 0
+end
+note usize::from_str: optional leading '+', digits only, 64-bit range
+fn qs_usize to ulong
+n = get qsul 0
+i = ulong 0
+if and gt n 0 eq get qsu 0 43
+i = 1
+end
+if or eq n 0 eq i n
+eqs_prefix
+if eq n 0
+js_raw e_empty
+else
+js_raw e_digit
+end
+ret 400
+end
+v = ulong 0
+while lt i n bound 999999
+c = get qsu i
+if or lt c 48 gt c 57
+eqs_prefix
+js_raw e_digit
+ret 400
+end
+d = ulong sub c 48
+if or gt v 1844674407370955161 and eq v 1844674407370955161 gt d 5
+eqs_prefix
+js_raw e_big
+ret 400
+end
+v = add mul v 10 d
+i = add i 1
+end
+note clamp here: u64::MAX would otherwise collide with the NONE sentinel (absent = 12)
+if gt v 50
+v = 50
+end
+put ap A_LIMIT v
+ret 0
+end
+fn qs_bool to ulong
+if or qsu_is ttrue qsu_is tfalse
+ret 0
+end
+eqs_prefix
+js_raw e_bool
+ret 400
+end

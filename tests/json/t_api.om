@@ -1,0 +1,92 @@
+note tests/json/t_api.om - checks the position rules JsonNum documents for typed-struct errors against
+note serde_json::from_slice::<struct Q { query: String }>: invalid type -> js_spos (array/object) or
+note js_epos (scalar), missing field -> js_epos(root), duplicate field -> js_vpos(js_kend(second member)).
+note Run with argument "raw" to parse with jrvm = 1 (typed-struct view). Also exercises js_find (last duplicate), js_len, js_child, js_key, js_line, js_col. Needs t_io.om.
+text tq "query"
+text tty "type "
+text tmis "missing "
+text tdup "duplicate "
+text tok "OK"
+fn t_pos k ulong idx ulong to void
+put jobl 0 0
+if eq k 1
+js_raw tty
+end
+if eq k 2
+js_raw tmis
+end
+if eq k 3
+js_raw tdup
+end
+js_u64 js_line idx
+js_byte 32
+js_u64 js_col idx
+t_emitjob
+end
+fn t_one to void
+if not js_parse
+trap 11
+end
+r = get jroot 0
+seen = false
+for i ulong js_len r
+m = js_child r i
+js_key m
+ok = eq get jsvl 0 5
+if ok
+for k ulong 5
+if ne get jsv k get tq k
+ok = false
+end
+end
+end
+if ok
+if seen
+t_pos 3 js_vpos js_kend m
+ret
+end
+seen = true
+if eq js_find r tq jnone
+trap 12
+end
+k = js_kind m
+if ne k 6
+if or eq k 7 eq k 8
+t_pos 1 js_spos m
+else
+t_pos 1 js_epos m
+end
+ret
+end
+end
+end
+if not seen
+if ne js_find r tq jnone
+trap 13
+end
+t_pos 2 js_epos r
+ret
+end
+put jobl 0 0
+js_raw tok
+t_emitjob
+end
+global targ uchar 8
+fn main to int
+num_init
+note optional argument "raw": disable the RawValue collapse (put jrvm 0 1), the typed-struct view
+if gt argcnt 1
+k = argread 1 targ 0 8
+if eq k 3
+put jrvm 0 1
+end
+end
+for it ulong 100000000
+if not t_rec
+t_flush
+ret 0
+end
+t_one
+end
+ret 1
+end

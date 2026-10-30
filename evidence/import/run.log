@@ -1,0 +1,129 @@
+command: sh tests/import/run.sh   (cwd repo root, 2026-10-26T17:49:23Z, host Linux 7.0.0-1019-nvidia aarch64)
+== toolchain
+omc 189ada82e00bb440cb41351bd252cc68c54a1b1050051cc42a1df700081c3b54 (omega-mv 91b3c932, tools/omc.sh)
+sqlite3 3.45.1 2024-01-30
+python Python 3.12.3
+src caab3d5b655b24fa6a287c5a600bfe7b7fef180206afa3cedbd68fdec5e35635 om/crc32c.om fns=8
+src d5010d407fbbc5aabf16af3d22750a6be9ed2b7651c11fb4ab4de81437d17a12 om/sqlite.om fns=40
+src 2c6922626b3a89c8a194195fdc2c0172efb7c180be115f0326a434b5468262d9 om/import_main.om fns=33
+src 3005ac256494d0b49f250a99de97f88a8689b3a9bfb298b368bd03d2af7e8936 tests/import/logdump.om fns=21
+src 0fd79aace260174b334bb148334d869705fc6a350c46624a7f3be9620773c107 tests/import/crctest.om fns=1
+fns library+program (crc32c+sqlite+import_main): 81
+== build
+omcbuild: /tmp/cxo/impwork/run/cortex-import ok sha256=efa4b5eefe5156e112164a7cc736f41866ceabb914bb473fd508ffea6b4ec8fa unit_sha256=d2820bfc774ac5f7626264de1f73b8b04b7c142b71bdc4b15f55472c0bfb99b2 fns=81
+omcbuild: /tmp/cxo/impwork/run/logdump ok sha256=05579f0cb3ba3b27881af7f8e6d583dd0a091ac71a9a4d67e085733ea9cb35bb unit_sha256=56f5b207cb36c09cfd1893fa1ab5671fde15559698d020974ee7e742ac34680e fns=29
+omcbuild: /tmp/cxo/impwork/run/crctest ok sha256=31c55245e68d8a0bf9a2f483ea6774ed0b5fac9f2512e6b7643e52d66c31db32 unit_sha256=7374e0dea88fd7c5456c9a96d5140e05c8c9cc0ef091cf789dcec17148335306 fns=9
+== crc32c
+PASS crc_check_value
+PASS crc_empty
+PASS crc_random_1B_vs_python
+PASS crc_random_7B_vs_python
+PASS crc_random_8B_vs_python
+PASS crc_random_65535B_vs_python
+PASS crc_random_65536B_vs_python
+PASS crc_random_65537B_vs_python
+PASS crc_random_1000003B_vs_python
+PASS crc_random_8388608B_vs_python
+PASS NEG crc_poly_mutant_detected (mutant gives 4d16456f)
+== on-disk REAL storage (independent parser)
+serial types rowid:type = 1:9 2:7 3:1 4:8 5:5 6:7
+PASS integral_reals_stored_as_integers
+== live copy (/tmp/cxo/data/cortex-copy.db)
+c59dec42f776f71a484465f168c57cf67643fcc115a9b6209370adc279efdf38  live.db
+live import run 1 rc=0 wall_ms=153 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
+live import run 2 rc=0 wall_ms=126 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
+live import run 3 rc=0 wall_ms=108 IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
+cortex-import: wal: frames=0 valid=0 committed=0
+cortex-import: db: pages=12895
+cortex-import: import: fts rows without entity=0
+PASS live_oracle_has_no_BAD
+PASS live_summary
+PASS live_dump_equals_sqlite3
+live log 19982026 bytes, dump lines 6338, sha256 e24dc3e5fe654e2a0a6d4dde848e14545aa526f0776a61d675a2c482eb501a29
+PASS NEG diff_detects_one_f64_digit
+== synthetic databases (schema.sql = cortex-rs init_schema, fill.sql)
+s512 page_size=512 reserved=0 pages=25985 maxpayload=300000
+IMPORT OK spaces=3 entities=1485 claims=294 fts=989
+PASS s512_oracle_has_no_BAD
+PASS s512_dump_equals_sqlite3
+s4k page_size=4096 reserved=0 pages=3352 maxpayload=300000
+IMPORT OK spaces=3 entities=1485 claims=294 fts=989
+PASS s4k_oracle_has_no_BAD
+PASS s4k_dump_equals_sqlite3
+s64k page_size=65536 reserved=0 pages=223 maxpayload=300000
+IMPORT OK spaces=3 entities=1485 claims=294 fts=989
+PASS s64k_oracle_has_no_BAD
+PASS s64k_dump_equals_sqlite3
+40
+sres page_size=1024 reserved=40 pages=13499 maxpayload=300000
+IMPORT OK spaces=3 entities=1485 claims=294 fts=989
+PASS sres_oracle_has_no_BAD
+PASS sres_dump_equals_sqlite3
+PASS s512_has_nulls_overflow_claims
+== WAL
+snap1 walfix: frames=3328 valid=642 committed=642 dbpages=3433 commits=642
+cortex-import: wal: frames=3328 valid=642 committed=642
+cortex-import: db: pages=3433
+cortex-import: import: fts rows without entity=1
+IMPORT OK spaces=4 entities=1485 claims=294 fts=989
+PASS snap1_dump_equals_sqlite3
+snap3 walfix: frames=3328 valid=1823 committed=1779 dbpages=3433 commits=642,1779
+cortex-import: wal: frames=3328 valid=1823 committed=1779
+cortex-import: db: pages=3433
+cortex-import: import: fts rows without entity=100
+IMPORT OK spaces=4 entities=1337 claims=295 fts=890
+PASS snap3_dump_equals_sqlite3
+PASS snap3_equals_committed_state_after_close
+PASS snap3_has_uncommitted_trailing_frames
+PASS snap3_importer_reports_same_frames
+PASS snap3_dump_lacks_uncommitted_rows
+PASS snap3_differs_from_snap1
+flip frame 643 walfix: frames=3328 valid=642 committed=642 dbpages=3433 commits=642
+cortex-import: wal: frames=3328 valid=642 committed=642
+cortex-import: db: pages=3433
+cortex-import: import: fts rows without entity=1
+PASS NEG flipped_cksum_stops_overlay_at_frame_643
+PASS flip_dump_equals_sqlite3
+PASS flip_dump_equals_txn1_state
+be walfix: frames=3328 valid=1823 committed=1779 dbpages=3433 commits=642,1779 magic=377f0683
+cortex-import: wal: frames=3328 valid=1823 committed=1779
+cortex-import: db: pages=3433
+cortex-import: import: fts rows without entity=100
+PASS bigendian_cksum_dump_equals_sqlite3
+PASS bigendian_cksum_equals_native
+cortex-import: wal: header invalid (magic, page size or checksum); WAL ignored as SQLite does
+cortex-import: db: pages=3433
+cortex-import: import: fts rows without entity=1
+PASS badmagic_wal_ignored_like_sqlite
+PASS badmagic_dump_equals_sqlite3
+cortex-import: sqlite: unsupported WAL format version
+PASS wal_version_3007001_refused(rc=14)
+== refusals
+cortex-import: wal: none
+cortex-import: sqlite: text encoding is not UTF-8; refusing
+PASS utf16_refused(rc=9)
+cortex-import: import: output file already exists; refusing to overwrite
+PASS existing_out_refused_and_untouched(rc=53)
+cortex-import: wal: none
+cortex-import: db: pages=25985
+cortex-import: import: cannot create OUT.tmp (it exists or the directory is not writable)
+PASS existing_out_tmp_refused(rc=54)
+cortex-import: sqlite: not an SQLite 3 database (bad header string)
+PASS non_sqlite_refused(rc=5)
+cortex-import: wal: none
+cortex-import: sqlite: in-header page count exceeds file size
+PASS truncated_db_refused(rc=12)
+cortex-import: wal: none
+cortex-import: db: pages=3352
+cortex-import: sqlite: not a table b-tree page
+PASS late_refusal_removes_OUT_tmp(claims root 14 type 05->02, rc=18)
+cortex-import: usage: cortex-import SRC.db OUT.log
+PASS usage(rc=2)
+== log decoder negative controls
+CRCFAIL offset=8
+PASS NEG corrupted_payload_byte_detected_CRCFAIL(rc=3)
+CRCFAIL offset=8
+PASS NEG corrupted_crc_field_detected(rc=3)
+TORN offset=12841867
+PASS NEG torn_tail_detected(rc=4)
+== result: PASS=50 FAIL=0

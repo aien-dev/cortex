@@ -1,0 +1,1369 @@
+note ---- de.om: axum Json<T> extraction (serde_json 1.0.151, serde 1.0.228, serde_path_to_error 0.1.20) ----
+note de_* parse jin[0 .. jinl) and return 0 with the ap slots filled, or the HTTP status (400 syntax/EOF,
+note 422 data) with the text/plain body in job. Plain structs (search, recall, traverse, delete) follow
+note serde_json deserialize_struct; write follows serde's internally tagged enum (tag "kind"): stage 1
+note buffers Content (positions and paths), stage 2 deserializes the variant from Content (neither).
+note Field type codes in the st_* texts ('a' + code - 1): 1 String, 2 String with default,
+note 3 Option<String>, 4 Option<String> with default, 5 usize with default, 6 Option<usize> with default,
+note 7 Option<bool> with default, 8 Vec<String> with default, 9 Value with default, 10 Option<Value>,
+note 11 f64 with default.
+
+global dfs ulong 16
+global dbad ulong 1
+global dexp ulong 1
+global dval ulong 1
+global dstk uchar 1600000
+
+text dp422 "Failed to deserialize the JSON body into the target type: "
+text dp400 "Failed to parse the request body as JSON: "
+text dt_at " at line "
+text dt_col " column "
+text dt_cs ": "
+text dt_ity "invalid type: "
+text dt_ival "invalid value: "
+text dt_exp ", expected "
+text dt_dup "duplicate field `"
+text dt_mis "missing field `"
+text dt_bq "`"
+text dt_ilen "invalid length "
+text dt_with " with "
+text dt_els " elements"
+text dt_insq " elements in sequence"
+text dt_one " with 1 element"
+text dt_onsq "1 element in sequence"
+text dt_unv "unknown variant `"
+text dt_oneof "`, expected one of `entity`, `claim`, `retract`"
+text dt_kind "kind"
+text dt_value "value"
+text dt_ull "ull"
+text dt_rue "rue"
+text dt_alse "alse"
+text dv_ent "entity"
+text dv_clm "claim"
+text dv_ret "retract"
+text du_null "null"
+text du_bool "boolean `"
+text du_int "integer `"
+text du_flt "floating point `"
+text du_str "string "
+text du_seq "sequence"
+text du_map "map"
+text dx_str "a string"
+text dx_usz "usize"
+text dx_bool "a boolean"
+text dx_seq "a sequence"
+text dx_f64 "f64"
+text dx_var "variant identifier"
+text dx_enum "internally tagged enum WritePayload"
+text dn_srch "struct SearchParams"
+text dn_rcl "struct RecallPayload"
+text dn_trav "struct TraversePayload"
+text dn_del "struct DeletePayload"
+text dn_ent "struct EntityWriteInput"
+text dn_clm "struct ClaimWriteInput"
+text dn_ret "struct RetractInput"
+text dn_vent "struct variant WritePayload::Entity"
+text dn_vclm "struct variant WritePayload::Claim"
+text dn_vret "struct variant WritePayload::Retract"
+text sf_srch "q|query|space|limit|include_retracted"
+text st_srch "ddcfg"
+text sf_rcl "query|space|limit|tokenBudget"
+text st_rcl "acee"
+text sf_trav "subjectId|space"
+text st_trav "ac"
+text sf_del "targetType|targetId|space"
+text st_del "ccc"
+text sf_ent "id|space|entityType|canonicalName|content|aliases|metadata|confidence|validFrom|validTo|externalId"
+text st_ent "cbbabhikccc"
+text sf_clm "id|space|subjectEntityId|predicate|objectEntityId|literalValue|confidence|metadata"
+text st_clm "cbaacjki"
+text sf_ret "targetType|targetId|reason"
+text st_ret "aac"
+
+note ---- message pieces ----
+fn de_beg st ulong to void
+put jobl 0 0
+if eq st 422
+js_raw dp422
+else
+js_raw dp400
+end
+end
+fn de_at idx ulong to void
+js_raw dt_at
+js_u64 js_line idx
+js_raw dt_col
+js_u64 js_col idx
+end
+note serde_json reports container type errors at the opening byte, scalars after the value
+fn de_npos n ulong to ulong
+k = js_kind n
+if or eq k 7 eq k 8
+ret js_spos n
+end
+ret js_epos n
+end
+note serde_json JsonUnexpected Display of a value node
+fn de_unexp n ulong to void
+k = js_kind n
+if eq k 0
+js_raw du_null
+ret
+end
+if le k 2
+js_raw du_bool
+if eq k 2
+js_raw ttrue
+else
+js_raw tfalse
+end
+js_raw dt_bq
+ret
+end
+if eq k 3
+js_raw du_int
+js_u64 js_num n
+js_raw dt_bq
+ret
+end
+if eq k 4
+js_raw du_int
+js_i64 bitcast long js_num n
+js_raw dt_bq
+ret
+end
+if eq k 5
+js_raw du_flt
+js_f64z js_num n
+js_raw dt_bq
+ret
+end
+if eq k 6
+js_raw du_str
+js_dbg_str n
+ret
+end
+if eq k 7
+js_raw du_seq
+ret
+end
+js_raw du_map
+end
+fn de_expt e ulong to void
+if eq e 1
+js_raw dx_str
+end
+if eq e 2
+js_raw dx_usz
+end
+if eq e 3
+js_raw dx_bool
+end
+if eq e 4
+js_raw dx_seq
+end
+if eq e 5
+js_raw dx_f64
+end
+if eq e 6
+js_raw dx_var
+end
+end
+note "invalid type|value: <unexp>, expected <exp>" for dbad/dexp (r 1 type, 2 value), optional position
+fn de_tyerr r uchar pos bool to ulong
+n = get dbad 0
+if eq r 2
+js_raw dt_ival
+else
+js_raw dt_ity
+end
+de_unexp n
+js_raw dt_exp
+de_expt get dexp 0
+if pos
+de_at de_npos n
+end
+ret 422
+end
+fn de_jem to void
+for i ulong get jeml 0
+js_byte get jem i
+end
+end
+note syntax/EOF error of the partial tree with its serde_path_to_error path
+fn de_syn to ulong
+de_beg 400
+if js_path
+js_raw dt_cs
+end
+de_jem
+ret 400
+end
+fn de_syn0 to ulong
+de_beg 400
+de_jem
+ret 400
+end
+fn de_kpath m ulong to void
+js_esc_raw ulong get jnko m ulong get jnkl m
+js_raw dt_cs
+end
+fn de_ipath i ulong to void
+js_byte 91
+js_u64 i
+js_byte 93
+js_raw dt_cs
+end
+
+note ---- struct field tables ----
+fn de_tc typ view uchar * f ulong to ulong
+ret sub ulong get typ f 96
+end
+note serde derive visit_seq: a field without a default (incl. plain Option) reports invalid length
+fn de_seqreq tc ulong to bool
+ret or or eq tc 1 eq tc 3 eq tc 10
+end
+fn de_segeq sch view uchar * s ulong m ulong to bool
+o = ulong get jnko m
+n = ulong get jnkl m
+for k ulong n
+if ne get sch add s k get jsp add o k
+ret false
+end
+end
+ret true
+end
+note field index of member m's key in sch ("a|b|c"), jnone when the key is not a field
+fn de_fidx sch view uchar * m ulong to ulong
+n = ulong get jnkl m
+f = ulong 0
+s = ulong 0
+for i ulong add len sch 1
+sep = true
+if lt i len sch
+sep = eq get sch i 124
+end
+if sep
+if eq sub i s n
+if de_segeq sch s m
+ret f
+end
+end
+f = add f 1
+s = add i 1
+end
+end
+ret jnone
+end
+fn de_fname sch view uchar * f ulong to void
+g = ulong 0
+for i ulong len sch
+c = get sch i
+if eq c 124
+g = add g 1
+else
+if eq g f
+js_byte c
+end
+end
+end
+end
+fn de_clr nf ulong to void
+for f ulong nf
+put dfs f jnone
+end
+end
+note does member m's key equal t
+fn de_keyis m ulong t view uchar * to bool
+if ne ulong get jnkl m len t
+ret false
+end
+ret js_keq m t
+end
+
+note ---- type checks: 0 ok, 1 invalid type, 2 invalid value; dbad = offending node, dexp = expected ----
+fn de_chkv n ulong to uchar
+put dexp 0 4
+if ne js_kind n 7
+ret 1
+end
+put dexp 0 1
+for i ulong js_len n
+c = js_child n i
+if ne js_kind c 6
+put dbad 0 c
+ret 1
+end
+end
+ret 0
+end
+fn de_chk tc ulong n ulong to uchar
+k = js_kind n
+put dbad 0 n
+if le tc 4
+put dexp 0 1
+if eq k 6
+ret 0
+end
+if and eq k 0 ge tc 3
+ret 0
+end
+ret 1
+end
+if le tc 6
+put dexp 0 2
+if and eq k 0 eq tc 6
+ret 0
+end
+if eq k 3
+ret 0
+end
+if eq k 4
+ret 2
+end
+ret 1
+end
+if eq tc 7
+put dexp 0 3
+if le k 2
+ret 0
+end
+ret 1
+end
+if eq tc 8
+ret de_chkv n
+end
+if eq tc 11
+put dexp 0 5
+if and ge k 3 le k 5
+ret 0
+end
+ret 1
+end
+ret 0
+end
+
+note ---- serde_json Deserializer::ignore_value (IgnoredAny for unknown keys), on jpi/jpe ----
+fn de_eat to void
+put jpi 0 add get jpi 0 1
+end
+fn de_nxt0 to uint
+i = get jpi 0
+if ge i get jpe 0
+ret 0
+end
+put jpi 0 add i 1
+ret uint get jin i
+end
+fn de_isdig c uint to bool
+ret and ge c 48 le c 57
+end
+fn de_iexp to bool
+de_eat
+c = js_peek
+if or eq c 43 eq c 45
+de_eat
+end
+if not de_isdig de_nxt0
+js_eerr 11
+ret false
+end
+while de_isdig js_peek bound 999999
+de_eat
+end
+ret true
+end
+fn de_idec to bool
+de_eat
+one = false
+while de_isdig js_peek bound 999999
+de_eat
+one = true
+end
+if not one
+js_perr 11
+ret false
+end
+c = js_peek
+if or eq c 101 eq c 69
+ret de_iexp
+end
+ret true
+end
+fn de_iint to bool
+c = de_nxt0
+if eq c 48
+if de_isdig js_peek
+js_perr 11
+ret false
+end
+else
+if and ge c 49 le c 57
+while de_isdig js_peek bound 999999
+de_eat
+end
+else
+js_eerr 11
+ret false
+end
+end
+c = js_peek
+if eq c 46
+ret de_idec
+end
+if or eq c 101 eq c 69
+ret de_iexp
+end
+ret true
+end
+fn de_ishex c uint to bool
+if de_isdig c
+ret true
+end
+if and ge c 65 le c 70
+ret true
+end
+ret and ge c 97 le c 102
+end
+note SliceRead::ignore_str after the opening quote
+fn de_istr to bool
+e = get jpe 0
+while true bound 999999
+i = get jpi 0
+if ge i e
+js_eerr 3
+ret false
+end
+c = get jin i
+if eq c 34
+put jpi 0 add i 1
+ret true
+end
+if lt c 32
+js_eerr 14
+ret false
+end
+put jpi 0 add i 1
+if eq c 92
+if not de_iesc
+ret false
+end
+end
+end
+ret false
+end
+fn de_iesc to bool
+e = get jpe 0
+i = get jpi 0
+if ge i e
+js_eerr 3
+ret false
+end
+c = get jin i
+put jpi 0 add i 1
+if eq c 117
+if gt add i 5 e
+put jpi 0 e
+js_eerr 3
+ret false
+end
+put jpi 0 add i 5
+for k ulong 4
+if not de_ishex uint get jin add add i 1 k
+js_eerr 10
+ret false
+end
+end
+ret true
+end
+if or or eq c 34 eq c 92 eq c 47
+ret true
+end
+if or or eq c 98 eq c 102 eq c 110
+ret true
+end
+if or eq c 114 eq c 116
+ret true
+end
+js_eerr 10
+ret false
+end
+fn de_push fr uint d ulong to void
+b = div d 8
+m = uchar shl 1 rem d 8
+v = get dstk b
+if eq fr 2
+v = or v m
+else
+v = and v xor m 255
+end
+put dstk b v
+end
+fn de_pop d ulong to uint
+m = uchar shl 1 rem d 8
+if eq and get dstk div d 8 m 0
+ret 1
+end
+ret 2
+end
+note one scalar or an opening bracket; returns 0 scalar, 1 '[', 2 '{', 9 error
+fn de_ival c uint to uint
+if eq c 110
+de_eat
+ret de_iok js_ident dt_ull
+end
+if eq c 116
+de_eat
+ret de_iok js_ident dt_rue
+end
+if eq c 102
+de_eat
+ret de_iok js_ident dt_alse
+end
+if eq c 45
+de_eat
+ret de_iok de_iint
+end
+if de_isdig c
+ret de_iok de_iint
+end
+if eq c 34
+de_eat
+ret de_iok de_istr
+end
+if eq c 91
+de_eat
+ret 1
+end
+if eq c 123
+de_eat
+ret 2
+end
+js_perr 9
+ret 9
+end
+fn de_iok b bool to uint
+if b
+ret 0
+end
+ret 9
+end
+note after a '{' frame: key string and colon
+fn de_ikey to bool
+c = js_ws
+if eq c 34
+de_eat
+else
+if eq c 256
+js_perr 2
+else
+js_perr 15
+end
+ret false
+end
+if not de_istr
+ret false
+end
+c = js_ws
+if eq c 58
+de_eat
+ret true
+end
+if eq c 256
+js_perr 2
+else
+js_perr 5
+end
+ret false
+end
+note the closing/comma loop; returns 0 next value, 1 done, 9 error; frame in/out via dexp
+fn de_iclose acc bool sp ulong to uint
+fr = uint get dexp 0
+d = sp
+while true bound 999999
+c = js_ws
+if and eq c 44 acc
+de_eat
+put dexp 0 ulong fr
+put dbad 0 d
+ret 0
+end
+cl = or and eq c 93 eq fr 1 and eq c 125 eq fr 2
+if not cl
+if eq c 256
+js_perr uchar fr
+ret 9
+end
+if acc
+js_perr uchar add fr 5
+ret 9
+end
+put dexp 0 ulong fr
+put dbad 0 d
+ret 0
+end
+de_eat
+if eq d 0
+ret 1
+end
+d = sub d 1
+fr = de_pop d
+acc = true
+end
+ret 9
+end
+note returns true when an ignored value starting at s is accepted (jpi = its end), else false with jem set
+fn de_ign s ulong to bool
+put jpi 0 s
+put jpe 0 get jinl 0
+put jpb 0 0
+put jeml 0 0
+sp = ulong 0
+enc = uint 0
+while true bound 999999
+c = js_ws
+if eq c 256
+js_perr 4
+ret false
+end
+fr = de_ival c
+if eq fr 9
+ret false
+end
+acc = false
+if ne fr 0
+if ne enc 0
+de_push enc sp
+sp = add sp 1
+end
+enc = 0
+else
+acc = true
+if ne enc 0
+fr = enc
+enc = 0
+else
+if eq sp 0
+ret true
+end
+sp = sub sp 1
+fr = de_pop sp
+end
+end
+put dexp 0 ulong fr
+r = de_iclose acc sp
+if eq r 9
+ret false
+end
+if eq r 1
+ret true
+end
+fr = uint get dexp 0
+sp = get dbad 0
+if eq fr 2
+if not de_ikey
+ret false
+end
+end
+enc = fr
+end
+ret false
+end
+note neutralize jin[s .. e) to "0" plus blanks, keeping newlines (positions stay identical)
+fn de_patch s ulong e ulong to void
+put jin s 48
+for i ulong sub e add s 1
+k = add add s 1 i
+if ne get jin k 10
+put jin k 32
+end
+end
+end
+fn de_skw idx ulong to ulong
+e = get jinl 0
+while lt idx e bound 999999
+c = get jin idx
+if and ne c 32 and ne c 10 and ne c 9 ne c 13
+ret idx
+end
+idx = add idx 1
+end
+ret idx
+end
+note value start of member m: after the key, whitespace, ':' and whitespace
+fn de_vst m ulong to ulong
+i = de_skw js_kend m
+ret de_skw add i 1
+end
+
+note ---- plain structs ----
+note one member in stage 1: duplicate check, then the field type; 0 continue
+fn de_s1m sch view uchar * typ view uchar * m ulong to ulong
+f = de_fidx sch m
+if eq f jnone
+ret 0
+end
+if ne get dfs f jnone
+de_beg 422
+js_raw dt_dup
+de_fname sch f
+js_raw dt_bq
+de_at js_vpos js_kend m
+ret 422
+end
+put dfs f m
+if ge js_kind m 9
+ret 0
+end
+r = de_chk de_tc typ f m
+if eq r 0
+ret 0
+end
+de_beg 422
+de_kpath m
+ret de_tyerr r true
+end
+note pending member of a failed object: 1 means "ignored value patched, parse again"
+fn de_ppend sch view uchar * typ view uchar * p ulong to ulong
+k = js_kind p
+if eq k 11
+ret de_syn
+end
+if ne de_fidx sch p jnone
+st = de_s1m sch typ p
+if ne st 0
+ret st
+end
+ret de_syn
+end
+if eq k 9
+ret de_syn
+end
+s = de_vst p
+if de_ign s
+de_patch s get jpi 0
+ret 1
+end
+de_beg 400
+de_kpath p
+de_jem
+ret 400
+end
+fn de_pmap sch view uchar * typ view uchar * r ulong to ulong
+de_clr len typ
+for i ulong js_len r
+st = de_s1m sch typ js_child r i
+if ne st 0
+ret st
+end
+end
+p = js_pend r
+if ne p jnone
+ret de_ppend sch typ p
+end
+if not js_done r
+ret de_syn
+end
+for f ulong len typ
+if and eq get dfs f jnone eq de_tc typ f 1
+de_beg 422
+js_raw dt_mis
+de_fname sch f
+js_raw dt_bq
+de_at js_epos r
+ret 422
+end
+end
+ret 0
+end
+fn de_s2e typ view uchar * f ulong m ulong to ulong
+r = de_chk de_tc typ f m
+if eq r 0
+ret 0
+end
+de_beg 422
+de_ipath f
+ret de_tyerr r true
+end
+fn de_ilen i ulong nm view uchar * nf ulong to void
+js_raw dt_ilen
+js_u64 i
+js_raw dt_exp
+js_raw nm
+js_raw dt_with
+js_u64 nf
+js_raw dt_els
+end
+note serde_json end_seq after the last struct element at idx
+fn de_eseq idx ulong to ulong
+e = get jinl 0
+idx = de_skw idx
+if ge idx e
+js_erri 1 e
+ret de_syn0
+end
+c = get jin idx
+if eq c 93
+ret 0
+end
+code = uchar 18
+if eq c 44
+idx = de_skw add idx 1
+if lt idx e
+if eq get jin idx 93
+code = 17
+end
+end
+end
+k = add idx 1
+if gt k e
+k = e
+end
+js_erri code k
+ret de_syn0
+end
+fn de_pseq typ view uchar * nm view uchar * r ulong to ulong
+nf = len typ
+de_clr nf
+c = js_len r
+for f ulong nf
+if lt f c
+m = js_child r f
+st = de_s2e typ f m
+if ne st 0
+ret st
+end
+put dfs f m
+else
+if not js_done r
+ret de_pseqf typ f r
+end
+if de_seqreq de_tc typ f
+de_beg 422
+de_ilen f nm nf
+de_at js_epos r
+ret 422
+end
+end
+end
+if lt c nf
+ret 0
+end
+ret de_eseq js_epos js_child r sub nf 1
+end
+fn de_pseqf typ view uchar * f ulong r ulong to ulong
+p = js_pend r
+if and eq f js_len r ne p jnone
+k = js_kind p
+if or eq k 7 eq k 8
+st = de_s2e typ f p
+if ne st 0
+ret st
+end
+end
+end
+ret de_syn
+end
+fn de_root nm view uchar * r ulong to ulong
+de_beg 422
+js_raw dt_ity
+de_unexp r
+js_raw dt_exp
+js_raw nm
+de_at js_epos r
+ret 422
+end
+fn de_plain sch view uchar * typ view uchar * nm view uchar * to ulong
+put jrvm 0 1
+for it ulong 100000
+b = js_parsep
+r = get jroot 0
+if eq r jnone
+ret de_syn
+end
+k = js_kind r
+st = ulong 0
+if eq k 8
+st = de_pmap sch typ r
+else
+if eq k 7
+st = de_pseq typ nm r
+else
+ret de_root nm r
+end
+end
+if ne st 1
+ret st
+end
+end
+ret de_syn
+end
+note string field f into slot (null / absent leave NONE)
+fn de_sstr f ulong slot ulong to void
+n = get dfs f
+if eq n jnone
+ret
+end
+if ne js_kind n 6
+ret
+end
+js_str n
+put ap slot stage_jsv
+end
+fn de_search to ulong
+st = de_plain sf_srch st_srch dn_srch
+if ne st 0
+ret st
+end
+de_sstr 1 A_Q
+de_sstr 0 A_Q
+de_sstr 2 A_SPACE
+n = get dfs 3
+if ne n jnone
+if eq js_kind n 3
+put ap A_LIMIT de_min js_num n 50
+end
+end
+ret 0
+end
+fn de_recall to ulong
+st = de_plain sf_rcl st_rcl dn_rcl
+if ne st 0
+ret st
+end
+de_sstr 0 A_Q
+de_sstr 1 A_SPACE
+n = get dfs 2
+if ne n jnone
+put ap A_LIMIT de_min js_num n 20
+end
+ret 0
+end
+note handlers clamp with min(50|20); doing it here keeps u64::MAX apart from the NONE sentinel
+fn de_min v ulong m ulong to ulong
+if gt v m
+ret m
+end
+ret v
+end
+fn de_traverse to ulong
+st = de_plain sf_trav st_trav dn_trav
+if ne st 0
+ret st
+end
+de_sstr 0 A_SUBJ
+de_sstr 1 A_SPACE
+ret 0
+end
+fn de_delete to ulong
+st = de_plain sf_del st_del dn_del
+if ne st 0
+ret st
+end
+de_sstr 0 A_TT
+de_sstr 1 A_TID
+de_sstr 2 A_SPACE
+ret 0
+end
+
+note ---- stage 2: a struct from buffered Content (no positions, no paths) ----
+fn de_c2m sch view uchar * typ view uchar * m ulong to ulong
+f = de_fidx sch m
+if eq f jnone
+ret 0
+end
+if ne get dfs f jnone
+de_beg 422
+js_raw dt_dup
+de_fname sch f
+js_raw dt_bq
+ret 422
+end
+put dfs f m
+r = de_chk de_tc typ f m
+if eq r 0
+ret 0
+end
+de_beg 422
+ret de_tyerr r false
+end
+fn de_cseq typ view uchar * nm view uchar * v ulong to ulong
+nf = len typ
+c = js_len v
+for f ulong nf
+if lt f c
+m = js_child v f
+r = de_chk de_tc typ f m
+if ne r 0
+de_beg 422
+ret de_tyerr r false
+end
+put dfs f m
+else
+if de_seqreq de_tc typ f
+de_beg 422
+de_ilen f nm nf
+ret 422
+end
+end
+end
+if gt c nf
+de_beg 422
+js_raw dt_ilen
+js_u64 c
+js_raw dt_exp
+js_u64 nf
+js_raw dt_insq
+ret 422
+end
+ret 0
+end
+fn de_cont sch view uchar * typ view uchar * nm view uchar * to ulong
+v = get dval 0
+de_clr len typ
+k = js_kind v
+if eq k 7
+ret de_cseq typ nm v
+end
+if ne k 8
+de_beg 422
+js_raw dt_ity
+de_unexp v
+js_raw dt_exp
+js_raw nm
+ret 422
+end
+ret de_cmap sch typ v
+end
+fn de_cmap sch view uchar * typ view uchar * v ulong to ulong
+for i ulong js_len v
+st = de_c2m sch typ js_child v i
+if ne st 0
+ret st
+end
+end
+ret de_cmis sch typ
+end
+fn de_cmis sch view uchar * typ view uchar * to ulong
+for f ulong len typ
+if and eq get dfs f jnone eq de_tc typ f 1
+de_beg 422
+js_raw dt_mis
+de_fname sch f
+js_raw dt_bq
+ret 422
+end
+end
+ret 0
+end
+
+note ---- write: internally tagged WritePayload ----
+fn de_jsvis t view uchar * to bool
+if ne get jsvl 0 len t
+ret false
+end
+for i ulong len t
+if ne get jsv i get t i
+ret false
+end
+end
+ret true
+end
+note variant of a string node: 1 entity, 2 claim, 3 retract, 0 unknown
+fn de_var n ulong to ulong
+js_str n
+if de_jsvis dv_ent
+ret 1
+end
+if de_jsvis dv_clm
+ret 2
+end
+if de_jsvis dv_ret
+ret 3
+end
+ret 0
+end
+note tag value m (path already written by the caller's choice): 0 ok, else 422 with the body
+fn de_tagv m ulong seq bool to ulong
+k = js_kind m
+if ge k 9
+ret 0
+end
+if eq k 6
+if ne de_var m 0
+ret 0
+end
+de_beg 422
+de_tpath m seq
+js_raw dt_unv
+for i ulong get jsvl 0
+js_byte get jsv i
+end
+js_raw dt_oneof
+de_at js_epos m
+ret 422
+end
+put dbad 0 m
+put dexp 0 6
+de_beg 422
+de_tpath m seq
+ret de_tyerr 1 true
+end
+fn de_tpath m ulong seq bool to void
+if seq
+de_ipath 0
+else
+de_kpath m
+end
+end
+fn de_wtag tag ulong m ulong to ulong
+if ne tag jnone
+de_beg 422
+js_raw dt_dup
+js_raw dt_kind
+js_raw dt_bq
+de_at js_vpos js_kend m
+ret 422
+end
+ret de_tagv m false
+end
+fn de_wvar vr ulong v ulong to ulong
+if eq vr 1
+put dval 0 v
+ret de_cont sf_ent st_ent dn_ent
+end
+if eq vr 2
+put dval 0 v
+ret de_cont sf_clm st_clm dn_clm
+end
+put dval 0 v
+ret de_cont sf_ret st_ret dn_ret
+end
+fn de_vname vr ulong to void
+if eq vr 1
+js_raw dn_vent
+end
+if eq vr 2
+js_raw dn_vclm
+end
+if eq vr 3
+js_raw dn_vret
+end
+end
+note the struct variant { value } from the Content map without the tag entries
+fn de_wval vr ulong r ulong to ulong
+val = jnone
+for i ulong js_len r
+m = js_child r i
+if not de_keyis m dt_kind
+if de_keyis m dt_value
+if ne val jnone
+de_beg 422
+js_raw dt_dup
+js_raw dt_value
+js_raw dt_bq
+ret 422
+end
+val = m
+st = de_wvar vr m
+if ne st 0
+ret st
+end
+end
+end
+end
+if eq val jnone
+de_beg 422
+js_raw dt_mis
+js_raw dt_value
+js_raw dt_bq
+ret 422
+end
+ret 0
+end
+fn de_wmap r ulong to ulong
+tag = jnone
+for i ulong js_len r
+m = js_child r i
+if de_keyis m dt_kind
+st = de_wtag tag m
+if ne st 0
+ret st
+end
+tag = m
+end
+end
+p = js_pend r
+if ne p jnone
+if ne js_kind p 11
+if de_keyis p dt_kind
+st = de_wtag tag p
+if ne st 0
+ret st
+end
+end
+end
+ret de_syn
+end
+if not js_done r
+ret de_syn
+end
+if eq tag jnone
+de_beg 422
+js_raw dt_mis
+js_raw dt_kind
+js_raw dt_bq
+de_at js_epos r
+ret 422
+end
+vr = de_var tag
+st = de_wval vr r
+if ne st 0
+ret st
+end
+ret de_wfill vr
+end
+fn de_wseq r ulong to ulong
+c = js_len r
+if eq c 0
+if js_done r
+de_beg 422
+js_raw dt_mis
+js_raw dt_kind
+js_raw dt_bq
+de_at js_epos r
+ret 422
+end
+p = js_pend r
+if ne p jnone
+st = de_tagv p true
+if ne st 0
+ret st
+end
+end
+ret de_syn
+end
+m = js_child r 0
+st = de_tagv m true
+if ne st 0
+ret st
+end
+if not js_done r
+ret de_syn
+end
+vr = de_var m
+if eq c 1
+de_beg 422
+js_raw dt_ilen
+js_u64 0
+js_raw dt_exp
+de_vname vr
+js_raw dt_one
+ret 422
+end
+st = de_wvar vr js_child r 1
+if ne st 0
+ret st
+end
+if gt c 2
+de_beg 422
+js_raw dt_ilen
+js_u64 sub c 1
+js_raw dt_exp
+js_raw dt_onsq
+ret 422
+end
+ret de_wfill vr
+end
+fn de_write to ulong
+put jrvm 0 1
+b = js_parsep
+r = get jroot 0
+if eq r jnone
+ret de_syn
+end
+k = js_kind r
+if eq k 8
+ret de_wmap r
+end
+if eq k 7
+ret de_wseq r
+end
+put dbad 0 r
+put dexp 0 0
+de_beg 422
+js_raw dt_ity
+de_unexp r
+js_raw dt_exp
+js_raw dx_enum
+de_at js_epos r
+ret 422
+end
+
+note ---- ap slots from the deserialized variant ----
+fn de_canon f ulong dflt view uchar * to ulong
+n = get dfs f
+if eq n jnone
+ret stage_txt dflt
+end
+a = get jobl 0
+js_canon n
+ret stage_job a
+end
+fn de_conf f ulong to ulong
+n = get dfs f
+if eq n jnone
+ret bitcast ulong f64 1.0
+end
+k = js_kind n
+v = js_num n
+if eq k 3
+ret bitcast ulong f64 v
+end
+if eq k 4
+ret bitcast ulong f64 bitcast long v
+end
+ret v
+end
+fn de_wfill vr ulong to ulong
+put ap A_KIND vr
+put jobl 0 0
+if eq vr 3
+de_sstr 0 A_TT
+de_sstr 1 A_TID
+ret 0
+end
+de_sstr 0 A_ID
+de_sstr 1 A_SPACE
+if eq vr 2
+de_sstr 2 A_SUBJ
+de_sstr 3 A_PRED
+de_sstr 4 A_OBJ
+n = get dfs 5
+if ne n jnone
+if ne js_kind n 0
+put ap A_LIT de_canon 5 tnull
+end
+end
+put ap A_CONF de_conf 6
+put ap A_META de_canon 7 tobj0
+ret 0
+end
+de_sstr 2 A_TYPE
+if eq get ap A_TYPE NONE
+put ap A_TYPE stage_txt tdeftype
+end
+de_sstr 3 A_NAME
+put jsvl 0 0
+n = get dfs 4
+if ne n jnone
+js_str n
+end
+put ap A_CONT stage_jsv_hc
+put ap A_ALIAS de_canon 5 tarr0
+put ap A_META de_canon 6 tobj0
+put ap A_CONF de_conf 7
+de_sstr 8 A_VF
+de_sstr 9 A_VT
+ret 0
+end

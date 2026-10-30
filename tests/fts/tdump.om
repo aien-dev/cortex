@@ -1,0 +1,62 @@
+note ===== tests/fts/tdump.om : reader for the oracle's FTSDUMP1 file (test only) =====
+note string field = u32 length (0xFFFFFFFF = SQL NULL, read as empty) + bytes
+global tsb uchar 1048576
+global tsbn ulong 1
+note read one string field into qnm (len qnml)
+fn t_rdnm fd int to void
+n = t_slen fd
+put qnml 0 n
+p = get tibp 0
+for i ulong n
+put qnm i get tib add p i
+end
+put tibp 0 add p n
+end
+note read one string field into qct (len qctl), in pieces so it may exceed the read buffer
+fn t_rdct fd int to void
+n = t_slen fd
+put qctl 0 n
+o = ulong 0
+while lt o n bound 999999
+z = t_need fd 1
+p = get tibp 0
+k = sub get tibn 0 p
+if gt k sub n o
+k = sub n o
+end
+for i ulong k
+put qct add o i get tib add p i
+end
+put tibp 0 add p k
+o = add o k
+end
+end
+note read one string field into tsb (len tsbn); returns false for NULL
+fn t_rdsb fd int to bool
+z = t_need fd 4
+if eq t_u32 4294967295
+put tsbn 0 0
+ret false
+end
+put tibp 0 sub get tibp 0 4
+n = t_slen fd
+put tsbn 0 n
+p = get tibp 0
+for i ulong n
+put tsb i get tib add p i
+end
+put tibp 0 add p n
+ret true
+end
+note length of the next string field, with its bytes buffered when they fit in tib
+fn t_slen fd int to ulong
+z = t_need fd 4
+n = t_u32
+if eq n 4294967295
+ret 0
+end
+if le n 8388608
+z = t_need fd n
+end
+ret n
+end

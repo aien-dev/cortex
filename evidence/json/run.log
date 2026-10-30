@@ -1,0 +1,81 @@
+== toolchain
+omc /tmp/cxo/cortex/build/omc sha256 189ada82e00bb440cb41351bd252cc68c54a1b1050051cc42a1df700081c3b54
+omc pinned by tools/omc.sh (omega-mv 91b3c932)
+rustc rustc 1.98.1 (48a229cea 2026-09-01)
+om/f64.om sha256 5e164308f6e04276f42c7bc9f541c2fa0f010cdfcbc8e4fc8b02dc73247d1a6d functions 31
+om/uni_rust.om sha256 74e84cab8487c87c1a41edf3de161736353c7da3018386eee245fd5f182c45fd functions 13
+om/json.om sha256 ad614b1a5c08adf1ce142455da88332b3b28bc7d088eae0af9ef4d75fd023328 functions 89
+== generated tables reproduce (ugen built with rustc 1.98.1, gen_tables.py)
+note counts: inv 342 pos 326 pow10 309 lower-ranges 185 cased 151 ignorable 464 debug-escaped 911
+PASS tables identical to embedded text
+== oracle build
+== harness builds
+== corpora (deterministic seeds)
+json.bin sha256 34e04ef465dfbd10780f5fa9a1e8014a4c17a4f923cec46d4cbfbcd0770ddbe1 bytes 10367880
+big.bin sha256 e13bd6815f4b48218cb041472ffa931ec49a7a106994809ca51a1917543ac983 bytes 33968608
+f64.bin sha256 635e5bcc6d5a74d4f79cf13362fbc506ae23a7bd86300be385acf944431c4d98 bytes 8090224
+f64r.bin sha256 adacc5bbf8a7a51fa1f09ba8c4f540df358c1a3d57979987641bd16054d00481 bytes 16000000
+uni.bin sha256 f6eedd5b83290a8596b4d587b11313f217744d0952c619537cc7b8476da7d6b9 bytes 26942947
+time.bin sha256 a66a668c0d74fe17f1e57d2ca341a043f6e6d11cf9e6c7e2721f5e3853865b39 bytes 4800004
+api.bin sha256 18956c0bc3b75b7f75c0c2087c951fb9968839990fd61ca14d0c1b8a83cdb516 bytes 6367476
+== differential runs
+json200k records 600000 observed 600000 match 600000 mismatch 0
+jsonbig records 36 observed 36 match 36 mismatch 0
+f64mixed records 1011278 observed 1011278 match 1011278 mismatch 0
+f64random records 2000000 observed 2000000 match 2000000 mismatch 0
+unicode records 1412064 observed 1412064 match 1412064 mismatch 0
+time_uuid records 400000 observed 400000 match 400000 mismatch 0
+api_typed records 100000 observed 100000 match 100000 mismatch 0
+api_value_view: same corpus with the RawValue collapse on (jrvm = 0); differences must all be documents
+  containing the RawValue token (documented Value-vs-typed divergence)
+api_value_view records 100000 match 99827 mismatch 173 (all with RawValue token: True)
+== negative controls (each mutant must produce mismatches)
+  mismatch record 123
+    expected b'O{"b\\\\u0061":{"b\\\\u0061":{},"x":false,"\xe6\xa0\xacx\\nd\xe2\xbe\x98m\xc2\x80k":{"ab":null,"b\\\\u0061":9035636.770877939,"query":["tKsqeket\xf2\x93\xa9\x92\xf3\x9a\xa5\x9bm",[{"":true,"f\\t\x7f":591594657234795610,'
+    observed b'O{"b\\\\u0061":{"b\\\\u0061":{},"x":false,"\xe6\xa0\xacx\\nd\xe2\xbe\x98m\xc2\x80k":{"ab":null,"b\\\\u0061":9035636.770877939,"query":["tKsqeket\xf2\x93\xa9\x92\xf3\x9a\xa5\x9bm",[{"":true,"f\\t\\u007f":59159465723479'
+mutant-esc7f records 600000 observed 600000 match 594947 mismatch 5053
+PASS negative control esc7f caught
+  mismatch record 63
+    expected b'3.6455610097781996e-304 3.6455610097781996e-304 3.6455610097781996e-304 f00f0000000000002'
+    observed b'3.6455610097781995e-304 3.6455610097781995e-304 3.6455610097781995e-304 f00f0000000000001'
+mutant-ryu_round records 1011278 observed 1011278 match 996205 mismatch 15073
+PASS negative control ryu_round caught
+  mismatch record 5469
+    expected b'O1.8446744073709552e+19'
+    observed b'O0'
+mutant-u64_overflow records 600000 observed 600000 match 599734 mismatch 266
+PASS negative control u64_overflow caught
+  mismatch record 1112079
+    expected b'\x18\x00\x00\x00y\xcd\x85\xcf\x82\xf0\x9f\x98\x80\xf4\x8a\xa0\xbb\xf1\x8f\xa3\x9ca\xf0\x9c\x8b\xbekk\x04\x00\x00\x000 261\x00\x00\x00"y\\u{345}\xce\xa3\xf0\x9f\x98\x80\\u{10a83b}\\u{4f8dc}a\\u{1c2fe}\xe2\x84\xaaK"\x01\x00\x00\x000'
+    observed b'\x18\x00\x00\x00y\xcd\x85\xcf\x83\xf0\x9f\x98\x80\xf4\x8a\xa0\xbb\xf1\x8f\xa3\x9ca\xf0\x9c\x8b\xbekk\x04\x00\x00\x000 261\x00\x00\x00"y\\u{345}\xce\xa3\xf0\x9f\x98\x80\\u{10a83b}\\u{4f8dc}a\\u{1c2fe}\xe2\x84\xaaK"\x01\x00\x00\x001'
+mutant-final_sigma records 1412064 observed 1412064 match 1401076 mismatch 10988
+PASS negative control final_sigma caught
+  mismatch record 953
+    expected b'2036-07-09T21:40:37.350400+00:00'
+    observed b'2036-07-09T21:40:37.350+00:00'
+mutant-autosi_millis records 400000 observed 400000 match 399617 mismatch 383
+PASS negative control autosi_millis caught
+  mismatch record 123
+    expected b'O{"b\\\\u0061":{"b\\\\u0061":{},"x":false,"\xe6\xa0\xacx\\nd\xe2\xbe\x98m\xc2\x80k":{"ab":null,"b\\\\u0061":9035636.770877939,"query":["tKsqeket\xf2\x93\xa9\x92\xf3\x9a\xa5\x9bm",[{"":true,"f\\t\x7f":591594657234795610,'
+    observed b'O{"b\\\\u0061":{"b\\\\u0061":{},"x":false,"\xe6\xa0\xacx\\nd\xe2\xbe\x98m\xc2\x80k":{"ab":null,"b\\\\u0061":9035636.770877939,"query":["tKsqeket\xf2\x93\xa9\x92\xf3\x9a\xa5\x9bm",[{"":"s\xf3\xad\x9a\xac","f\\t\x7f":5915946572347956'
+mutant-dup_last_wins records 600000 observed 600000 match 594538 mismatch 5462
+PASS negative control dup_last_wins caught
+== throughput (host, nice 19; machine shared with other lanes)
+ 12:48:56 up 5 days, 18:29, 17 users,  load average: 6.52, 6.10, 6.16
+ru_contains_5x6MB_ns 92130664 30000000
+ru_contains_5x6MB_latin_ns 51877264 30000000
+js_parse_ns_bytes 27008353 4710001
+js_canon_ns_bytes 32285745 4590001
+js_f64_1M_ns 178921632 1000000
+ru_contains_5x6MB_ns 87958787 30000000
+ru_contains_5x6MB_latin_ns 51747935 30000000
+js_parse_ns_bytes 26765983 4710001
+js_canon_ns_bytes 32591172 4590001
+js_f64_1M_ns 178932976 1000000
+ru_contains_5x6MB_ns 109927127 30000000
+ru_contains_5x6MB_latin_ns 51774624 30000000
+js_parse_ns_bytes 26141642 4710001
+js_canon_ns_bytes 32429746 4590001
+js_f64_1M_ns 178954049 1000000
+== summary
+RESULT PASS

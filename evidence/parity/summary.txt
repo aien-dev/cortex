@@ -1,0 +1,51 @@
+parity gate 2026-10-26T18:05:32Z rc=0
+corpus     4642 requests, sha256 a3852b083815600fe2712549253b0ea9b56443f3891ccc9f809089fd18b58514
+generator  gen.sh: 100 terms, 152 entities, 4642 requests
+source     6327 entities (copy of a cortex-rs database)
+import     cortex-import: wal: none
+cortex-import: db: pages=12895
+IMPORT OK spaces=9 entities=6327 claims=0 fts=3576
+cortex-import: import: fts rows without entity=0
+omc        sha256 189ada82e00bb440cb41351bd252cc68c54a1b1050051cc42a1df700081c3b54
+omega      sha256 ecff30d9784e24f8b8b31ed58ff28a120220a5a433cd1cbd4a4c466db88ff20e
+oracle     sha256 91ccba9403601ed4d4b4c762dd489fd9b7de58d4b0017e44102005eb51398afe
+since      2026-10-26T18:05:01
+TOTAL records=4642 pass=4642 fail=0 masked-values=3726 renamed-uuids=48
+per class (pass / total):
+auth                        26 /    26
+cors                        16 /    16
+ctype                       14 /    14
+error.big.recall             6 /     6
+error.big.search             6 /     6
+error.big.write              1 /     1
+error.body.recall           65 /    65
+error.body.search           12 /    12
+error.body.traverse         11 /    11
+error.body.write            49 /    49
+error.get                   12 /    12
+error.query                 28 /    28
+get.read                   811 /   811
+health                      13 /    13
+post.search                  8 /     8
+recall.malformed            95 /    95
+recall.ops                 550 /   550
+recall.term                500 /   500
+route                       17 /    17
+search.get.malformed        95 /    95
+search.get.ops             550 /   550
+search.get.term            500 /   500
+search.post.malformed       95 /    95
+search.post.ops            550 /   550
+search.post.term           500 /   500
+traverse.read               31 /    31
+visitor.forget               8 /     8
+visitor.list                12 /    12
+visitor.read                 3 /     3
+visitor.remember             7 /     7
+write.claim                  4 /     4
+write.create                 5 /     5
+write.read                  10 /    10
+write.retract                4 /     4
+write.search                19 /    19
+write.traverse               7 /     7
+write.upsert                 2 /     2

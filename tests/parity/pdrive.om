@@ -1,0 +1,529 @@
+note pdrive.om: parity and load driver. usage: pdrive CORPUS PORT OUT [LAT]
+note Sends every corpus request, in order, as its own HTTP/1.1 connection to 127.0.0.1:PORT and
+note stores the raw answers. CORPUS lines are CLASS TAB METHOD TAB PATH TAB FLAGS TAB BODY (format
+note in spec/PARITY.md). OUT gets one record per request: "#<index> <bytes>\n", the raw answer
+note bytes and "\n"; a failed exchange is "#<index> ERR\n". LAT (optional) gets the latency of each
+note request in nanoseconds, one per line, measured from socket creation to the peer's close.
+note Flag a sends "authorization: Bearer paritytok", or the value of PDRIVE_TOKEN when that
+note environment variable is set (shadow replay against a server with a real token).
+global pa uchar 4096
+global cb uchar 16777216
+global bb uchar 4194304
+global rq uchar 4194304
+global rb uchar 16777216
+global sa uchar 16
+global ob uchar 64
+note pv: 0 corpus bytes, 1 port, 2 out fd, 3 lat fd (0 none), 4 body len, 5 request len, 6 answer len,
+note 7 length of the PDRIVE_TOKEN header in tk (0 none)
+global pv ulong 8
+global ev uchar 4096
+global tk uchar 4200
+text h_auth "authorization: Bearer "
+text e_tok "PDRIVE_TOKEN="
+note fl: one byte per flag letter present on the current line
+global fl uchar 128
+text u_use "usage: pdrive CORPUS PORT OUT [LAT]\n"
+text u_open "pdrive: cannot open a file\n"
+text u_big "pdrive: corpus too large\n"
+text u_bad "pdrive: malformed corpus line\n"
+text h_ver " HTTP/1.1"
+text h_host "host: 127.0.0.1:"
+text h_ok "authorization: Bearer paritytok"
+text h_bad "authorization: Bearer wrongtok"
+text h_sp "authorization: Bearer  paritytok  "
+text h_lc "authorization: bearer paritytok"
+text h_js "content-type: application/json"
+text h_tx "content-type: text/plain"
+text h_vnd "content-type: application/vnd.x+json"
+text h_o1 "origin: http://localhost:18095"
+text h_o2 "origin: http://127.0.0.1:18095"
+text h_ev "origin: http://evil"
+text h_pf "access-control-request-method: POST"
+text h_pf2 "access-control-request-headers: authorization,content-type"
+text h_cl "content-length: "
+text h_cc "connection: close"
+text h_err " ERR\n"
+
+fn say t view uchar * to void
+w = write 2 t 0 len t
+if lt w 0
+ret
+end
+end
+note copy argument i into pa; returns its length
+fn argp i ulong to ulong
+n = argread i pa 0 len pa
+if lt n 0
+ret 0
+end
+ret ulong n
+end
+fn opnr n ulong to int
+f = fopen pa 0 n 524288 0
+ret int f
+end
+fn opnw n ulong to int
+f = fopen pa 0 n 524865 420
+ret int f
+end
+fn rdall fd int to bool
+n = ulong 0
+while true bound 999999
+if ge n len cb
+say u_big
+ret false
+end
+r = pread fd cb n sub len cb n long n
+if lt r 0
+ret false
+end
+if eq r 0
+put pv 0 n
+ret true
+end
+n = add n ulong r
+end
+ret false
+end
+fn wall fd int a ulong n ulong to bool
+k = a
+e = add a n
+while lt k e bound 999999
+w = write fd rb k sub e k
+if le w 0
+ret false
+end
+k = add k ulong w
+end
+ret true
+end
+fn wob fd int n ulong to bool
+w = write fd ob 0 n
+ret eq w long n
+end
+fn obdec o ulong v ulong to ulong
+k = o
+if ge v 10
+k = obdec o div v 10
+end
+put ob k uchar add rem v 10 48
+ret add k 1
+end
+
+fn rqt o ulong t view uchar * to ulong
+for i ulong len t
+put rq add o i get t i
+end
+ret add o len t
+end
+fn rqcr o ulong to ulong
+put rq o 13
+put rq add o 1 10
+ret add o 2
+end
+fn rqh o ulong t view uchar * to ulong
+ret rqcr rqt o t
+end
+fn rqa o ulong to ulong
+if eq get pv 7 0
+ret rqh o h_ok
+end
+for i ulong get pv 7
+put rq add o i get tk i
+end
+ret rqcr add o get pv 7
+end
+note tokenv: find PDRIVE_TOKEN=VALUE in the environment; tk gets "authorization: Bearer VALUE"
+fn tokenv to void
+c = ulong envcnt
+for i ulong c
+m = envread i ev 0 len ev
+if lt m 14
+continue
+end
+if tokpre
+tokcp sub ulong m len e_tok
+end
+end
+end
+fn tokpre to bool
+for j ulong len e_tok
+if ne get ev j get e_tok j
+ret false
+end
+end
+ret true
+end
+fn tokcp v ulong to void
+for q ulong len h_auth
+put tk q get h_auth q
+end
+for r ulong v
+put tk add len h_auth r get ev add len e_tok r
+end
+put pv 7 add len h_auth v
+end
+fn rqdec o ulong v ulong to ulong
+k = o
+if ge v 10
+k = rqdec o div v 10
+end
+put rq k uchar add rem v 10 48
+ret add k 1
+end
+fn hexv c ulong to ulong
+if le c 57
+ret sub c 48
+end
+if le c 70
+ret sub c 55
+end
+ret sub c 87
+end
+fn hexd v ulong to uchar
+if lt v 10
+ret uchar add v 48
+end
+ret uchar add v 55
+end
+note path bytes cb[a..b) into rq at o; "~" starts hex pairs sent as %HH up to "&" or the end
+fn rqpath o ulong a ulong b ulong to ulong
+k = o
+i = a
+hx = false
+while lt i b bound 999999
+c = get cb i
+if eq c 126
+hx = true
+i = add i 1
+continue
+end
+if eq c 38
+hx = false
+end
+if hx
+v = add mul hexv ulong c 16 hexv ulong get cb add i 1
+put rq k 37
+put rq add k 1 hexd shr v 4
+put rq add k 2 hexd and v 15
+k = add k 3
+i = add i 2
+continue
+end
+put rq k c
+k = add k 1
+i = add i 1
+end
+ret k
+end
+note body bytes cb[a..b) into bb (flag e: \n \t \\ escapes); sets pv 4
+fn mkbody a ulong b ulong to void
+k = ulong 0
+es = eq get fl 101 1
+sk = false
+for j ulong sub b a
+if sk
+sk = false
+continue
+end
+i = add a j
+c = get cb i
+if and es eq c 92
+d = get cb add i 1
+if eq d 110
+c = 10
+end
+if eq d 116
+c = 9
+end
+if eq d 92
+c = 92
+end
+sk = true
+end
+put bb k c
+k = add k 1
+end
+put pv 4 k
+end
+fn rqflag o ulong to ulong
+k = o
+if eq get fl 97 1
+k = rqa k
+end
+if eq get fl 98 1
+k = rqh k h_bad
+end
+if eq get fl 115 1
+k = rqh k h_sp
+end
+if eq get fl 99 1
+k = rqh k h_lc
+end
+if eq get fl 106 1
+k = rqh k h_js
+end
+if eq get fl 116 1
+k = rqh k h_tx
+end
+if eq get fl 118 1
+k = rqh k h_vnd
+end
+ret rqflg2 k
+end
+fn rqflg2 o ulong to ulong
+k = o
+if eq get fl 111 1
+k = rqh k h_o1
+end
+if eq get fl 79 1
+k = rqh k h_o2
+end
+if eq get fl 120 1
+k = rqh k h_ev
+end
+if eq get fl 112 1
+k = rqh rqh k h_pf h_pf2
+end
+ret k
+end
+fn mkflg a ulong b ulong to void
+for i ulong 128
+put fl i 0
+end
+for i ulong sub b a
+c = get cb add a i
+put fl and ulong c 127 1
+end
+end
+note method cb[a..b) and path cb[b+1..p) as the request line plus host; returns its length
+fn mkline a ulong b ulong p ulong to ulong
+k = ulong 0
+for i ulong sub b a
+put rq k get cb add a i
+k = add k 1
+end
+put rq k 32
+k = rqpath add k 1 add b 1 p
+k = rqcr rqt k h_ver
+k = rqt k h_host
+ret rqcr rqdec k get pv 1
+end
+note build the request for a line with tabs at t1..t4 ending at e; sets pv 5
+fn mkreq t1 ulong t2 ulong t3 ulong t4 ulong e ulong to void
+mkflg add t3 1 t4
+mkbody add t4 1 e
+k = rqflag mkline add t1 1 t2 t3
+bl = get pv 4
+ispo = eq get cb add t1 1 80
+if or gt bl 0 or ispo eq get fl 108 1
+k = rqcr rqdec rqt k h_cl bl
+end
+k = rqcr rqh k h_cc
+for i ulong bl
+put rq add k i get bb i
+end
+put pv 5 add k bl
+end
+
+fn xsend fd int dl long to bool
+k = ulong 0
+e = get pv 5
+while lt k e bound 999999
+w = waitio fd 4 sub dl monons
+if le w 0
+ret false
+end
+s = send fd rq k sub e k 0
+if le s 0
+ret false
+end
+k = add k ulong s
+end
+ret true
+end
+fn xrecv fd int dl long to bool
+n = ulong 0
+while true bound 999999
+now = monons
+if ge now dl
+ret false
+end
+w = waitio fd 1 sub dl now
+if le w 0
+ret false
+end
+if ge n len rb
+ret false
+end
+r = recv fd rb n sub len rb n 0
+if lt r 0
+ret false
+end
+if eq r 0
+put pv 6 n
+ret true
+end
+n = add n ulong r
+end
+ret false
+end
+fn xchg to bool
+dl = add monons 60000000000
+sk = socknew 2 524289 0
+fd = int sk
+if lt fd 0
+ret false
+end
+p = get pv 1
+put sa 0 2
+put sa 1 0
+put sa 2 uchar shr p 8
+put sa 3 uchar and p 255
+put sa 4 127
+put sa 5 0
+put sa 6 0
+put sa 7 1
+r = connect fd sa 0 16
+ok = false
+if eq r 0
+if xsend fd dl
+ok = xrecv fd dl
+end
+end
+x = fclose fd
+ret ok
+end
+
+note emit the record for request ix
+fn emit ix ulong ok bool lat ulong to bool
+fd = int get pv 2
+put ob 0 35
+o = obdec 1 ix
+if not ok
+for i ulong len h_err
+put ob add o i get h_err i
+end
+ret wob fd add o len h_err
+end
+put ob o 32
+o = obdec add o 1 get pv 6
+put ob o 10
+if not wob fd add o 1
+ret false
+end
+n = get pv 6
+put rb n 10
+if not wall fd 0 add n 1
+ret false
+end
+lf = int get pv 3
+if eq lf 0
+ret true
+end
+o = obdec 0 lat
+put ob o 10
+ret wob lf add o 1
+end
+note tab position at or after i on the line ending at e (e when none)
+fn tabat i ulong e ulong to ulong
+for j ulong sub e i
+if eq get cb add i j 9
+ret add i j
+end
+end
+ret e
+end
+fn eolat i ulong to ulong
+n = get pv 0
+for j ulong sub n i
+if eq get cb add i j 10
+ret add i j
+end
+end
+ret n
+end
+fn runone s ulong e ulong ix ulong to int
+t1 = tabat s e
+t2 = tabat add t1 1 e
+t3 = tabat add t2 1 e
+t4 = tabat add t3 1 e
+if ge t4 e
+say u_bad
+ret 4
+end
+mkreq t1 t2 t3 t4 e
+t0 = monons
+ok = xchg
+lat = ulong sub monons t0
+if not emit ix ok lat
+ret 5
+end
+ret 0
+end
+fn runall to int
+i = ulong 0
+ix = ulong 0
+n = get pv 0
+while lt i n bound 999999
+e = eolat i
+if gt e i
+r = runone i e ix
+if ne r 0
+ret r
+end
+ix = add ix 1
+end
+i = add e 1
+end
+ret 0
+end
+fn parg n ulong to ulong
+v = ulong 0
+for k ulong n
+c = get pa k
+if or lt c 48 gt c 57
+ret 0
+end
+v = add mul v 10 ulong sub c 48
+end
+ret v
+end
+fn main to int
+c = ulong argcnt
+if or lt c 4 gt c 5
+say u_use
+ret 2
+end
+tokenv
+fd = opnr argp 1
+if lt fd 0
+say u_open
+ret 3
+end
+if not rdall fd
+ret 3
+end
+x = fclose fd
+put pv 1 parg argp 2
+if or eq get pv 1 0 gt get pv 1 65535
+say u_use
+ret 2
+end
+of = opnw argp 3
+if lt of 0
+say u_open
+ret 3
+end
+put pv 2 ulong of
+put pv 3 0
+if eq c 5
+lf = opnw argp 4
+if lt lf 0
+say u_open
+ret 3
+end
+put pv 3 ulong lf
+end
+ret runall
+end

@@ -1,0 +1,72 @@
+note tests/json/t_json.om - differential harness: per input document two records,
+note A = from_slice::<Value> (canonical text or category + message),
+note C = js_canon_buf over the same bytes (via jes) followed by js_canon of the A tree again (the tree
+note must survive canon_buf), B = axum-style prefix parse + serde_path_to_error path.  Needs t_io.om.
+fn t_jem to void
+for i ulong get jeml 0
+js_byte get jem i
+end
+end
+fn t_res ok bool pfx bool to void
+put jobl 0 0
+if ok
+js_byte 79
+js_canon get jroot 0
+else
+js_byte 69
+js_byte add 48 get jecat 0
+if pfx
+if js_path
+js_byte 58
+js_byte 32
+end
+end
+t_jem
+end
+t_emitjob
+end
+fn t_cpes n ulong to void
+i = ulong 0
+for b ulong 4000
+for c ulong 4000
+if ge i n
+ret
+end
+x = get jin i
+put jes i x
+i = add i 1
+end
+end
+end
+fn t_canb a bool to void
+n = get jinl 0
+t_cpes n
+put jobl 0 0
+js_byte 79
+if js_canon_buf 0 n
+if a
+js_byte 124
+js_canon get jroot 0
+else
+js_byte 63
+end
+else
+put jobl 0 0
+js_byte 70
+end
+t_emitjob
+end
+fn main to int
+num_init
+for it ulong 100000000
+if not t_rec
+t_flush
+ret 0
+end
+a = js_parse
+t_res a false
+t_canb a
+t_res js_parsep true
+end
+ret 1
+end

@@ -1,0 +1,16 @@
+conc latency statistics, computed by the Wolfram Language evaluator (Wolfram MCP) from the raw files in this directory.
+Query per file F (the full integer list of F substituted for <F>, values in ns, results in ms):
+  With[{d=N[{<F>}/10^6]},{Length[d],Quantile[d,1/2],Quantile[d,99/100],Mean[d],Max[d]}]
+Run: tests/conc/run.sh from check.sh on a fresh clone of 962977c, binary sha256 c4f77955... (wall.txt),
+control = the one-connection build of f1a54ad (sha256 ecff30d9...). Shared 20-core host, nice 19 / ionice idle.
+seq = 1 client; c16 = 16 clients; slow = 16 clients plus 200 slowloris connections; ctl = the slow phase
+against the one-connection control (only 3984 of 4277 requests got an answer: 293 transport errors).
+
+file          sha256(first 16)   Wolfram output {n, p50, p99, mean, max} (ms)
+lat-seq.ns    261d40b6f9c10b84   Out[1]= {4277, 4.220208, 62.936722, 11.009724764554594, 611.94201}
+lat-c16.ns    8c9180664c91093c   Out[1]= {4277, 146.124798, 824.862311, 150.4718583761982, 1132.963211}
+lat-slow.ns   4231b3edb71ade22   Out[1]= {4277, 136.699262, 432.016776, 135.30290287350945, 1054.290087}
+lat-ctl.ns    05c51169805fdcb8   Out[1]= {3984, 166.118398, 1128.27237, 277.3065264756526, 38054.905288}
+
+slow.txt: 200 of 200 slow connections ended by the server with HTTP/1.1 400, the latest after 10.095 s
+(gate: 11 s). Control: wall 1599.9 s for the same phase (wall.txt).

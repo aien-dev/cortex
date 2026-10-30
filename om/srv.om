@@ -1,0 +1,407 @@
+note srv.om: concurrent connections. Three kinds of process:
+note   state process  (the first one) owns the log and the in-memory store and answers forwarded
+note                  requests one at a time on a private local socket, so writes stay serialized
+note                  and crash-safe exactly as with one connection;
+note   acceptor       forked before the store is loaded (small, cheap to fork); owns the TCP
+note                  listener and forks one handler per connection (at most S_MAXH alive);
+note   handler        reads one whole request from its client under the header, request and idle
+note                  deadlines (hto), forwards the raw bytes to the state process, reads the whole
+note                  answer and writes it to the client under its own deadline.
+note A slow or stalled client only holds its own handler. The state process never reads from or
+note writes to a client socket.
+global upath uchar 108
+global upl ulong 1
+global uad uchar 112
+global sfd uchar 8
+global sfp ulong 4
+global sst uchar 4
+global sone uchar 1
+global sstat uchar 128
+global pxn ulong 2
+global snh ulong 1
+const S_MAXH ulong 256
+const S_SOCKMX ulong 100
+text a_sock "--sock"
+text sockext ".sock"
+text m_sockp "cortex: private socket path too long (at most 100 bytes; use --sock PATH)\n"
+text m_sockx "cortex: --sock path exists and is not a socket\n"
+text m_sock "cortex: cannot create the private socket\n"
+text m_acc "cortex: acceptor process ended; exiting\n"
+
+note deadlines for client connections (handler) and for forwarded requests (state process)
+fn sv_tmo_client to void
+put hto 0 10000000000
+put hto 1 30000000000
+put hto 2 10000000000
+end
+fn sv_tmo_local to void
+put hto 0 2000000000
+put hto 1 2000000000
+put hto 2 2000000000
+end
+
+note --sock PATH (from jrs, n bytes)
+fn sv_setpath n ulong to bool
+if or eq n 0 gt n S_SOCKMX
+ret false
+end
+for k ulong n
+put upath k get jrs k
+end
+put upl 0 n
+ret true
+end
+note default private socket path: the log path plus ".sock"
+fn sv_defpath to bool
+if gt get upl 0 0
+ret true
+end
+n = get lpl 0
+if gt add n len sockext S_SOCKMX
+ret false
+end
+for k ulong n
+put upath k get lpath k
+end
+for k ulong len sockext
+put upath add n k get sockext k
+end
+put upl 0 add n len sockext
+ret true
+end
+note sockaddr_un for upath in uad; returns its length
+fn sv_addr to ulong
+put uad 0 1
+put uad 1 0
+n = get upl 0
+for k ulong n
+put uad add 2 k get upath k
+end
+put uad add 2 n 0
+ret add n 3
+end
+note 0 when upath is absent or a socket (removed), 1 when something else is there, 2 on error
+fn sv_clear to ulong
+r = lstat upath 0 get upl 0 sstat 0 len sstat
+if eq r neg long 2
+ret 0
+end
+if lt r 0
+ret 2
+end
+m = or ulong get sstat 16 shl ulong get sstat 17 8
+if ne and m 61440 49152
+ret 1
+end
+x = unlink upath 0 get upl 0
+if ne x 0
+ret 2
+end
+ret 0
+end
+note private listening socket, mode 0600 before listen; descriptor or -1 (message printed)
+fn sv_ulisten to int
+cl = sv_clear
+if eq cl 1
+say m_sockx
+ret -1
+end
+if eq cl 2
+say m_sock
+ret -1
+end
+fd = socknew 1 524289 0
+if lt fd 0
+say m_sock
+ret -1
+end
+um = umask 63
+r = bind int fd uad 0 sv_addr
+x = umask int um
+if ne r 0
+say m_sock
+ret -1
+end
+r = chmod upath 0 get upl 0 384
+if ne r 0
+say m_sock
+ret -1
+end
+r = listen int fd 1024
+if ne r 0
+say m_sock
+ret -1
+end
+ret int fd
+end
+note handler side: connect to the state process
+fn sv_connect to int
+fd = socknew 1 524289 0
+if lt fd 0
+ret -1
+end
+r = connect int fd uad 0 sv_addr
+if ne r 0
+x = fclose int fd
+ret -1
+end
+ret int fd
+end
+note little-endian descriptor word at sfd[off..off+4)
+fn sv_fdword off ulong to int
+v = ulong 0
+for i ulong 4
+b = ulong get sfd add off i
+v = or v shl b mul i 8
+end
+ret int v
+end
+
+note send b[0..n) of rqraw to u within dl; true when all of it went
+fn sv_sendraw u int n ulong dl long to bool
+o = ulong 0
+while lt o n bound 999999
+now = monons
+if ge now dl
+ret false
+end
+w = waitio u 4 sub dl now
+if le w 0
+ret false
+end
+s = send u rqraw o sub n o 0
+if le s 0
+ret false
+end
+o = add o ulong s
+end
+ret true
+end
+note read the answer of the state process (it closes after it) into job; an answer larger than
+note job is passed on to the client in job-sized pieces. pxn 1 counts bytes received in total
+fn sv_recvall u int c int dl long to bool
+put pxn 0 0
+put pxn 1 0
+while true bound 999999
+n = get pxn 0
+if ge n len job
+if not sv_sendcli c add monons 30000000000
+ret false
+end
+put pxn 0 0
+n = ulong 0
+end
+now = monons
+if ge now dl
+ret false
+end
+w = waitio u 1 sub dl now
+if le w 0
+ret false
+end
+r = recv u job n sub len job n 0
+if eq r 0
+ret gt get pxn 1 0
+end
+if lt r 0
+ret false
+end
+put pxn 0 add n ulong r
+put pxn 1 add get pxn 1 ulong r
+end
+ret false
+end
+note write job[0..pxn 0) to the client within dl; true when all of it went
+fn sv_sendcli c int dl long to bool
+o = ulong 0
+n = get pxn 0
+while lt o n bound 999999
+now = monons
+if ge now dl
+ret false
+end
+w = waitio c 4 sub dl now
+if le w 0
+ret false
+end
+s = send c job o sub n o 0
+if le s 0
+ret false
+end
+o = add o ulong s
+end
+ret true
+end
+note one client connection, in a handler process
+fn sv_handle c int to void
+sv_tmo_client
+put hmir 0 1
+put hrawn 0 0
+st = http_read c
+if eq st 1
+ret
+end
+if ne st 0
+api_rderr c st
+ret
+end
+u = sv_connect
+if lt u 0
+http_send c 503 0 0 0
+ret
+end
+dl = add monons 120000000000
+ok = sv_sendraw u get hrawn 0 dl
+if ok
+ok = sv_recvall u c dl
+end
+x = fclose u
+if ok
+ok = sv_sendcli c add monons 30000000000
+end
+x2 = shutdown c 1
+end
+
+note reap finished handlers without blocking
+fn sv_reap to void
+for k ulong 1024
+r = waitpid neg int 1 sst 0 len sst 1
+if le r 0
+ret
+end
+h = get snh 0
+if gt h 0
+put snh 0 sub h 1
+end
+end
+end
+note acceptor loop; returns in the acceptor when the state process is gone (its end of the go
+note pipe pr closed, so pr turns readable), and in each handler after its connection is done
+note (both then exit). getppid is not used: omc 189ada82 emits the x86-64 number (110) for it on
+note arm64, fixed upstream after this pin.
+fn sv_accept lfd int pr int to void
+put snh 0 0
+while true bound 999999
+for k ulong 999999
+if gt waitio pr 1 0 0
+ret
+end
+sv_reap
+if ge get snh 0 S_MAXH
+x = sleepns 1000000
+continue
+end
+w = waitio lfd 1 200000000
+if gt w 0
+c = accept lfd 524288
+if ge c 0
+pid = fork
+if eq pid 0
+x = fclose lfd
+x = fclose pr
+sv_handle int c
+x = fclose int c
+ret
+end
+if gt pid 0
+put snh 0 add get snh 0 1
+end
+x = fclose int c
+end
+end
+end
+end
+end
+note acceptor process: wait for the state process's go byte, bind TCP, report, serve
+fn sv_accmain pr int qw int to int
+n = read pr sone 0 1
+if ne n 1
+ret 0
+end
+fd = main_listen
+if lt fd 0
+put sone 0 110
+x = write qw sone 0 1
+ret 4
+end
+put sone 0 111
+x = write qw sone 0 1
+x = fclose qw
+sv_accept fd pr
+ret 0
+end
+note start the acceptor; 0 on success with the pipe ends in sfp (0 go-write, 1 ack-read, 2 pid),
+note 1 when this process is the acceptor or a handler and has finished (exit status in sfp 3)
+fn sv_start u int to ulong
+r = pipefds sfd 0 len sfd 524288
+if ne r 0
+put sfp 3 4
+ret 1
+end
+gr = sv_fdword 0
+gw = sv_fdword 4
+r = pipefds sfd 0 len sfd 524288
+if ne r 0
+put sfp 3 4
+ret 1
+end
+ar = sv_fdword 0
+aw = sv_fdword 4
+pid = fork
+if lt pid 0
+put sfp 3 4
+ret 1
+end
+if eq pid 0
+x = fclose u
+x = fclose gw
+x = fclose ar
+put sfp 3 ulong sv_accmain gr aw
+ret 1
+end
+x = fclose gr
+x = fclose aw
+put sfp 0 ulong gw
+put sfp 1 ulong ar
+put sfp 2 ulong pid
+ret 0
+end
+note state process: tell the acceptor to bind; true when it reports success
+fn sv_go to bool
+put sone 0 103
+w = write int get sfp 0 sone 0 1
+if ne w 1
+ret false
+end
+put sone 0 0
+n = read int get sfp 1 sone 0 1
+if or ne n 1 ne get sone 0 111
+x = waitpid int get sfp 2 sst 0 len sst 0
+ret false
+end
+ret true
+end
+note state process loop: one forwarded request at a time; returns when the acceptor has ended
+fn sv_serve u int to void
+sv_tmo_local
+put hprox 0 1
+put hmir 0 0
+apid = int get sfp 2
+while true bound 999999
+for k ulong 999999
+w = waitio u 1 1000000000
+if gt w 0
+c = accept u 524288
+if ge c 0
+api_conn int c
+x = fclose int c
+end
+end
+r = waitpid apid sst 0 len sst 1
+if ne r 0
+say m_acc
+ret
+end
+end
+end
+end

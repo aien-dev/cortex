@@ -1,0 +1,624 @@
+note store.om: in-memory Cortex state rebuilt from the append log (log.om).
+note Strings: small strings (ids, names, types, slugs, json, dates) live in hs (bytes);
+note content and embeddings live in hc, a ulong pool used as a little-endian byte space (128 MiB).
+note A string reference packs pool and place: bit 63 = on disk (offset into the log file),
+note bit 62 = in hc (else hs), bits 25..61 = offset, bits 0..24 = length. NONE = SQL NULL.
+const EMAX ulong 262144
+const CMAX ulong 65536
+const SMAX ulong 65536
+const DMAX ulong 65536
+const MIDN ulong 524288
+const MCLN ulong 131072
+const MDIN ulong 131072
+const RDISK ulong 9223372036854775808
+const RHC ulong 4611686018427387904
+const RLENM ulong 33554431
+note hs holds every short string field (ids, names, types, aliases, metadata, timestamps) of every
+note logged revision. 2026-10-26: 2022373 bytes for 6641 live entities (about 305 bytes each) at about
+note 60-70 new entities an hour, so a single 16 MiB pool would fill (trap 9 when the log is loaded)
+note in about a month. One omc pool holds at most 16777216 elements (error 23 beyond), so the 64 MiB
+note string space is four pools (hs, hs1, hs2, hs3) read and written only through hsg / hsp.
+const HSCAP ulong 67108864
+const HCCAP ulong 134217728
+global hs uchar 16777216
+global hs1 uchar 16777216
+global hs2 uchar 16777216
+global hs3 uchar 16777216
+global hsn ulong 1
+global hc ulong 16777216
+global hcn ulong 1
+note entity slots
+global nent ulong 1
+global erow ulong 262144
+global efts ulong 262144
+global eret uchar 262144
+global erev long 262144
+global ecf f64 262144
+global eid ulong 262144
+global esid ulong 262144
+global esl ulong 262144
+global ety ulong 262144
+global enm ulong 262144
+global ect ulong 262144
+global eal ulong 262144
+global emd ulong 262144
+global evf ulong 262144
+global evt ulong 262144
+global eca ulong 262144
+global eem ulong 262144
+global eav uchar 262144
+note claim slots
+global nc ulong 1
+global crow ulong 65536
+global cret uchar 65536
+global ccf f64 65536
+global cid ulong 65536
+global csid ulong 65536
+global csl ulong 65536
+global csub ulong 65536
+global cprd ulong 65536
+global cobj ulong 65536
+global clit ulong 65536
+global cmd ulong 65536
+global cca ulong 65536
+note spaces (rows of the spaces table)
+global ns ulong 1
+global srow ulong 65536
+global sid ulong 65536
+global sdi ulong 65536
+global sca ulong 65536
+note dictionary of interned strings (slugs, entity types): dref = hs ref, dsp = space slot + 1
+global nd ulong 1
+global dref ulong 65536
+global dsp ulong 65536
+global drank ulong 65536
+note hash tables: slot + 1, 0 empty, NONE deleted
+global mid ulong 524288
+global mnm ulong 524288
+global mcl ulong 131072
+global mdi ulong 131072
+note scalar state: 0 max entity rowid, 1 max fts rowid, 2 max claim rowid, 3 max space rowid, 4 rank dirty
+global stv ulong 8
+
+fn rf_len r ulong to ulong
+ret and r RLENM
+end
+fn rf_off r ulong to ulong
+ret and shr r 25 68719476735
+end
+fn rf_hs off ulong n ulong to ulong
+ret or shl off 25 n
+end
+fn rf_hc off ulong n ulong to ulong
+ret or RHC or shl off 25 n
+end
+fn rf_disk off ulong n ulong to ulong
+ret or RDISK or shl off 25 n
+end
+fn rf_isdisk r ulong to bool
+ret and ne r NONE ne and r RDISK 0
+end
+
+note hc byte access (little-endian bytes inside ulong cells)
+fn hc_get i ulong to uchar
+ret uchar and shr get hc shr i 3 mul and i 7 8 255
+end
+fn hc_put i ulong c uchar to void
+w = shr i 3
+s = mul and i 7 8
+v = and get hc w not shl ulong 255 s
+put hc w or v shl ulong c s
+end
+
+note FNV-1a 64 over hs bytes
+fn hs_hash r ulong to ulong
+h = ulong 14695981039346656037
+o = rf_off r
+for i ulong rf_len r
+h = mul xor h ulong hsg add o i 1099511628211
+end
+ret h
+end
+fn hs_eq a ulong b ulong to bool
+if or eq a NONE eq b NONE
+ret eq a b
+end
+n = rf_len a
+if ne n rf_len b
+ret false
+end
+x = rf_off a
+y = rf_off b
+for i ulong n
+if ne hsg add x i hsg add y i
+ret false
+end
+end
+ret true
+end
+note bytewise compare of two hs strings: -1, 0, 1 (memcmp then length, as SQLite BINARY)
+fn hs_cmp a ulong b ulong to long
+n = rf_len a
+m = rf_len b
+k = n
+if lt m k
+k = m
+end
+x = rf_off a
+y = rf_off b
+for i ulong k
+p = hsg add x i
+q = hsg add y i
+if lt p q
+ret -1
+end
+if gt p q
+ret 1
+end
+end
+if lt n m
+ret -1
+end
+if gt n m
+ret 1
+end
+ret 0
+end
+fn hs_eqtxt r ulong t view uchar * to bool
+if eq r NONE
+ret false
+end
+if ne rf_len r len t
+ret false
+end
+o = rf_off r
+for i ulong len t
+if ne hsg add o i get t i
+ret false
+end
+end
+ret true
+end
+note staging: bytes appended at hsn without committing; hs_commit makes them a string
+fn hs_room n ulong to bool
+ret le add get hsn 0 n HSCAP
+end
+fn hs_stage_txt t view uchar * to ulong
+o = get hsn 0
+for i ulong len t
+hsp add o i get t i
+end
+ret rf_hs o len t
+end
+fn hs_commit r ulong to void
+if eq r NONE
+ret
+end
+e = add rf_off r rf_len r
+if gt e get hsn 0
+put hsn 0 e
+end
+end
+
+note dictionary: intern the hs string r (staged); returns dictionary index
+fn dict_find r ulong to ulong
+h = hs_hash r
+m = sub MDIN 1
+i = and h m
+for k ulong MDIN
+v = get mdi i
+if eq v 0
+ret NONE
+end
+if ne v NONE
+d = sub v 1
+if hs_eq get dref d r
+ret d
+end
+end
+i = and add i 1 m
+end
+ret NONE
+end
+fn dict_intern r ulong to ulong
+d = dict_find r
+if ne d NONE
+ret d
+end
+hs_commit r
+d = get nd 0
+put nd 0 add d 1
+put dref d r
+put dsp d 0
+dict_rank d
+h = hs_hash r
+m = sub MDIN 1
+i = and h m
+while ne get mdi i 0 bound 999999
+i = and add i 1 m
+end
+put mdi i add d 1
+ret d
+end
+
+note id map over entity slots
+fn mid_find r ulong to ulong
+h = hs_hash r
+m = sub MIDN 1
+i = and h m
+for k ulong MIDN
+v = get mid i
+if eq v 0
+ret NONE
+end
+if ne v NONE
+e = sub v 1
+if hs_eq get eid e r
+ret e
+end
+end
+i = and add i 1 m
+end
+ret NONE
+end
+fn mid_add e ulong to void
+h = hs_hash get eid e
+m = sub MIDN 1
+i = and h m
+while true bound 999999
+v = get mid i
+if or eq v 0 eq v NONE
+put mid i add e 1
+ret
+end
+i = and add i 1 m
+end
+end
+fn mid_del e ulong to void
+h = hs_hash get eid e
+m = sub MIDN 1
+i = and h m
+for k ulong MIDN
+v = get mid i
+if eq v 0
+ret
+end
+if eq v add e 1
+put mid i NONE
+ret
+end
+i = and add i 1 m
+end
+end
+
+note (space slug, name) multimap: key hash mixes the slug dictionary index into the name hash
+fn mnm_hash sl ulong r ulong to ulong
+ret mul xor hs_hash r mul add sl 1 11400714819323198485 1099511628211
+end
+fn mnm_add e ulong to void
+h = mnm_hash get esl e get enm e
+m = sub MIDN 1
+i = and h m
+while true bound 999999
+v = get mnm i
+if or eq v 0 eq v NONE
+put mnm i add e 1
+ret
+end
+i = and add i 1 m
+end
+end
+fn mnm_del e ulong to void
+h = mnm_hash get esl e get enm e
+m = sub MIDN 1
+i = and h m
+for k ulong MIDN
+v = get mnm i
+if eq v 0
+ret
+end
+if eq v add e 1
+put mnm i NONE
+ret
+end
+i = and add i 1 m
+end
+end
+note lowest-rowid entity with this slug and name (retracted included), as idx_entities_canonical gives it
+fn mnm_find sl ulong r ulong to ulong
+m = sub MIDN 1
+i = and mnm_hash sl r m
+best = NONE
+brow = NONE
+for k ulong MIDN
+v = get mnm i
+if eq v 0
+ret best
+end
+if ne v NONE
+e = sub v 1
+if and eq get esl e sl hs_eq get enm e r
+if lt get erow e brow
+best = e
+brow = get erow e
+end
+end
+end
+i = and add i 1 m
+end
+ret best
+end
+
+note claim id map
+fn mcl_find r ulong to ulong
+h = hs_hash r
+m = sub MCLN 1
+i = and h m
+for k ulong MCLN
+v = get mcl i
+if eq v 0
+ret NONE
+end
+if ne v NONE
+c = sub v 1
+if hs_eq get cid c r
+ret c
+end
+end
+i = and add i 1 m
+end
+ret NONE
+end
+fn mcl_add c ulong to void
+h = hs_hash get cid c
+m = sub MCLN 1
+i = and h m
+while true bound 999999
+v = get mcl i
+if or eq v 0 eq v NONE
+put mcl i add c 1
+ret
+end
+i = and add i 1 m
+end
+end
+
+note space slot for a slug dictionary index, or NONE
+fn sp_of d ulong to ulong
+v = get dsp d
+if eq v 0
+ret NONE
+end
+ret sub v 1
+end
+fn sp_add row ulong idr ulong d ulong car ulong to ulong
+s = get ns 0
+put ns 0 add s 1
+put srow s row
+put sid s idr
+put sdi s d
+put sca s car
+put dsp d add s 1
+if gt row get stv 3
+put stv 3 row
+end
+ret s
+end
+
+note type rank: dord holds dictionary indices in byte order; drank is each index's position.
+note A new string is inserted at its place; the order of existing strings never changes.
+global dord ulong 65536
+fn dict_rank d ulong to void
+n = d
+lo = ulong 0
+hi = n
+r = get dref d
+while lt lo hi bound 64
+mp = div add lo hi 2
+if lt hs_cmp get dref get dord mp r 0
+lo = add mp 1
+else
+hi = mp
+end
+end
+i = n
+while gt i lo bound 999999
+x = get dord sub i 1
+put dord i x
+put drank x i
+i = sub i 1
+end
+put dord lo d
+put drank d lo
+end
+
+note scan order of idx_entities_type: (space slug, entity_type bytes, rowid). eord holds live slots in that
+note order; the slug part only groups (dictionary index), the type part uses drank.
+global eord ulong 262144
+global neo ulong 1
+global eor ulong 2
+fn eo_lt a ulong b ulong to bool
+x = get esl a
+y = get esl b
+if ne x y
+ret lt x y
+end
+p = get drank get ety a
+q = get drank get ety b
+if ne p q
+ret lt p q
+end
+ret lt get erow a get erow b
+end
+note first index whose slot is not less than e
+fn eo_lower e ulong to ulong
+lo = ulong 0
+hi = get neo 0
+while lt lo hi bound 64
+mp = div add lo hi 2
+if eo_lt get eord mp e
+lo = add mp 1
+else
+hi = mp
+end
+end
+ret lo
+end
+fn eo_insert e ulong to void
+p = eo_lower e
+n = get neo 0
+i = n
+while gt i p bound 999999
+put eord i get eord sub i 1
+i = sub i 1
+end
+put eord p e
+put neo 0 add n 1
+end
+fn eo_remove e ulong to void
+p = eo_lower e
+n = get neo 0
+if or ge p n ne get eord p e
+ret
+end
+i = p
+while lt add i 1 n bound 999999
+put eord i get eord add i 1
+i = add i 1
+end
+put neo 0 sub n 1
+end
+note eord range of slug d into eor 0 (first) and eor 1 (end)
+fn eo_range d ulong to void
+lo = ulong 0
+hi = get neo 0
+while lt lo hi bound 64
+mp = div add lo hi 2
+if lt get esl get eord mp d
+lo = add mp 1
+else
+hi = mp
+end
+end
+put eor 0 lo
+hi = get neo 0
+a = lo
+while lt a hi bound 64
+mp = div add a hi 2
+if le get esl get eord mp d
+a = add mp 1
+else
+hi = mp
+end
+end
+put eor 1 a
+end
+
+note link/unlink a slot from the name map and scan order (keys: slug, name, type, rowid)
+fn ent_link e ulong to void
+mnm_add e
+eo_insert e
+end
+fn ent_unlink e ulong to void
+mnm_del e
+eo_remove e
+end
+
+note max of live fts rows after the current max was removed
+fn st_ftsmax to void
+m = ulong 0
+for e ulong get nent 0
+if and lt get eret e 2 gt get efts e m
+m = get efts e
+end
+end
+put stv 1 m
+end
+fn st_rowmax to void
+m = ulong 0
+for e ulong get nent 0
+if and lt get eret e 2 gt get erow e m
+m = get erow e
+end
+end
+put stv 0 m
+end
+
+note copy entity name to the FTS name input, content to the FTS content input, then index
+fn st_fts_put e ulong to void
+r = get enm e
+o = rf_off r
+n = rf_len r
+for i ulong n
+put qnm i hsg add o i
+end
+put qnml 0 n
+c = get ect e
+o = rf_off c
+n = rf_len c
+for i ulong n
+put qct i hc_get add o i
+end
+put qctl 0 n
+if not fts_put e get efts e
+trap 9
+end
+end
+note remove the FTS row of e (if any) and keep the max fts rowid
+fn st_fts_drop e ulong to void
+f = get efts e
+if eq f 0
+ret
+end
+if eq get stv 5 0
+fts_del e
+end
+put efts e 0
+if eq f get stv 1
+st_ftsmax
+end
+end
+note give e a fresh FTS row (max + 1) and index it
+fn st_fts_new e ulong to void
+f = add get stv 1 1
+put stv 1 f
+put efts e f
+if eq get stv 5 0
+st_fts_put e
+end
+end
+note byte i of the string space (16 MiB per pool)
+fn hsg i ulong to uchar
+k = shr i 24
+j = and i 16777215
+if eq k 0
+ret get hs j
+end
+if eq k 1
+ret get hs1 j
+end
+if eq k 2
+ret get hs2 j
+end
+ret get hs3 j
+end
+note Omega has no elif: `elif eq k 1` parses as an assignment to a local named elif, so an
+note if/elif chain runs every later body unconditionally (stored each byte into all later pools).
+note Each branch returns on its own instead. tests/big covers it.
+fn hsp i ulong v uchar to void
+k = shr i 24
+j = and i 16777215
+if eq k 0
+put hs j v
+ret
+end
+if eq k 1
+put hs1 j v
+ret
+end
+if eq k 2
+put hs2 j v
+ret
+end
+put hs3 j v
+end
