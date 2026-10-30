@@ -17,6 +17,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "sqlite3.h"
 
 static const char *SEARCH_SQL =
@@ -31,6 +33,15 @@ static const char *SEARCH_SQL =
 static void die(const char *m, sqlite3 *db){
   fprintf(stderr, "oracle: %s: %s\n", m, db ? sqlite3_errmsg(db) : "");
   exit(2);
+}
+
+/* output files are created 0644 (subject to umask), never world-writable */
+static FILE *wopen(const char *path){
+  int fd = open(path, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+  if( fd<0 ) return 0;
+  FILE *f = fdopen(fd, "w");
+  if( !f ) close(fd);
+  return f;
 }
 
 static sqlite3 *opendb(const char *path){
@@ -71,7 +82,7 @@ static int mode_plan(const char *dbp){
 
 static int mode_dump(const char *dbp, const char *out){
   sqlite3 *db = opendb(dbp);
-  FILE *f = fopen(out, "wb");
+  FILE *f = wopen(out);
   sqlite3_stmt *st;
   fwrite("FTSDUMP1", 1, 8, f);
   if( sqlite3_prepare_v2(db, "SELECT count(*) FROM entities_fts", -1, &st, 0) ) die("count", db);
@@ -124,7 +135,7 @@ static int mode_tok(const char *dbp, const char *out){
   void *ud; fts5_tokenizer tk; Fts5Tokenizer *t = 0;
   if( api->xFindTokenizer(api, "unicode61", &ud, &tk) ) die("find tok", db);
   if( tk.xCreate(ud, 0, 0, &t) ) die("create tok", db);
-  gTokOut = fopen(out, "wb");
+  gTokOut = wopen(out);
   sqlite3_stmt *st;
   if( sqlite3_prepare_v2(db, "SELECT rowid, canonical_name, content FROM entities_fts ORDER BY rowid", -1, &st, 0) ) die("tok sel", db);
   while( sqlite3_step(st)==SQLITE_ROW ){
@@ -154,7 +165,7 @@ static int mode_mutate(const char *src, const char *dst, const char *ops){
   if( !b ) die("backup", d);
   sqlite3_backup_step(b, -1); sqlite3_backup_finish(b);
   sqlite3_close(s);
-  FILE *o = fopen(ops, "wb");
+  FILE *o = wopen(ops);
   sqlite3_stmt *sel, *del, *ins;
   if( sqlite3_prepare_v2(d, "SELECT id, canonical_name, content, space_slug FROM entities_fts ORDER BY rowid", -1, &sel, 0) ) die("sel", d);
   if( sqlite3_prepare_v2(d, "DELETE FROM entities_fts WHERE id = ?1", -1, &del, 0) ) die("del", d);
@@ -193,7 +204,7 @@ static int mode_tokf(const char *in, const char *out){
   if( api->xFindTokenizer(api, "unicode61", &ud, &tk) ) die("find tok", db);
   if( tk.xCreate(ud, 0, 0, &t) ) die("create tok", db);
   long n; unsigned char *b = slurp(in, &n);
-  gTokOut = fopen(out, "wb");
+  gTokOut = wopen(out);
   long p = 0; long r = 0;
   while( p + 4 <= n ){
     uint32_t len; memcpy(&len, b+p, 4); p += 4;
@@ -217,7 +228,7 @@ static unsigned char *slurp(const char *p, long *pn){
 static int mode_query(const char *dbp, const char *qf, const char *out){
   sqlite3 *db = opendb(dbp);
   long n; unsigned char *b = slurp(qf, &n);
-  FILE *o = fopen(out, "wb");
+  FILE *o = wopen(out);
   sqlite3_stmt *st;
   char sql[4096];
   snprintf(sql, sizeof sql, "%s", SEARCH_SQL);
@@ -263,7 +274,7 @@ static int mode_query(const char *dbp, const char *qf, const char *out){
 static int mode_like(const char *dbp, const char *pf, const char *out){
   sqlite3 *db = opendb(dbp);
   long n; unsigned char *b = slurp(pf, &n);
-  FILE *o = fopen(out, "wb");
+  FILE *o = wopen(out);
   sqlite3_stmt *cntst, *st;
   if( sqlite3_prepare_v2(db, "SELECT count(*) FROM entities", -1, &cntst, 0) ) die("c", db);
   sqlite3_step(cntst); int nent = sqlite3_column_int(cntst, 0); sqlite3_finalize(cntst);
@@ -304,7 +315,7 @@ static int mode_like(const char *dbp, const char *pf, const char *out){
 static uint64_t rng = 0x9E3779B97F4A7C15ull;
 static uint64_t xr(void){ rng ^= rng<<13; rng ^= rng>>7; rng ^= rng<<17; return rng; }
 static int mode_log(const char *out, long target, long lo, long hi){
-  FILE *o = fopen(out, "wb");
+  FILE *o = wopen(out);
   long cnt = 0;
   for(long nRow=lo; nRow<=hi; nRow++){
     for(long nHit=0; nHit<=nRow; nHit++){
@@ -336,7 +347,7 @@ static int mode_log(const char *out, long target, long lo, long hi){
 
 /* hardware fma reference for the Omega soft-fma: input u64 a,b,c -> fma bits */
 static int mode_fma(const char *out, long target){
-  FILE *o = fopen(out, "wb");
+  FILE *o = wopen(out);
   for(long i=0;i<target;i++){
     uint64_t ua = xr(), ub = xr(), uc = xr();
     switch( i % 5 ){
