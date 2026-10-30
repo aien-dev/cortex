@@ -26,7 +26,7 @@ This project has one maintainer; the targets below are best effort and stated ho
 
 ## Scope
 
-`cortex` (branch `wip/omega-cortex`) is a re-implementation in seeded Omega of the Cortex memory
+`cortex` (the repository's default branch) is a re-implementation in seeded Omega of the Cortex memory
 server `cortex-rs` 0.1.0, meant to be byte-for-byte compatible on the wire, plus `cortex-import`,
 which converts a cortex-rs SQLite database into the server's append-only log (`CXLOG001`).
 
@@ -47,9 +47,11 @@ Out of scope:
 
 ## Supported versions
 
-Only the branch `wip/omega-cortex` at its current head; nothing is released. Reports against older commits are welcome but fixes land on the default branch only.
+Only the head of the default branch (currently `wip/omega-cortex`; `main` once the port is merged
+there); nothing is released. Reports against older commits are welcome but fixes land on the default branch only.
 
 ## Status
 
-Work in progress branch. No hosted CI workflow is tracked at this revision. No certification, no
+Work in progress. Hosted CI compiles both units with the pinned compiler and produces an SBOM; the
+differential and parity suites run locally (`check.sh`), not in CI. No certification, no
 bug bounty. See AUDIT_SCOPE.md for what to review and how to build and test it.
