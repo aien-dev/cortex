@@ -67,7 +67,7 @@ if gt add o n HSCAP
 trap 9
 end
 for i ulong n
-put hs add o i get jsv i
+hsp add o i get jsv i
 end
 put hst 0 add o n
 ret rf_hs o n
@@ -87,7 +87,7 @@ end
 fn stage_txt t view uchar * to ulong
 o = get hst 0
 for i ulong len t
-put hs add o i get t i
+hsp add o i get t i
 end
 put hst 0 add o len t
 ret rf_hs o len t
@@ -100,7 +100,7 @@ if gt add o n HSCAP
 trap 9
 end
 for i ulong n
-put hs add o i get job add a i
+hsp add o i get job add a i
 end
 put hst 0 add o n
 put jobl 0 a
@@ -131,7 +131,7 @@ end
 o = rf_off r
 n = rf_len r
 for i ulong n
-put jes i get hs add o i
+put jes i hsg add o i
 end
 js_esc_buf 0 n
 end
@@ -148,7 +148,7 @@ fn o_canon r ulong fb view uchar * to void
 o = rf_off r
 n = rf_len r
 for i ulong n
-put jes i get hs add o i
+put jes i hsg add o i
 end
 if not js_canon_buf 0 n
 js_raw fb
@@ -401,13 +401,8 @@ js_raw t
 http_send c st ct al get jobl 0
 end
 
-note one request on connection c
-fn api_conn c int to void
-st = http_read c
-if eq st 1
-ret
-end
-if ne st 0
+note answer a request that http_read refused (st: 400, 408, 413, 431); no server state is used
+fn api_rderr c int st ulong to void
 put jobl 0 0
 if eq st 413
 js_raw e413
@@ -415,6 +410,15 @@ http_send c 413 2 0 get jobl 0
 ret
 end
 http_send c st 0 0 0
+end
+note one request on connection c
+fn api_conn c int to void
+st = http_read c
+if eq st 1
+ret
+end
+if ne st 0
+api_rderr c st
 ret
 end
 r = route_id

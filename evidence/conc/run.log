@@ -1,0 +1,9 @@
+conc 2026-10-26T22:12:26Z binary sha256 c4f77955e3c74c5727e3b5fa391507a1744a9d578a88cfb7728b52b1446192e7
+requests per phase: 4277
+seq  1 client   wall_ns=47287948749 transport_errors=0
+c16  16 clients wall_ns=40438153289 transport_errors=0
+slow 16 clients wall_ns=36243369892 transport_errors=0 with 200 slow clients (slow rc=0)
+pcmp c16 vs one client: records=4277 pass=4277 fail=0 masked-values=3433
+pcmp slow vs one client: records=4277 pass=4277 fail=0 masked-values=3432
+control sha256 ecff30d9784e24f8b8b31ed58ff28a120220a5a433cd1cbd4a4c466db88ff20e: 16 clients with 200 slow clients wall_ns=1599876386750 transport_errors=293 latencies=3984 of 4277
+slow connections: 200 of 200 opened, 0 not ended by the server within 11 s; endings:  200 answered:HTTP/1.1 400;

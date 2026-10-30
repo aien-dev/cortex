@@ -149,7 +149,7 @@ fn qsu_stage to ulong
 n = get qsul 0
 o = get hst 0
 for i ulong n
-put hs add o i get qsu i
+hsp add o i get qsu i
 end
 put hst 0 add o n
 ret rf_hs o n

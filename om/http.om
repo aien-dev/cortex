@@ -6,6 +6,15 @@ global hv ulong 32
 global hb uchar 8192
 global hbl ulong 1
 global hnn ulong 1
+note per-connection deadlines in ns (srv.om sets them): 0 header complete, 1 whole request, 2 idle
+note between received bytes; all counted from the start of http_read
+global hto ulong 3
+note handler mode (hmir 1): every received byte is also kept, unparsed, in rqraw[0..hrawn)
+global rqraw uchar 4194304
+global hrawn ulong 1
+global hmir ulong 1
+note hprox 1: the peer is a local handler that already answered Expect: 100-continue
+global hprox ulong 1
 const H_METH ulong 0
 const H_PO ulong 1
 const H_PL ulong 2
@@ -366,7 +375,11 @@ now = monons
 if ge now dl
 ret -1
 end
-w = waitio c 1 sub dl now
+wt = sub dl now
+if gt wt long get hto 2
+wt = long get hto 2
+end
+w = waitio c 1 wt
 if le w 0
 ret -1
 end
@@ -375,7 +388,17 @@ if eq cap 0
 ret -1
 end
 r = recv c rq n cap 0
+if and gt r 0 eq get hmir 0 1
+http_mirror n ulong r
+end
 ret r
+end
+note handler mode: keep rq[n..n+r) raw in rqraw
+fn http_mirror n ulong r ulong to void
+for i ulong r
+put rqraw add n i get rq add n i
+end
+put hrawn 0 add n r
 end
 
 note find CRLFCRLF or LFLF end of head within rq[0..n); returns index after it or NONE
@@ -403,7 +426,8 @@ end
 note read one request. returns 0 ok, 1 peer closed or timeout before any byte, else an HTTP status to answer
 fn http_read c int to ulong
 http_clear
-dl = add monons 10000000000
+t0 = monons
+dl = add t0 long get hto 0
 n = ulong 0
 he = NONE
 while eq he NONE bound 4096
@@ -430,7 +454,7 @@ end
 if eq get hv H_CLEN sub NONE 1
 ret 400
 end
-ret http_body c n dl
+ret http_body c n add t0 long get hto 1
 end
 
 note body: content-length or chunked. Body bytes end up contiguous at hv H_BO
@@ -466,6 +490,9 @@ put hv H_BL cl
 ret 0
 end
 fn http_cont c int to void
+if eq get hprox 0 1
+ret
+end
 put hbl 0 0
 hb_txt tcont
 hb_crlf

@@ -1,0 +1,209 @@
+note slow.om: slow-client (slowloris) driver. usage: slow PORT N SECS OUT
+note Opens N connections to 127.0.0.1:PORT, sends an incomplete request head ("GET /health
+note HTTP/1.1" and one header line) and then one more header byte per connection every second,
+note never finishing the head. Stops each connection when the server answers or closes it, or
+note when SECS seconds have passed. OUT gets one line per connection: "<index> <ns alive> <how>"
+note with how = closed (server closed without answering), answered:<first 12 answer bytes>, or
+note open (still open at SECS). Exit 0 when every connection was opened.
+global pa uchar 4096
+global sa uchar 16
+global ob uchar 128
+global rb uchar 4096
+note per connection: fd, start ns, end ns, state (0 open, 1 closed, 2 answered, 3 never opened)
+global cfd ulong 1024
+global cst ulong 1024
+global cen ulong 1024
+global cmo ulong 1024
+global ans uchar 12288
+global sv ulong 4
+text u_use "usage: slow PORT N SECS OUT\n"
+text h_req "GET /health HTTP/1.1\nhost: 127.0.0.1\nx-slow: "
+text w_cl " closed\n"
+text w_op " open\n"
+text w_an " answered:"
+fn say t view uchar * to void
+w = write 2 t 0 len t
+if lt w 0
+ret
+end
+end
+fn argn i ulong to ulong
+n = argread i pa 0 len pa
+if le n 0
+ret 0
+end
+v = ulong 0
+for k ulong ulong n
+c = get pa k
+if or lt c 48 gt c 57
+ret 0
+end
+v = add mul v 10 ulong sub c 48
+end
+ret v
+end
+fn obdec o ulong v ulong to ulong
+k = o
+if ge v 10
+k = obdec o div v 10
+end
+put ob k uchar add rem v 10 48
+ret add k 1
+end
+fn opn port ulong to int
+fd = socknew 2 524289 0
+if lt fd 0
+ret -1
+end
+put sa 0 2
+put sa 1 0
+put sa 2 uchar shr port 8
+put sa 3 uchar and port 255
+put sa 4 127
+put sa 5 0
+put sa 6 0
+put sa 7 1
+r = connect int fd sa 0 16
+if ne r 0
+x = fclose int fd
+ret -1
+end
+s = send int fd h_req 0 len h_req 0
+if ne s long len h_req
+x = fclose int fd
+ret -1
+end
+ret int fd
+end
+note look at connection i once: answer, close, or still waiting; true while still open
+fn poll1 i ulong to bool
+fd = int get cfd i
+w = waitio fd 1 0
+if le w 0
+ret true
+end
+r = recv fd rb 0 12 0
+put cen i ulong monons
+x = fclose fd
+if le r 0
+put cmo i 1
+ret false
+end
+put cmo i 2
+for k ulong ulong r
+put ans add mul i 12 k get rb k
+end
+ret false
+end
+fn drip i ulong to void
+put rb 0 120
+s = send int get cfd i rb 0 1 0
+if le s 0
+put cen i ulong monons
+put cmo i 1
+x = fclose int get cfd i
+end
+end
+fn emitln ofd int i ulong to void
+o = obdec 0 i
+put ob o 32
+o = add o 1
+o = obdec o sub get cen i get cst i
+m = get cmo i
+if eq m 1
+for k ulong len w_cl
+put ob add o k get w_cl k
+end
+o = add o len w_cl
+end
+if eq m 0
+for k ulong len w_op
+put ob add o k get w_op k
+end
+o = add o len w_op
+end
+if eq m 2
+for k ulong len w_an
+put ob add o k get w_an k
+end
+o = add o len w_an
+for k ulong 12
+c = get ans add mul i 12 k
+if or lt c 32 gt c 126
+c = 46
+end
+put ob add o k c
+end
+o = add o 12
+put ob o 10
+o = add o 1
+end
+w = write ofd ob 0 o
+end
+fn main to int
+port = argn 1
+n = argn 2
+secs = argn 3
+if or or eq port 0 eq n 0 gt n 1024
+say u_use
+ret 2
+end
+q = argread 4 pa 0 len pa
+if le q 0
+say u_use
+ret 2
+end
+ofd = fopen pa 0 ulong q 524865 420
+if lt ofd 0
+say u_use
+ret 2
+end
+bad = ulong 0
+for i ulong n
+put cst i ulong monons
+f = opn port
+if lt f 0
+put cmo i 3
+put cen i ulong monons
+bad = add bad 1
+else
+put cfd i ulong f
+put cmo i 0
+end
+end
+dl = add monons mul long secs 1000000000
+nx = add monons 1000000000
+while lt monons dl bound 999999
+live = ulong 0
+for i ulong n
+if eq get cmo i 0
+if poll1 i
+live = add live 1
+end
+end
+end
+if eq live 0
+break
+end
+if ge monons nx
+for i ulong n
+if eq get cmo i 0
+drip i
+end
+end
+nx = add nx 1000000000
+end
+x = sleepns 20000000
+end
+for i ulong n
+if eq get cmo i 0
+put cen i ulong monons
+x = fclose int get cfd i
+end
+emitln int ofd i
+end
+if gt bad 0
+ret 1
+end
+ret 0
+end

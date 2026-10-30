@@ -35,7 +35,7 @@ fail() { echo "load: $*" >&2; stop; exit 2; }
 ms() { date +%s%N; }
 waitup() {
   for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
-    curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$1/health" && return 0
+    curl -sf -o /dev/null --max-time 1 "http://127.0.0.1:$1/health" && return 0
     sleep 1
   done
   return 1
@@ -91,43 +91,62 @@ for side in oracle omega; do
 done
 kill "$OPID" 2>/dev/null
 OPID=
-# crash: a stream of 4000 acknowledged-or-not writes with known ids; kill -9 Omega mid-stream,
-# restart it on the same log, then every write that was answered 201 must be readable with its
-# content and nothing else may be in a half state (the log replays or the server refuses to start).
-awk 'BEGIN { for (i = 0; i < 4000; i++)
-  printf "crash.write\tPOST\t/api/cortex/write\taj\t{\"kind\":\"entity\",\"value\":{\"id\":\"ck-%05d\",\"space\":\"crash-space\",\"canonicalName\":\"crash row %05d\",\"content\":\"durable payload %05d\"}}\n", i, i, i }' > "$W/writes.tsv"
-"$D" "$W/writes.tsv" $SP "$W/writes.out" &
-DP=$!
+# crash: 4 writer clients (1000 writes each, known ids: writer k sends ids k, k+4, k+8, ...) and
+# 4 reader clients (the read mix) run together; kill -9 Omega mid-stream, restart it on the same
+# log, then every write that was answered 201 must be readable with its content, and the server
+# must come back (the log replays or the server refuses to start). Any other answer (transport
+# error, empty answer, a 503 from a connection handler whose state process was gone) is
+# "not acknowledged": it may or may not be stored.
+for k in 0 1 2 3; do
+  awk -v k=$k 'BEGIN { for (j = 0; j < 1000; j++) { i = k + 4 * j
+    printf "crash.write\tPOST\t/api/cortex/write\taj\t{\"kind\":\"entity\",\"value\":{\"id\":\"ck-%05d\",\"space\":\"crash-space\",\"canonicalName\":\"crash row %05d\",\"content\":\"durable payload %05d\"}}\n", i, i, i } }' > "$W/writes$k.tsv"
+done
+CP=
+for k in 0 1 2 3; do
+  "$D" "$W/writes$k.tsv" $SP "$W/writes$k.out" &
+  CP="$CP $!"
+  "$D" "$W/mix$k.tsv" $SP "$W/reads$k.out" &
+  CP="$CP $!"
+done
 sleep 2
 kill -9 "$SPID"
 SPID=
-wait $DP
-ack=$(awk '/^#[0-9]+ [0-9]+$/ { ix = substr($1, 2); getline; if ($2 == "201") print ix }' "$W/writes.out")
-na=$(echo "$ack" | grep -c .)
-nerr=$(grep -c '^#[0-9]* ERR$' "$W/writes.out")
-# a request cut off by the kill gets an empty answer: not acknowledged, so it may or may not be stored
-cut=$(awk '/^#[0-9]+ 0$/ { print substr($1, 2) }' "$W/writes.out")
-nc=$(echo "$cut" | grep -c .)
-[ "$nerr" -gt 0 ] || fail "kill -9 landed after the stream ended (no failed writes); nothing was tested"
+# shellcheck disable=SC2086
+wait $CP
+# per writer: one class per request index: A (201), E (transport error), Z (empty answer), O (other)
+for k in 0 1 2 3; do
+  awk -v k=$k '/^#[0-9]+ ERR$/ { print k + 4 * substr($1, 2), "E"; next }
+    /^#[0-9]+ 0$/ { print k + 4 * substr($1, 2), "Z"; next }
+    /^#[0-9]+ [0-9]+$/ { ix = substr($1, 2); getline; print k + 4 * ix, ($2 == "201" ? "A" : "O") }' "$W/writes$k.out"
+done > "$W/classes.txt"
+na=$(grep -c ' A$' "$W/classes.txt")
+nerr=$(grep -c ' E$' "$W/classes.txt")
+nz=$(grep -c ' Z$' "$W/classes.txt")
+no=$(grep -c ' O$' "$W/classes.txt")
+nall=$(wc -l < "$W/classes.txt")
+rerr=$(cat "$W"/reads?.out | grep -c '^#[0-9]* ERR$')
+[ $((nerr + nz + no)) -gt 0 ] || fail "kill -9 landed after the streams ended (every write acknowledged); nothing was tested"
 startomega
-echo "$ack" | awk 'NF { printf "crash.get\tGET\t/api/cortex/get?id=ck-%05d&space=crash-space\ta\t\n", $1 }' > "$W/gets.tsv"
+awk '$2 == "A" { printf "crash.get\tGET\t/api/cortex/get?id=ck-%05d&space=crash-space\ta\t\n", $1 }' "$W/classes.txt" > "$W/gets.tsv"
 "$D" "$W/gets.tsv" $SP "$W/gets.out" || fail "read-back failed"
 got=$(awk '/^#[0-9]+ [0-9]+$/ { getline; if ($2 == "200") ok++ } END { print ok + 0 }' "$W/gets.out")
 body=$(grep -c '"content":"durable payload [0-9]*"' "$W/gets.out")
-echo "$cut" | awk 'NF { printf "crash.get\tGET\t/api/cortex/get?id=ck-%05d&space=crash-space\ta\t\n", $1 }' > "$W/cut.tsv"
+awk '$2 != "A" { printf "crash.get\tGET\t/api/cortex/get?id=ck-%05d&space=crash-space\ta\t\n", $1 }' "$W/classes.txt" > "$W/cut.tsv"
 cutin=0
-if [ "$nc" -gt 0 ]; then
-  "$D" "$W/cut.tsv" $SP "$W/cut.out" || fail "read-back of cut writes failed"
+if [ -s "$W/cut.tsv" ]; then
+  "$D" "$W/cut.tsv" $SP "$W/cut.out" || fail "read-back of unacknowledged writes failed"
   cutin=$(grep -c '"content":"durable payload [0-9]*"' "$W/cut.out")
 fi
 stop
 {
-  echo "crash test $(date -u +%Y-%m-%dT%H:%M:%SZ): 4000 sequential writes, kill -9 after 2 s"
-  echo "acknowledged (201) before kill: $na; refused after kill (ERR): $nerr; cut off mid-request (empty answer): $nc"
+  echo "crash test $(date -u +%Y-%m-%dT%H:%M:%SZ): 4 writer clients x 1000 writes + 4 reader clients, kill -9 after 2 s"
+  echo "binary sha256 $(sha256sum "$BIN" | cut -c1-64)"
+  echo "acknowledged (201) before kill: $na; transport error: $nerr; empty answer: $nz; other answer: $no; total $nall"
+  echo "reader transport errors (expected after the kill): $rerr"
   echo "read back after restart: $got answered 200, $body carry their payload"
-  echo "cut-off writes present after restart: $cutin of $nc (allowed either way: never acknowledged)"
+  echo "unacknowledged writes present after restart: $cutin of $((nerr + nz + no)) (allowed either way)"
 } > "$EV/crash.txt"
 cat "$EV/wall.txt" "$EV/crash.txt"
-[ $((na + nerr + nc)) -eq 4000 ] || { echo "load: $na + $nerr + $nc answers do not account for 4000 writes" >&2; exit 1; }
+[ "$nall" -eq 4000 ] || { echo "load: $nall answers do not account for 4000 writes" >&2; exit 1; }
 [ "$na" -gt 0 ] && [ "$got" = "$na" ] && [ "$body" = "$na" ] || { echo "load: acknowledged writes lost" >&2; exit 1; }
 exit 0

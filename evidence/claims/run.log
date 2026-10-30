@@ -1,0 +1,20 @@
+parity gate 2026-10-26T22:40:17Z rc=0
+corpus     332 requests, sha256 f904327df62dba3a420a0a850b72cb8116fe9114e408b091bab755ed725e3a7d
+generator  claims gen: 332 requests from 6641 entities
+source     6641 entities (copy of a cortex-rs database)
+import     cortex-import: wal: none
+cortex-import: db: pages=12895
+IMPORT OK spaces=9 entities=6641 claims=0 fts=3890
+cortex-import: import: fts rows without entity=0
+omc        sha256 189ada82e00bb440cb41351bd252cc68c54a1b1050051cc42a1df700081c3b54
+omega      sha256 c4f77955e3c74c5727e3b5fa391507a1744a9d578a88cfb7728b52b1446192e7
+oracle     sha256 91ccba9403601ed4d4b4c762dd489fd9b7de58d4b0017e44102005eb51398afe
+since      2026-10-26T22:40:13
+TOTAL records=332 pass=332 fail=0 masked-values=514 renamed-uuids=138
+per class (pass / total):
+claims.create               80 /    80
+claims.get                  40 /    40
+claims.retract              18 /    18
+claims.search               40 /    40
+claims.traverse            120 /   120
+claims.upsert               34 /    34

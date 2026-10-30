@@ -3,13 +3,14 @@
 #   sh tests/parity/mutant.sh SRC.db
 # Builds a mutant server whose LIKE-fallback score in o_search_row is 0.71 instead of 0.7, runs the
 # full gate against it with scratch work/evidence directories, and expects the gate to FAIL.
-# Writes evidence/parity/mutant.txt. Exit 0 only when the mutant is caught (gate rc 1 with at least
-# one FAIL record), 1 when it survives, 2 on a setup error.
+# Writes $MUTANT_EVIDENCE/mutant.txt (default evidence/parity). Exit 0 only when the mutant is caught
+# (gate rc 1 with at least one FAIL record), 1 when it survives, 2 on a setup error.
 set -u
 SRC=${1:?usage: mutant.sh SRC.db}
 R=$(cd "$(dirname "$0")/../.." && pwd)
 M=${MUTANT_WORK:-$R/build/mutant}
-EV=$R/evidence/parity
+EV=${MUTANT_EVIDENCE:-$R/evidence/parity}
+mkdir -p "$EV"
 [ -s "$R/build/cortex.unit.om" ] || { echo "mutant: build first (sh build.sh)" >&2; exit 2; }
 OMC=$(sh "$R/tools/omc.sh") || exit 2
 rm -rf "$M" && mkdir -p "$M/ev"

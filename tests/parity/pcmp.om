@@ -609,9 +609,11 @@ end
 end
 ret v
 end
-note HEAD answers carry no body, so the masked runtime value of /health and /status shows only as a
-note content-length one larger in Omega: accepted when both bodies are empty and the difference is +1
-fn headcl to bool
+note HEAD answers carry no body, so a masked value shows only in content-length: the runtime value
+note of /health and /status makes Omega's exactly one larger; the elapsedMs number of a search or
+note recall answer may differ in length by less than 24 bytes (the longest JSON f64 text,
+note -2.2250738585072014e-308, is 24 bytes). Accepted only when both bodies are empty.
+fn headcl ix ulong to bool
 if or ne get cv 15 get cv 5 ne get cv 16 get cv 6
 ret false
 end
@@ -632,7 +634,39 @@ end
 if or eq vo NONE eq vs NONE
 ret false
 end
-ret eq vs add vo 1
+if eq vs add vo 1
+ret true
+end
+if not hdtim ix
+ret false
+end
+if gt vo vs
+ret le sub vo vs 24
+end
+ret le sub vs vo 24
+end
+text t_hs "HEAD\t/api/cortex/search"
+text t_hr "HEAD\t/api/cortex/recall"
+note corpus line ix is a HEAD of /api/cortex/search or /api/cortex/recall (answers with elapsedMs)
+fn hdtim ix ulong to bool
+if ge ix len ls
+ret false
+end
+i = get ls ix
+for j ulong 64
+if eq get cb add i j 9
+ret or cbhas add add i j 1 t_hs cbhas add add i j 1 t_hr
+end
+end
+ret false
+end
+fn cbhas p ulong t view uchar * to bool
+for k ulong len t
+if ne get cb add p k get t k
+ret false
+end
+end
+ret true
 end
 note one masked value at oracle vo / Omega vs; returns false when the mismatch is not maskable;
 note on success cv 19 / cv 20 hold the oracle / Omega offsets after the value
@@ -774,7 +808,7 @@ verdict ix f_body sub d get cv 15
 ret
 end
 if eq h 2
-if or ne get cv 8 0 headcl
+if or ne get cv 8 0 headcl ix
 passed ix
 ret
 end
